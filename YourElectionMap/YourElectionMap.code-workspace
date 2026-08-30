@@ -1,0 +1,27 @@
+{
+  // Open with: File > Open Workspace from File..., or `code YourElectionMap.code-workspace`.
+  // Debug configurations live in .vscode/launch.json and tasks in .vscode/tasks.json.
+  "folders": [
+    {
+      "name": "YourElectionMap",
+      "path": "."
+    }
+  ],
+  "settings": {
+    // C# Dev Kit needs the solution named at the workspace level when a
+    // .code-workspace file is used.
+    "dotnet.defaultSolution": "YourElectionMap.sln",
+    "debug.internalConsoleOptions": "neverOpen",
+    "terminal.integrated.cwd": "${workspaceFolder}"
+  },
+  "extensions": {
+    "recommendations": [
+      "ms-dotnettools.csdevkit",
+      "ms-dotnettools.csharp",
+      "vitest.explorer",
+      "oxc.oxc-vscode",
+      "ms-azuretools.vscode-docker",
+      "humao.rest-client"
+    ]
+  }
+}

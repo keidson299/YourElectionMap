@@ -1,0 +1,85 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      // Debugs the ASP.NET Core API on https://localhost:7132 (http://localhost:5026).
+      // launchSettingsProfile is blank on purpose: it keeps Properties/launchSettings.json
+      // from starting a second Vite instance through Microsoft.AspNetCore.SpaProxy.
+      "name": "Server: ASP.NET Core",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build",
+      "program": "${workspaceFolder}/YourElectionMap.Server/bin/Debug/net9.0/YourElectionMap.Server.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/YourElectionMap.Server",
+      "stopAtEntry": false,
+      "launchSettingsProfile": "",
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_URLS": "https://localhost:7132;http://localhost:5026",
+        "ASPNETCORE_HOSTINGSTARTUPASSEMBLIES": ""
+      },
+      "console": "internalConsole"
+    },
+    {
+      // Starts Vite, then attaches the browser debugger so React code can be
+      // stepped through from the editor. The API must already be running.
+      "name": "Client: Vite + Edge",
+      "type": "msedge",
+      "request": "launch",
+      "preLaunchTask": "client: dev server",
+      "url": "https://localhost:52462",
+      "webRoot": "${workspaceFolder}/yourelectionmap.client",
+      "sourceMapPathOverrides": {
+        "/src/*": "${workspaceFolder}/yourelectionmap.client/src/*"
+      }
+    },
+    {
+      "name": "Client: Vite + Chrome",
+      "type": "chrome",
+      "request": "launch",
+      "preLaunchTask": "client: dev server",
+      "url": "https://localhost:52462",
+      "webRoot": "${workspaceFolder}/yourelectionmap.client",
+      "sourceMapPathOverrides": {
+        "/src/*": "${workspaceFolder}/yourelectionmap.client/src/*"
+      }
+    },
+    {
+      // Runs the Vitest suite under the Node debugger, so breakpoints in tests work.
+      "name": "Client: debug tests (Vitest)",
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/yourelectionmap.client",
+      "program": "${workspaceFolder}/yourelectionmap.client/node_modules/vitest/vitest.mjs",
+      "args": ["run", "--no-file-parallelism"],
+      "console": "integratedTerminal",
+      "smartStep": true,
+      "skipFiles": ["<node_internals>/**"]
+    },
+    {
+      "name": "Server: attach to process",
+      "type": "coreclr",
+      "request": "attach"
+    }
+  ],
+  "compounds": [
+    {
+      // The everyday F5: API + Vite dev server + browser, all debuggable.
+      "name": "Full stack (Edge)",
+      "configurations": ["Server: ASP.NET Core", "Client: Vite + Edge"],
+      "stopAll": true,
+      "presentation": {
+        "order": 1
+      }
+    },
+    {
+      "name": "Full stack (Chrome)",
+      "configurations": ["Server: ASP.NET Core", "Client: Vite + Chrome"],
+      "stopAll": true,
+      "presentation": {
+        "order": 2
+      }
+    }
+  ]
+}

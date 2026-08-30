@@ -1,0 +1,186 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "build",
+      "detail": "dotnet build of the whole solution",
+      "command": "dotnet",
+      "type": "process",
+      "args": [
+        "build",
+        "${workspaceFolder}/YourElectionMap.sln",
+        "/property:GenerateFullPaths=true",
+        "/consoleloggerparameters:NoSummary;ForceNoAlign"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "clean",
+      "detail": "dotnet clean of the whole solution",
+      "command": "dotnet",
+      "type": "process",
+      "args": [
+        "clean",
+        "${workspaceFolder}/YourElectionMap.sln",
+        "/property:GenerateFullPaths=true",
+        "/consoleloggerparameters:NoSummary;ForceNoAlign"
+      ],
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "publish",
+      "detail": "dotnet publish - also builds the SPA into wwwroot",
+      "command": "dotnet",
+      "type": "process",
+      "args": [
+        "publish",
+        "${workspaceFolder}/YourElectionMap.Server/YourElectionMap.Server.csproj",
+        "/property:GenerateFullPaths=true",
+        "/consoleloggerparameters:NoSummary;ForceNoAlign"
+      ],
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "watch server",
+      "detail": "dotnet watch - restarts the API on C# changes",
+      "command": "dotnet",
+      "type": "process",
+      "args": [
+        "watch",
+        "run",
+        "--project",
+        "${workspaceFolder}/YourElectionMap.Server/YourElectionMap.Server.csproj",
+        "--no-launch-profile"
+      ],
+      "options": {
+        "env": {
+          "ASPNETCORE_ENVIRONMENT": "Development",
+          "ASPNETCORE_URLS": "https://localhost:7132;http://localhost:5026"
+        }
+      },
+      "isBackground": true,
+      "problemMatcher": "$msCompile"
+    },
+
+    {
+      "label": "client: install",
+      "detail": "npm install for the React client",
+      "type": "shell",
+      "command": "npm install",
+      "options": {
+        "cwd": "${workspaceFolder}/yourelectionmap.client"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "client: dev server",
+      "detail": "Starts Vite on https://localhost:52462 (proxies /api and /weatherforecast to the server)",
+      "type": "shell",
+      "command": "npm run dev",
+      "options": {
+        "cwd": "${workspaceFolder}/yourelectionmap.client"
+      },
+      "isBackground": true,
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "dev"
+      },
+      "problemMatcher": {
+        "owner": "vite",
+        "fileLocation": [
+          "relative",
+          "${workspaceFolder}/yourelectionmap.client"
+        ],
+        "pattern": {
+          "regexp": "^\\s*(.*)\\((\\d+),(\\d+)\\):\\s+(error|warning)\\s+(.*)$",
+          "file": 1,
+          "line": 2,
+          "column": 3,
+          "severity": 4,
+          "message": 5
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "^\\s*(VITE|vite)\\s*v?.*$",
+          "endsPattern": "^.*(ready in|Local:\\s+https?://).*$"
+        }
+      }
+    },
+    {
+      "label": "client: build",
+      "detail": "Type-checks and bundles the client into dist/",
+      "type": "shell",
+      "command": "npm run build",
+      "options": {
+        "cwd": "${workspaceFolder}/yourelectionmap.client"
+      },
+      "problemMatcher": "$tsc"
+    },
+    {
+      "label": "client: lint",
+      "type": "shell",
+      "command": "npm run lint",
+      "options": {
+        "cwd": "${workspaceFolder}/yourelectionmap.client"
+      },
+      "problemMatcher": []
+    },
+
+    {
+      "label": "test: server",
+      "detail": "dotnet test - xUnit unit and integration tests",
+      "command": "dotnet",
+      "type": "process",
+      "args": [
+        "test",
+        "${workspaceFolder}/YourElectionMap.Server.Tests/YourElectionMap.Server.Tests.csproj",
+        "/property:GenerateFullPaths=true",
+        "/consoleloggerparameters:NoSummary;ForceNoAlign"
+      ],
+      "group": "test",
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "test: client",
+      "detail": "vitest run - React component tests",
+      "type": "shell",
+      "command": "npm test",
+      "options": {
+        "cwd": "${workspaceFolder}/yourelectionmap.client"
+      },
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "test: client (watch)",
+      "type": "shell",
+      "command": "npm run test:watch",
+      "options": {
+        "cwd": "${workspaceFolder}/yourelectionmap.client"
+      },
+      "isBackground": true,
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "test"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "test: all",
+      "detail": "Runs the server and client test suites",
+      "dependsOrder": "sequence",
+      "dependsOn": ["test: server", "test: client"],
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "problemMatcher": []
+    }
+  ]
+}

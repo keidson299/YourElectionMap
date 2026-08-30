@@ -1,0 +1,41 @@
+{
+  // C# Dev Kit: load this solution without prompting.
+  "dotnet.defaultSolution": "YourElectionMap.sln",
+
+  // The client pins a newer TypeScript than the one bundled with VS Code.
+  "typescript.tsdk": "yourelectionmap.client/node_modules/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true,
+
+  "files.exclude": {
+    "**/.vs": true,
+    "**/bin": true,
+    "**/obj": true
+  },
+  "search.exclude": {
+    "**/bin": true,
+    "**/dist": true,
+    "**/node_modules": true,
+    "**/obj": true
+  },
+  "files.watcherExclude": {
+    "**/.git/objects/**": true,
+    "**/bin/**": true,
+    "**/dist/**": true,
+    "**/node_modules/**": true,
+    "**/obj/**": true
+  },
+
+  "editor.formatOnSave": true,
+  "[csharp]": {
+    "editor.defaultFormatter": "ms-dotnettools.csharp"
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "vscode.typescript-language-features"
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "vscode.typescript-language-features"
+  },
+
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true
+}

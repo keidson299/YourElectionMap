@@ -1,0 +1,15 @@
+{
+  "recommendations": [
+    // C# language service, debugger, solution explorer and test explorer.
+    "ms-dotnettools.csdevkit",
+    "ms-dotnettools.csharp",
+    // Runs the Vitest suite from the Testing panel.
+    "vitest.explorer",
+    // The linter this client is configured with (npm run lint).
+    "oxc.oxc-vscode",
+    // Dockerfile support for YourElectionMap.Server/Dockerfile.
+    "ms-azuretools.vscode-docker",
+    // Sends requests from YourElectionMap.Server.http.
+    "humao.rest-client"
+  ]
+}
