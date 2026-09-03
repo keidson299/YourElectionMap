@@ -1,0 +1,25 @@
+{
+  "artboards": [
+    { "file": "Foundations.dc.html", "title": "Foundations — three map-first directions", "x": 0, "y": 0, "w": 1560, "h": 1100 },
+    { "file": "Main.dc.html", "title": "1 · Atlas — warm paper", "x": 0, "y": 1300, "w": 1440, "h": 900 },
+    { "file": "Survey.dc.html", "title": "2 · Survey — cool wireframe", "x": 1560, "y": 1300, "w": 1440, "h": 900 },
+    { "file": "Meridian.dc.html", "title": "3 · Meridian — deep green split", "x": 3120, "y": 1300, "w": 1440, "h": 900 }
+  ],
+  "annotations": [
+    {
+      "id": "brief",
+      "x": -560,
+      "y": 0,
+      "w": 440,
+      "text": "Three variations on the map-forward direction you picked.\n\nSame anatomy every time — a real district map, the site name, one address field — with the type, the palette and the shape of the search changed between them. The primary action is \"Find My Maps\" in all three; candidates and election dates are demoted to a secondary line, so the maps read as the product and the rest as what comes with them.\n\nEach board has a light/dark toggle and an accent swatch in the tweaks row above it."
+    },
+    {
+      "id": "notes",
+      "x": -560,
+      "y": 420,
+      "w": 440,
+      "text": "Two things to decide alongside the direction:\n\nFonts — Fraunces + Inter (1), Space Grotesk + IBM Plex Mono (2), DM Serif Display + Manrope (3). All webfonts, so one Google Fonts <link> in index.html. Say the word and I'll refit whichever you pick to system fonts.\n\nChakra UI — nothing here needs it; all three are plain CSS. If it goes in, the field, button and tag map onto Chakra primitives and these palettes become a theme token set. The SVG map stays hand-drawn either way.\n\nThe district chip on Meridian is sample text, not a real lookup."
+    }
+  ],
+  "launch": { "view": "canvas" }
+}

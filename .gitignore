@@ -52,6 +52,9 @@ appsettings.*.local.json
 *.key
 *.pem
 
+# Design canvases: track the .dc.html sources, not the built pages
+design/**/yourelectionmap-*.html
+
 # OS
 .DS_Store
 Thumbs.db

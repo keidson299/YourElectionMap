@@ -1,0 +1,22 @@
+{
+  "artboards": [
+    { "file": "Main.dc.html", "title": "Atlas — final build spec", "x": 0, "y": 0, "w": 2020, "h": 3920, "expand": "fit" }
+  ],
+  "annotations": [
+    {
+      "id": "brief",
+      "x": -620,
+      "y": 0,
+      "w": 480,
+      "text": "One sheet, everything needed to build Atlas.\n\n01 Home and 02 Result, each at 1440×900 and 390×844.\n03 The type ramp and every colour token, light and dark, with the hex and what each one is for.\n\nThe light/dark toggle in the tweaks row above the board switches the mockups; the colour tables always show both themes side by side."
+    },
+    {
+      "id": "sample",
+      "x": -620,
+      "y": 400,
+      "w": 480,
+      "text": "Everything on the result screens is invented — 1420 Maple Street, Springfield, Greenlake County, State House 44, the counts. The polygons are hand-drawn, not real district geometry; that SVG is the piece that gets replaced when a real districts API returns shapes.\n\nAccent is hand-picked per theme rather than derived: #B4552B on light, #E08A5A on dark. Both clear 6:1 against their button ink."
+    }
+  ],
+  "launch": { "view": "canvas" }
+}

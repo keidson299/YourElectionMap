@@ -1,0 +1,222 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; }
+    .atlas {
+      --bg: #FAF5EB; --card: #FFFDF8; --field: #FBF7EF;
+      --ink: #241C12; --ink-soft: #6E6252;
+      --rule: #E7DCC8; --rule-strong: #CFC0A4;
+      --map-a: #F0E7D3; --map-b: #EDE6D6; --map-c: #F4EDDD; --map-d: #E9E0CB;
+      --map-line: #DCCDAE; --map-water: #DDE5DE; --map-road: #FBF6EA;
+      --map-contour: #E3D7BE;
+      --shadow: 0 30px 60px -28px rgba(60,44,22,.38), 0 2px 6px rgba(60,44,22,.07);
+      --display: 'Fraunces', Georgia, 'Times New Roman', serif;
+      --ui: 'Inter', 'Segoe UI', system-ui, sans-serif;
+    }
+    .atlas[data-theme="dark"] {
+      --bg: #191410; --card: #221C16; --field: #1D1813;
+      --ink: #F2EBE0; --ink-soft: #A0927F;
+      --rule: #33291F; --rule-strong: #4A3C2D;
+      --map-a: #1E1811; --map-b: #1B1712; --map-c: #221B13; --map-d: #191410;
+      --map-line: #2C2317; --map-water: #16201B; --map-road: #2A2115;
+      --map-contour: #251D13;
+      --shadow: 0 30px 60px -28px rgba(0,0,0,.7), 0 2px 6px rgba(0,0,0,.4);
+    }
+    .atlas .veil { background: linear-gradient(94deg, #FAF5EB 0%, #FAF5EB 36%, rgba(250,245,235,.6) 60%, rgba(250,245,235,0) 84%); }
+    .atlas[data-theme="dark"] .veil { background: linear-gradient(94deg, #191410 0%, #191410 36%, rgba(25,20,16,.6) 60%, rgba(25,20,16,0) 84%); }
+    .atlas input::placeholder { color: var(--ink-soft); opacity: .8; }
+  </style>
+</helmet>
+
+<div class="atlas" data-theme="{{theme}}" style="position: relative; width: 1440px; height: 900px; overflow: hidden; background: var(--bg); color: var(--ink); font-family: var(--ui); font-size: 16px;">
+
+  <svg viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice" aria-hidden="true" style="position: absolute; inset: 0; width: 100%; height: 100%; display: block;">
+    <rect x="0" y="0" width="1600" height="1000" fill="var(--map-c)"></rect>
+    <g stroke="var(--map-line)" stroke-width="1.4" stroke-linejoin="round">
+      <polygon points="0,0 320,-10 350,215 0,240" fill="var(--map-a)"></polygon>
+      <polygon points="320,-10 640,10 610,270 350,215" fill="var(--map-b)"></polygon>
+      <polygon points="640,10 960,-5 985,235 610,270" fill="var(--map-c)"></polygon>
+      <polygon points="960,-5 1280,5 1250,265 985,235" fill="var(--map-d)"></polygon>
+      <polygon points="1280,5 1600,0 1600,245 1250,265" fill="var(--map-a)"></polygon>
+      <polygon points="0,240 350,215 300,485 0,510" fill="var(--map-d)"></polygon>
+      <polygon points="350,215 610,270 665,530 300,485" fill="var(--map-c)"></polygon>
+      <polygon points="610,270 985,235 930,495 665,530" fill="var(--map-a)"></polygon>
+      <polygon points="985,235 1250,265 1310,520 930,495" fill="var(--map-b)"></polygon>
+      <polygon points="1250,265 1600,245 1600,490 1310,520" fill="var(--map-c)"></polygon>
+      <polygon points="0,510 300,485 365,770 0,745" fill="var(--map-b)"></polygon>
+      <polygon points="300,485 665,530 620,725 365,770" fill="var(--map-d)"></polygon>
+      <polygon points="665,530 930,495 1000,765 620,725" fill="var(--map-c)"></polygon>
+      <polygon points="930,495 1310,520 1270,735 1000,765" fill="var(--map-a)"></polygon>
+      <polygon points="1310,520 1600,490 1600,760 1270,735" fill="var(--map-d)"></polygon>
+      <polygon points="0,745 365,770 320,1000 0,1000" fill="var(--map-c)"></polygon>
+      <polygon points="365,770 620,725 640,1000 320,1000" fill="var(--map-a)"></polygon>
+      <polygon points="620,725 1000,765 960,1000 640,1000" fill="var(--map-b)"></polygon>
+      <polygon points="1000,765 1270,735 1280,1000 960,1000" fill="var(--map-d)"></polygon>
+      <polygon points="1270,735 1600,760 1600,1000 1280,1000" fill="var(--map-c)"></polygon>
+    </g>
+
+    <g fill="none" stroke="var(--map-contour)" stroke-width="1.1">
+      <path d="M1180,120 C1320,90 1470,150 1520,250 C1560,330 1500,400 1400,410 C1290,420 1200,360 1190,270 C1183,205 1200,150 1180,120 Z"></path>
+      <path d="M1215,160 C1330,138 1440,186 1478,262 C1508,322 1462,376 1382,384 C1300,392 1232,344 1224,276 C1219,226 1230,184 1215,160 Z"></path>
+      <path d="M1252,200 C1338,186 1412,222 1438,274 C1458,314 1424,350 1366,356 C1310,362 1264,328 1258,282 C1254,248 1262,216 1252,200 Z"></path>
+      <path d="M120,820 C230,790 340,830 372,896 C398,950 350,990 268,996 C190,1002 132,962 124,908 C119,872 130,840 120,820 Z"></path>
+      <path d="M158,856 C240,836 318,866 342,912 C360,948 326,976 268,980 C212,984 170,956 164,918 C160,892 166,868 158,856 Z"></path>
+    </g>
+
+    <path d="M-20,300 C260,340 380,470 620,500 C840,528 980,470 1180,520 C1360,564 1480,640 1620,660 L1620,724 C1460,704 1340,632 1170,588 C980,540 850,598 615,566 C360,534 240,404 -20,364 Z" fill="var(--map-water)"></path>
+    <g stroke="var(--map-road)" stroke-width="3.5" fill="none" stroke-linecap="round">
+      <path d="M-20,640 L420,600 L760,700 L1180,650 L1620,690"></path>
+      <path d="M520,-20 L560,300 L500,640 L560,1020"></path>
+      <path d="M1080,-20 L1040,260 L1120,540 L1080,1020"></path>
+    </g>
+
+    <polygon points="930,495 1310,520 1270,735 1000,765" fill="{{accentTint}}" stroke="{{accent}}" stroke-width="3.5" stroke-linejoin="round"></polygon>
+    <circle cx="1127" cy="629" r="40" fill="{{accentTint}}"></circle>
+    <circle cx="1127" cy="629" r="12" fill="{{accent}}" stroke="var(--card)" stroke-width="4"></circle>
+
+    <g transform="translate(1452, 128)" stroke="{{accent}}" fill="none" stroke-width="1.6" opacity=".72">
+      <circle r="34"></circle>
+      <circle r="25" stroke-dasharray="2 7"></circle>
+      <path d="M0,-40 L7,-6 L0,34 L-7,-6 Z" fill="{{accent}}" stroke="none"></path>
+      <path d="M-40,0 L40,0" stroke-width="1"></path>
+    </g>
+  </svg>
+
+  <div class="veil" style="position: absolute; inset: 0;"></div>
+
+  <div style="position: relative; height: 100%; display: flex; align-items: center; padding: 0 84px;">
+    <div style="width: 636px; background: var(--card); border: 1px solid var(--rule); border-radius: 14px; padding: 46px 50px 42px; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 28px;">
+
+      <div style="display: flex; flex-direction: column; gap: 16px;">
+        <div style="display: flex; align-items: center; gap: 9px; color: {{accent}};">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4 3 6.5v14L9 18l6 2.5 6-2.5v-14L15 6.5 9 4Z"></path><path d="M9 4v14M15 6.5v14"></path></svg>
+          <span style="font-size: 11.5px; font-weight: 600; letter-spacing: .17em; text-transform: uppercase;">Local election maps</span>
+        </div>
+        <h1 style="margin: 0; font-family: var(--display); font-weight: 600; font-size: 58px; line-height: 1.0; letter-spacing: -0.022em; color: var(--ink);">YourElectionMap</h1>
+        <p style="margin: 0; font-size: 17.5px; line-height: 1.55; color: var(--ink-soft); max-width: 44ch; text-wrap: pretty;">See the district maps you vote in — plus the candidates and dates that come with them.</p>
+      </div>
+
+      <form style="display: flex; flex-direction: column; gap: 16px;">
+        <label for="atlas-addr" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap;">Home address</label>
+
+        <div style="display: flex; gap: 10px;">
+          <div style="position: relative; flex-grow: 1; min-width: 0; display: flex; align-items: center;">
+            <span style="position: absolute; left: 17px; display: flex; color: var(--ink-soft); pointer-events: none;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+            </span>
+            <input id="atlas-addr" type="text" placeholder="Enter your home address" style="width: 100%; height: 58px; padding: 0 16px 0 47px; font-family: inherit; font-size: 16.5px; color: var(--ink); background: var(--field); border: 1px solid var(--rule-strong); border-radius: 9px; outline: none;">
+          </div>
+          <button type="submit" style="height: 58px; padding: 0 27px; font-family: inherit; font-size: 16px; font-weight: 600; letter-spacing: .005em; color: {{onAccent}}; background: {{accent}}; border: none; border-radius: 9px; cursor: pointer; white-space: nowrap;">Find My Maps</button>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 16px;">
+          <button type="button" style="display: flex; align-items: center; gap: 7px; padding: 0; font-family: inherit; font-size: 15px; font-weight: 600; color: {{accent}}; background: none; border: none; cursor: pointer;">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="7"></circle><circle cx="12" cy="12" r="2.4" fill="currentColor" stroke="none"></circle><path d="M12 2v3M12 19v3M2 12h3M19 12h3"></path></svg>
+            Use my current location
+          </button>
+          <span style="width: 1px; height: 15px; background: var(--rule-strong);"></span>
+          <p style="margin: 0; font-size: 13px; line-height: 1.5; color: var(--ink-soft);">We use your address only to look up your voting districts.</p>
+        </div>
+      </form>
+
+      <div style="border-top: 1px solid var(--rule); padding-top: 18px; display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap;">
+        <span style="font-size: 12.5px; font-weight: 600; letter-spacing: .09em; text-transform: uppercase; color: var(--ink-soft);">Also included</span>
+        <span style="font-size: 14.5px; color: var(--ink-soft);">candidates · ballot measures · upcoming election dates</span>
+      </div>
+
+    </div>
+  </div>
+
+  <p style="position: absolute; left: 84px; bottom: 34px; margin: 0; font-size: 12px; letter-spacing: .05em; color: var(--ink-soft);">Nonpartisan · Not affiliated with any election authority</p>
+
+</div>
+</x-dc>
+<script data-dc-script data-props='{"theme":{"editor":"enum","options":["light","dark"],"default":"light","section":"Theme"},"accent":{"editor":"color","default":"#B4552B","options":["#B4552B","#8C6A1F","#7A4230","#4E6B36"],"section":"Theme"},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const theme = this.props.theme ?? 'light';
+    const accent = this.adjust(this.props.accent ?? '#B4552B', theme === 'dark' ? 'onDark' : 'onLight');
+    return {
+      theme: theme,
+      accent: accent,
+      onAccent: this.pickInk(accent),
+      accentTint: this.tint(accent, theme === 'dark' ? 0.22 : 0.13)
+    };
+  }
+  rgb(input) {
+    let h = String(input).replace('#', '').trim();
+    if (h.length === 3) h = h.split('').map(function (c) { return c + c; }).join('');
+    const n = parseInt(h.slice(0, 6), 16);
+    if (isNaN(n)) return [180, 85, 43];
+    return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+  }
+  toHex(r, g, b) {
+    const p = function (v) { return ('0' + Math.round(Math.max(0, Math.min(255, v))).toString(16)).slice(-2); };
+    return '#' + p(r) + p(g) + p(b);
+  }
+  hsl(input) {
+    const c = this.rgb(input);
+    const r = c[0] / 255, g = c[1] / 255, b = c[2] / 255;
+    const mx = Math.max(r, g, b), mn = Math.min(r, g, b), d = mx - mn;
+    const l = (mx + mn) / 2;
+    const s = d === 0 ? 0 : d / (1 - Math.abs(2 * l - 1));
+    let h = 0;
+    if (d !== 0) {
+      if (mx === r) h = ((g - b) / d) % 6;
+      else if (mx === g) h = (b - r) / d + 2;
+      else h = (r - g) / d + 4;
+      h *= 60;
+      if (h < 0) h += 360;
+    }
+    return [h, s, l];
+  }
+  fromHsl(h, S, L) {
+    const cc = (1 - Math.abs(2 * L - 1)) * S;
+    const x = cc * (1 - Math.abs(((h / 60) % 2) - 1));
+    const m = L - cc / 2;
+    let t = [cc, x, 0];
+    if (h >= 60 && h < 120) t = [x, cc, 0];
+    else if (h >= 120 && h < 180) t = [0, cc, x];
+    else if (h >= 180 && h < 240) t = [0, x, cc];
+    else if (h >= 240 && h < 300) t = [x, 0, cc];
+    else if (h >= 300) t = [cc, 0, x];
+    return this.toHex((t[0] + m) * 255, (t[1] + m) * 255, (t[2] + m) * 255);
+  }
+  adjust(input, mode) {
+    const p = this.hsl(input);
+    let L = p[2], S = p[1];
+    if (mode === 'onDark') { L = Math.max(p[2], 0.62); S = Math.min(p[1], 0.52); }
+    else { L = Math.min(p[2], 0.43); S = Math.max(p[1], 0.32); }
+    return this.fromHsl(p[0], S, L);
+  }
+  lum(input) {
+    const c = this.rgb(input).map(function (v) {
+      const s = v / 255;
+      return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+    });
+    return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+  }
+  ratio(a, b) {
+    const x = this.lum(a), y = this.lum(b);
+    return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05);
+  }
+  pickInk(input) {
+    return this.ratio(input, '#FFFDF8') >= this.ratio(input, '#241C12') ? '#FFFDF8' : '#241C12';
+  }
+  tint(input, a) {
+    const c = this.rgb(input);
+    return 'rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',' + a + ')';
+  }
+}
+</script>
+</body>
+</html>

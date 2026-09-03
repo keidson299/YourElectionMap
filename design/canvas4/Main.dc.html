@@ -1,0 +1,662 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; }
+
+    .sheet {
+      --bg: #FAF5EB; --card: #FFFDF8; --field: #FBF7EF;
+      --ink: #241C12; --ink-soft: #6E6252;
+      --rule: #E7DCC8; --rule-strong: #CFC0A4;
+      --grid: #EEE5D2; --grid-strong: #E2D6BC;
+      --district: #C9BA9C; --water: #E4EAE1; --road: #DCD0B6;
+      --accent: #B4552B; --accent-tint: rgba(180,85,43,.11); --accent-soft: rgba(180,85,43,.07);
+      --on-accent: #FFFDF8;
+      --sheet-bg: #EDE7DB; --sheet-ink: #241C12; --sheet-soft: #6E6252; --sheet-rule: #DAD1C0;
+      --shadow: 0 26px 52px -26px rgba(60,44,22,.34), 0 2px 6px rgba(60,44,22,.06);
+      --display: 'Fraunces', Georgia, 'Times New Roman', serif;
+      --ui: 'Inter', 'Segoe UI', system-ui, sans-serif;
+      --mono: 'IBM Plex Mono', ui-monospace, Consolas, monospace;
+    }
+    .sheet[data-theme="dark"] {
+      --bg: #191410; --card: #221C16; --field: #1D1813;
+      --ink: #F2EBE0; --ink-soft: #A0927F;
+      --rule: #33291F; --rule-strong: #4A3C2D;
+      --grid: #201A13; --grid-strong: #2B2318;
+      --district: #4A3D2C; --water: #1A2018; --road: #3A3020;
+      --accent: #E08A5A; --accent-tint: rgba(224,138,90,.18); --accent-soft: rgba(224,138,90,.11);
+      --on-accent: #241C12;
+      --sheet-bg: #100C09; --sheet-ink: #F2EBE0; --sheet-soft: #A0927F; --sheet-rule: #2A231B;
+      --shadow: 0 26px 52px -26px rgba(0,0,0,.7), 0 2px 6px rgba(0,0,0,.4);
+    }
+
+    .page { position: relative; overflow: hidden; background: var(--bg); color: var(--ink); font-family: var(--ui); font-size: 16px; }
+    .d { width: 1440px; height: 900px; }
+    .m { width: 390px; height: 844px; }
+    .frame { border: 1px solid var(--sheet-rule); border-radius: 10px; overflow: hidden; box-shadow: var(--shadow); flex-shrink: 0; }
+    .cap { display: block; margin-bottom: 9px; font-family: var(--mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--sheet-soft); }
+    .sec { display: flex; align-items: baseline; gap: 14px; padding-bottom: 12px; border-bottom: 1.5px solid var(--sheet-rule); }
+    .sec .num { font-family: var(--mono); font-size: 13px; letter-spacing: .1em; color: var(--accent); }
+    .sec h2 { margin: 0; font-family: var(--display); font-weight: 600; font-size: 27px; letter-spacing: -0.02em; color: var(--sheet-ink); }
+    .sec p { margin: 0 0 0 auto; max-width: 62ch; font-size: 13.5px; line-height: 1.55; color: var(--sheet-soft); text-align: right; }
+    .row { display: flex; gap: 44px; align-items: flex-start; }
+    .srow { display: flex; align-items: center; gap: 12px; height: 36px; border-bottom: 1px solid var(--sheet-rule); }
+    .sw { width: 30px; height: 22px; border-radius: 4px; border: 1px solid rgba(120,100,70,.25); flex-shrink: 0; }
+    .tk { font-family: var(--mono); font-size: 12.5px; color: var(--sheet-ink); width: 148px; flex-shrink: 0; }
+    .hx { font-family: var(--mono); font-size: 12.5px; color: var(--accent); width: 84px; flex-shrink: 0; }
+    .us { font-size: 12.5px; color: var(--sheet-soft); }
+    .kicker { font-size: 11px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: var(--sheet-soft); }
+    .lrow { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 8px; border: 1px solid transparent; }
+    .zoom { width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; background: var(--card); border: 1px solid var(--rule-strong); color: var(--ink); font-size: 19px; font-family: var(--ui); }
+    .veilD { background: linear-gradient(94deg, rgba(250,245,235,.9) 0%, rgba(250,245,235,.74) 32%, rgba(250,245,235,.3) 55%, rgba(250,245,235,0) 76%); }
+    .sheet[data-theme="dark"] .veilD { background: linear-gradient(94deg, rgba(25,20,16,.9) 0%, rgba(25,20,16,.74) 32%, rgba(25,20,16,.3) 55%, rgba(25,20,16,0) 76%); }
+    .veilM { background: linear-gradient(180deg, rgba(250,245,235,0) 30%, rgba(250,245,235,.45) 48%, rgba(250,245,235,.86) 62%); }
+    .sheet[data-theme="dark"] .veilM { background: linear-gradient(180deg, rgba(25,20,16,0) 30%, rgba(25,20,16,.45) 48%, rgba(25,20,16,.86) 62%); }
+    .sheet input::placeholder { color: var(--ink-soft); opacity: .8; }
+    .hide { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  </style>
+</helmet>
+
+<div class="sheet" data-theme="{{theme}}" style="width: 2020px; height: 3920px; background: var(--sheet-bg); color: var(--sheet-ink); font-family: var(--ui); font-size: 15px; padding: 72px; display: flex; flex-direction: column; gap: 54px;">
+
+  <svg width="0" height="0" style="position: absolute;" aria-hidden="true">
+    <defs>
+      <pattern id="gFine" width="25" height="25" patternUnits="userSpaceOnUse">
+        <path d="M25,0 V25 M0,25 H25" fill="none" stroke="var(--grid)" stroke-width="1"></path>
+      </pattern>
+      <pattern id="gBold" width="100" height="100" patternUnits="userSpaceOnUse">
+        <path d="M100,0 V100 M0,100 H100" fill="none" stroke="var(--grid-strong)" stroke-width="1.2"></path>
+      </pattern>
+      <g id="dists" fill="none" stroke-linejoin="round">
+        <polygon points="0,0 320,-10 350,215 0,240"></polygon>
+        <polygon points="320,-10 640,10 610,270 350,215"></polygon>
+        <polygon points="640,10 960,-5 985,235 610,270"></polygon>
+        <polygon points="960,-5 1280,5 1250,265 985,235"></polygon>
+        <polygon points="1280,5 1600,0 1600,245 1250,265"></polygon>
+        <polygon points="0,240 350,215 300,485 0,510"></polygon>
+        <polygon points="350,215 610,270 665,530 300,485"></polygon>
+        <polygon points="610,270 985,235 930,495 665,530"></polygon>
+        <polygon points="985,235 1250,265 1310,520 930,495"></polygon>
+        <polygon points="1250,265 1600,245 1600,490 1310,520"></polygon>
+        <polygon points="0,510 300,485 365,770 0,745"></polygon>
+        <polygon points="300,485 665,530 620,725 365,770"></polygon>
+        <polygon points="665,530 930,495 1000,765 620,725"></polygon>
+        <polygon points="930,495 1310,520 1270,735 1000,765"></polygon>
+        <polygon points="1310,520 1600,490 1600,760 1270,735"></polygon>
+        <polygon points="0,745 365,770 320,1000 0,1000"></polygon>
+        <polygon points="365,770 620,725 640,1000 320,1000"></polygon>
+        <polygon points="620,725 1000,765 960,1000 640,1000"></polygon>
+        <polygon points="1000,765 1270,735 1280,1000 960,1000"></polygon>
+        <polygon points="1270,735 1600,760 1600,1000 1280,1000"></polygon>
+      </g>
+      <path id="riv" d="M-20,300 C260,340 380,470 620,500 C840,528 980,470 1180,520 C1360,564 1480,640 1620,660 L1620,724 C1460,704 1340,632 1170,588 C980,540 850,598 615,566 C360,534 240,404 -20,364 Z"></path>
+      <g id="roads" fill="none" stroke-linecap="round">
+        <path d="M-20,640 L420,600 L760,700 L1180,650 L1620,690"></path>
+        <path d="M520,-20 L560,300 L500,640 L560,1020"></path>
+        <path d="M1080,-20 L1040,260 L1120,540 L1080,1020"></path>
+      </g>
+    </defs>
+  </svg>
+
+  <!-- ── title ─────────────────────────────────────────── -->
+  <div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 40px;">
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+      <span class="kicker">YourElectionMap · build spec</span>
+      <h1 style="margin: 0; font-family: var(--display); font-weight: 600; font-size: 46px; letter-spacing: -0.025em; line-height: 1;">Atlas — final</h1>
+      <p style="margin: 0; max-width: 66ch; font-size: 15px; line-height: 1.6; color: var(--sheet-soft);">Everything needed to build the landing and result pages: both screens at desktop and phone width, then the type ramp and the full colour token set for light and dark.</p>
+    </div>
+    <div style="display: flex; gap: 10px;">
+      <div style="padding: 11px 16px; background: var(--card); border: 1px solid var(--sheet-rule); border-radius: 8px; display: flex; flex-direction: column; gap: 2px;">
+        <span style="font-family: var(--mono); font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--sheet-soft);">Display</span>
+        <span style="font-family: var(--display); font-weight: 600; font-size: 17px; color: var(--ink);">Fraunces</span>
+      </div>
+      <div style="padding: 11px 16px; background: var(--card); border: 1px solid var(--sheet-rule); border-radius: 8px; display: flex; flex-direction: column; gap: 2px;">
+        <span style="font-family: var(--mono); font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--sheet-soft);">Interface</span>
+        <span style="font-size: 17px; font-weight: 600; color: var(--ink);">Inter</span>
+      </div>
+      <div style="padding: 11px 16px; background: var(--accent); border-radius: 8px; display: flex; flex-direction: column; gap: 2px;">
+        <span style="font-family: var(--mono); font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--on-accent); opacity: .75;">Accent</span>
+        <span style="font-family: var(--mono); font-size: 17px; color: var(--on-accent);">{{accentHex}}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 01 · home ─────────────────────────────────────── -->
+  <div style="display: flex; flex-direction: column; gap: 18px;">
+    <div class="sec">
+      <span class="num">01</span>
+      <h2>Home</h2>
+      <p>Card on the left over a full-bleed survey map. The veil fades to nothing by 76% of the width, so the grid and boundaries stay readable behind the card. On phones the card drops to the bottom and the controls stack full width.</p>
+    </div>
+
+    <div class="row">
+
+      <div>
+        <span class="cap">Desktop · 1440 × 900</span>
+        <div class="frame">
+          <div class="page d">
+            <svg viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice" aria-hidden="true" style="position: absolute; inset: 0; width: 100%; height: 100%; display: block;">
+              <rect x="0" y="0" width="1600" height="1000" fill="var(--bg)"></rect>
+              <rect x="0" y="0" width="1600" height="1000" fill="url(#gFine)"></rect>
+              <rect x="0" y="0" width="1600" height="1000" fill="url(#gBold)"></rect>
+              <use href="#riv" fill="var(--water)"></use>
+              <use href="#roads" stroke="var(--road)" stroke-width="3" opacity=".55"></use>
+              <use href="#dists" stroke="var(--district)" stroke-width="1.8"></use>
+              <polygon points="930,495 1310,520 1270,735 1000,765" fill="var(--accent-tint)" stroke="var(--accent)" stroke-width="3" stroke-linejoin="round"></polygon>
+              <g stroke="var(--accent)" stroke-width="1" opacity=".5">
+                <path d="M950,730 L1290,505 M985,762 L1305,540 M938,660 L1240,462 M1000,780 L1312,585"></path>
+              </g>
+              <g stroke="var(--accent)" stroke-width="1.3"><path d="M1127,571 V687 M1069,629 H1185"></path></g>
+              <circle cx="1127" cy="629" r="8.5" fill="var(--accent)"></circle>
+              <circle cx="1127" cy="629" r="25" fill="none" stroke="var(--accent)" stroke-width="1.3" stroke-dasharray="3 6"></circle>
+              <g font-family="Inter, sans-serif" font-size="12" font-weight="500" letter-spacing="1.2" fill="var(--ink-soft)" opacity=".55">
+                <text x="806" y="24">800</text><text x="1006" y="24">1000</text><text x="1206" y="24">1200</text><text x="1406" y="24">1400</text>
+                <text x="1548" y="206">200</text><text x="1548" y="406">400</text><text x="1548" y="606">600</text><text x="1548" y="806">800</text>
+              </g>
+            </svg>
+            <div class="veilD" style="position: absolute; inset: 0;"></div>
+
+            <div style="position: relative; height: 100%; display: flex; align-items: center; padding: 0 84px;">
+              <div style="width: 560px; background: var(--card); border: 1px solid var(--rule); border-radius: 12px; padding: 40px 42px 34px; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 24px;">
+                <div style="display: flex; flex-direction: column; gap: 13px;">
+                  <div style="display: flex; align-items: center; gap: 8px; color: var(--accent);">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4 3 6.5v14L9 18l6 2.5 6-2.5v-14L15 6.5 9 4Z"></path><path d="M9 4v14M15 6.5v14"></path></svg>
+                    <span style="font-size: 11px; font-weight: 600; letter-spacing: .17em; text-transform: uppercase;">Local election maps</span>
+                  </div>
+                  <h1 style="margin: 0; font-family: var(--display); font-weight: 600; font-size: 44px; line-height: 1.02; letter-spacing: -0.022em;">YourElectionMap</h1>
+                  <p style="margin: 0; font-size: 16px; line-height: 1.55; color: var(--ink-soft); max-width: 42ch; text-wrap: pretty;">See the district maps you vote in — plus the candidates and dates that come with them.</p>
+                </div>
+                <form style="display: flex; flex-direction: column; gap: 14px;">
+                  <label for="dh-addr" class="hide">Home address</label>
+                  <div style="display: flex; gap: 9px;">
+                    <div style="position: relative; flex-grow: 1; min-width: 0; display: flex; align-items: center;">
+                      <span style="position: absolute; left: 15px; display: flex; color: var(--ink-soft);">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                      </span>
+                      <input id="dh-addr" type="text" placeholder="Enter your home address" style="width: 100%; height: 50px; padding: 0 14px 0 42px; font-family: inherit; font-size: 15.5px; color: var(--ink); background: var(--field); border: 1px solid var(--rule-strong); border-radius: 8px; outline: none;">
+                    </div>
+                    <button type="submit" style="height: 50px; padding: 0 22px; font-family: inherit; font-size: 15px; font-weight: 600; color: var(--on-accent); background: var(--accent); border: none; border-radius: 8px; cursor: pointer; white-space: nowrap;">Find My Maps</button>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 13px;">
+                    <button type="button" style="display: flex; align-items: center; gap: 6px; padding: 0; font-family: inherit; font-size: 14px; font-weight: 600; color: var(--accent); background: none; border: none; cursor: pointer;">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="12" cy="12" r="7"></circle><circle cx="12" cy="12" r="2.4" fill="currentColor" stroke="none"></circle><path d="M12 2v3M12 19v3M2 12h3M19 12h3"></path></svg>
+                      Use my current location
+                    </button>
+                    <span style="width: 1px; height: 14px; background: var(--rule-strong);"></span>
+                    <p style="margin: 0; font-size: 12.5px; color: var(--ink-soft);">Address used only to look up your districts.</p>
+                  </div>
+                </form>
+                <div style="border-top: 1px solid var(--rule); padding-top: 15px; display: flex; align-items: baseline; gap: 7px;">
+                  <span style="font-size: 11.5px; font-weight: 600; letter-spacing: .09em; text-transform: uppercase; color: var(--ink-soft);">Also included</span>
+                  <span style="font-size: 13.5px; color: var(--ink-soft);">candidates · ballot measures · election dates</span>
+                </div>
+              </div>
+            </div>
+            <p style="position: absolute; left: 84px; bottom: 34px; margin: 0; font-size: 12px; letter-spacing: .05em; color: var(--ink-soft);">Nonpartisan · Not affiliated with any election authority</p>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <span class="cap">Phone · 390 × 844</span>
+        <div class="frame">
+          <div class="page m">
+            <svg viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice" aria-hidden="true" style="position: absolute; inset: 0; width: 100%; height: 100%; display: block;">
+              <rect x="0" y="0" width="1600" height="1000" fill="var(--bg)"></rect>
+              <rect x="0" y="0" width="1600" height="1000" fill="url(#gFine)"></rect>
+              <rect x="0" y="0" width="1600" height="1000" fill="url(#gBold)"></rect>
+              <use href="#riv" fill="var(--water)"></use>
+              <use href="#roads" stroke="var(--road)" stroke-width="4" opacity=".55"></use>
+              <use href="#dists" stroke="var(--district)" stroke-width="2.4"></use>
+              <polygon points="610,270 985,235 930,495 665,530" fill="var(--accent-tint)" stroke="var(--accent)" stroke-width="4" stroke-linejoin="round"></polygon>
+              <g stroke="var(--accent)" stroke-width="1.4" opacity=".5">
+                <path d="M640,470 L960,262 M672,510 L975,300 M628,400 L940,240"></path>
+              </g>
+              <g stroke="var(--accent)" stroke-width="1.8"><path d="M797,312 V452 M727,382 H867"></path></g>
+              <circle cx="797" cy="382" r="11" fill="var(--accent)"></circle>
+              <circle cx="797" cy="382" r="30" fill="none" stroke="var(--accent)" stroke-width="1.8" stroke-dasharray="4 7"></circle>
+              <g font-family="Inter, sans-serif" font-size="15" font-weight="500" letter-spacing="1.4" fill="var(--ink-soft)" opacity=".5">
+                <text x="600" y="28">600</text><text x="800" y="28">800</text><text x="1000" y="28">1000</text>
+              </g>
+            </svg>
+            <div class="veilM" style="position: absolute; inset: 0;"></div>
+
+            <div style="position: absolute; left: 0; right: 0; bottom: 0; padding: 0 16px 16px; display: flex; flex-direction: column; gap: 10px;">
+              <div style="background: var(--card); border: 1px solid var(--rule); border-radius: 14px; padding: 22px 20px 20px; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 18px;">
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                  <div style="display: flex; align-items: center; gap: 7px; color: var(--accent);">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4 3 6.5v14L9 18l6 2.5 6-2.5v-14L15 6.5 9 4Z"></path><path d="M9 4v14M15 6.5v14"></path></svg>
+                    <span style="font-size: 10.5px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase;">Local election maps</span>
+                  </div>
+                  <h1 style="margin: 0; font-family: var(--display); font-weight: 600; font-size: 32px; line-height: 1.03; letter-spacing: -0.022em;">YourElectionMap</h1>
+                  <p style="margin: 0; font-size: 14.5px; line-height: 1.5; color: var(--ink-soft); text-wrap: pretty;">See the district maps you vote in — plus the candidates and dates that come with them.</p>
+                </div>
+                <form style="display: flex; flex-direction: column; gap: 10px;">
+                  <label for="mh-addr" class="hide">Home address</label>
+                  <div style="position: relative; display: flex; align-items: center;">
+                    <span style="position: absolute; left: 14px; display: flex; color: var(--ink-soft);">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                    </span>
+                    <input id="mh-addr" type="text" placeholder="Enter your home address" style="width: 100%; height: 50px; padding: 0 14px 0 41px; font-family: inherit; font-size: 16px; color: var(--ink); background: var(--field); border: 1px solid var(--rule-strong); border-radius: 8px; outline: none;">
+                  </div>
+                  <button type="submit" style="height: 50px; font-family: inherit; font-size: 15.5px; font-weight: 600; color: var(--on-accent); background: var(--accent); border: none; border-radius: 8px; cursor: pointer;">Find My Maps</button>
+                  <button type="button" style="align-self: center; display: flex; align-items: center; gap: 6px; height: 32px; padding: 0; font-family: inherit; font-size: 14px; font-weight: 600; color: var(--accent); background: none; border: none; cursor: pointer;">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="12" cy="12" r="7"></circle><circle cx="12" cy="12" r="2.4" fill="currentColor" stroke="none"></circle><path d="M12 2v3M12 19v3M2 12h3M19 12h3"></path></svg>
+                    Use my current location
+                  </button>
+                  <p style="margin: 0; text-align: center; font-size: 12px; line-height: 1.45; color: var(--ink-soft);">Address used only to look up your districts.</p>
+                </form>
+                <div style="border-top: 1px solid var(--rule); padding-top: 13px; display: flex; flex-direction: column; gap: 3px;">
+                  <span style="font-size: 10.5px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft);">Also included</span>
+                  <span style="font-size: 13px; color: var(--ink-soft);">candidates · ballot measures · election dates</span>
+                </div>
+              </div>
+              <p style="margin: 0; text-align: center; font-size: 11px; letter-spacing: .04em; color: var(--ink-soft);">Nonpartisan · Not affiliated with any election authority</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── 02 · result ───────────────────────────────────── -->
+  <div style="display: flex; flex-direction: column; gap: 18px;">
+    <div class="sec">
+      <span class="num">02</span>
+      <h2>Result</h2>
+      <p>The address stays editable in the header. The rail lists every district covering the address; the selected one is drawn solid, the two that overlap it dashed and dotted. On phones the map takes the top third and the list becomes a sheet under it. Names and numbers here are invented.</p>
+    </div>
+
+    <div class="row">
+
+      <div>
+        <span class="cap">Desktop · 1440 × 900</span>
+        <div class="frame">
+          <div class="page d" style="display: flex; flex-direction: column;">
+            <header style="flex-shrink: 0; height: 68px; display: flex; align-items: center; gap: 22px; padding: 0 24px; background: var(--card); border-bottom: 1px solid var(--rule);">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="display: flex; color: var(--accent);">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4 3 6.5v14L9 18l6 2.5 6-2.5v-14L15 6.5 9 4Z"></path><path d="M9 4v14M15 6.5v14"></path></svg>
+                </span>
+                <span style="font-family: var(--display); font-weight: 600; font-size: 20px; letter-spacing: -0.02em;">YourElectionMap</span>
+              </div>
+              <form style="display: flex; align-items: center; gap: 9px; flex-grow: 1; max-width: 520px;">
+                <label for="dr-addr" class="hide">Home address</label>
+                <div style="position: relative; flex-grow: 1; display: flex; align-items: center;">
+                  <span style="position: absolute; left: 13px; display: flex; color: var(--ink-soft);">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                  </span>
+                  <input id="dr-addr" type="text" value="1420 Maple Street, Springfield" style="width: 100%; height: 40px; padding: 0 12px 0 38px; font-family: inherit; font-size: 14.5px; color: var(--ink); background: var(--field); border: 1px solid var(--rule-strong); border-radius: 8px; outline: none;">
+                </div>
+                <button type="submit" style="height: 40px; padding: 0 17px; font-family: inherit; font-size: 14px; font-weight: 600; color: var(--on-accent); background: var(--accent); border: none; border-radius: 8px; cursor: pointer;">Update</button>
+              </form>
+              <span style="margin-left: auto; font-size: 12px; letter-spacing: .04em; color: var(--ink-soft);">Nonpartisan · Not affiliated with any election authority</span>
+            </header>
+
+            <div style="flex-grow: 1; display: flex; min-height: 0;">
+              <aside style="flex-shrink: 0; width: 400px; background: var(--card); border-right: 1px solid var(--rule); padding: 22px 20px 20px; display: flex; flex-direction: column; gap: 16px; overflow: hidden;">
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                  <span style="font-size: 11px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: var(--ink-soft);">Your maps</span>
+                  <h2 style="margin: 0; font-family: var(--display); font-weight: 600; font-size: 25px; letter-spacing: -0.02em;">6 districts cover you</h2>
+                  <p style="margin: 2px 0 0; font-size: 13.5px; color: var(--ink-soft);">Select one to draw its boundary on the map.</p>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 2px;">
+                  <div class="lrow">
+                    <svg width="26" height="8"><path d="M1,4 H25" stroke="var(--ink-soft)" stroke-width="2.4" stroke-dasharray="7 4"></path></svg>
+                    <div style="flex-grow: 1;"><div style="font-size: 14.5px; font-weight: 600;">U.S. House · District 7</div><div style="font-size: 12.5px; color: var(--ink-soft);">Federal</div></div>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--ink-soft)" stroke-width="2" stroke-linecap="round"><path d="M9 5l7 7-7 7"></path></svg>
+                  </div>
+                  <div class="lrow">
+                    <svg width="26" height="8"><path d="M1,4 H25" stroke="var(--ink-soft)" stroke-width="2.4" stroke-dasharray="7 4"></path></svg>
+                    <div style="flex-grow: 1;"><div style="font-size: 14.5px; font-weight: 600;">State Senate · District 22</div><div style="font-size: 12.5px; color: var(--ink-soft);">State</div></div>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--ink-soft)" stroke-width="2" stroke-linecap="round"><path d="M9 5l7 7-7 7"></path></svg>
+                  </div>
+                  <div class="lrow" style="background: var(--accent-soft); border-color: var(--accent);">
+                    <svg width="26" height="8"><path d="M1,4 H25" stroke="var(--accent)" stroke-width="3"></path></svg>
+                    <div style="flex-grow: 1;"><div style="font-size: 14.5px; font-weight: 600; color: var(--accent);">State House · District 44</div><div style="font-size: 12.5px; color: var(--ink-soft);">Shown on the map</div></div>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.2" stroke-linecap="round"><path d="M20 6L9 17l-5-5"></path></svg>
+                  </div>
+                  <div class="lrow">
+                    <svg width="26" height="8"><path d="M1,4 H25" stroke="var(--ink-soft)" stroke-width="2.4" stroke-dasharray="2 4" stroke-linecap="round"></path></svg>
+                    <div style="flex-grow: 1;"><div style="font-size: 14.5px; font-weight: 600;">County Commission · District 3</div><div style="font-size: 12.5px; color: var(--ink-soft);">Greenlake County</div></div>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--ink-soft)" stroke-width="2" stroke-linecap="round"><path d="M9 5l7 7-7 7"></path></svg>
+                  </div>
+                  <div class="lrow">
+                    <svg width="26" height="8"><path d="M1,4 H25" stroke="var(--ink-soft)" stroke-width="2.4" stroke-dasharray="7 4"></path></svg>
+                    <div style="flex-grow: 1;"><div style="font-size: 14.5px; font-weight: 600;">City Council · Ward 2</div><div style="font-size: 12.5px; color: var(--ink-soft);">City of Springfield</div></div>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--ink-soft)" stroke-width="2" stroke-linecap="round"><path d="M9 5l7 7-7 7"></path></svg>
+                  </div>
+                  <div class="lrow">
+                    <svg width="26" height="8"><path d="M1,4 H25" stroke="var(--ink-soft)" stroke-width="2.4" stroke-dasharray="1 4" stroke-linecap="round"></path></svg>
+                    <div style="flex-grow: 1;"><div style="font-size: 14.5px; font-weight: 600;">School Board · Zone 5</div><div style="font-size: 12.5px; color: var(--ink-soft);">Springfield Unified</div></div>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--ink-soft)" stroke-width="2" stroke-linecap="round"><path d="M9 5l7 7-7 7"></path></svg>
+                  </div>
+                </div>
+                <div style="margin-top: auto; border-top: 1px solid var(--rule); padding-top: 16px; display: flex; flex-direction: column; gap: 11px;">
+                  <span style="font-size: 11px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-soft);">Also for this address</span>
+                  <div style="display: flex; align-items: center; gap: 10px; font-size: 13.5px; color: var(--ink-soft);">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M3 10h18M8 3v4M16 3v4"></path></svg>
+                    <span>Next election · <strong style="color: var(--ink); font-weight: 600;">Tue, Nov 4</strong></span>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 10px; font-size: 13.5px; color: var(--ink-soft);">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.9"></path></svg>
+                    <span><strong style="color: var(--ink); font-weight: 600;">14 candidates</strong> on your ballot</span>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 10px; font-size: 13.5px; color: var(--ink-soft);">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9Z"></path><path d="M14 3v6h6M9 14h6"></path></svg>
+                    <span><strong style="color: var(--ink); font-weight: 600;">2 ballot measures</strong></span>
+                  </div>
+                  <button type="button" style="align-self: flex-start; padding: 0; font-family: inherit; font-size: 13.5px; font-weight: 600; color: var(--accent); background: none; border: none; cursor: pointer;">See the full ballot →</button>
+                </div>
+              </aside>
+
+              <div style="position: relative; flex-grow: 1; min-width: 0; overflow: hidden;">
+                <svg viewBox="820 380 620 520" preserveAspectRatio="xMidYMid slice" aria-hidden="true" style="position: absolute; inset: 0; width: 100%; height: 100%; display: block;">
+                  <rect x="780" y="340" width="700" height="600" fill="var(--bg)"></rect>
+                  <rect x="780" y="340" width="700" height="600" fill="url(#gFine)"></rect>
+                  <rect x="780" y="340" width="700" height="600" fill="url(#gBold)"></rect>
+                  <use href="#riv" fill="var(--water)"></use>
+                  <use href="#roads" stroke="var(--road)" stroke-width="2.6" opacity=".5"></use>
+                  <use href="#dists" stroke="var(--district)" stroke-width="1.6"></use>
+                  <polygon points="700,300 1520,330 1480,930 740,900" fill="none" stroke="var(--accent)" stroke-width="2.4" stroke-dasharray="9 6" opacity=".68"></polygon>
+                  <polygon points="965,455 1345,478 1305,800 1010,825" fill="none" stroke="var(--accent)" stroke-width="2.4" stroke-dasharray="1.5 6" stroke-linecap="round" opacity=".68"></polygon>
+                  <polygon points="930,495 1310,520 1270,735 1000,765" fill="var(--accent-tint)" stroke="var(--accent)" stroke-width="3.4" stroke-linejoin="round"></polygon>
+                  <g stroke="var(--accent)" stroke-width="0.9" opacity=".45">
+                    <path d="M948,724 L1290,506 M978,752 L1305,536 M938,668 L1244,466 M1000,776 L1312,580 M1030,764 L1315,624"></path>
+                  </g>
+                  <g stroke="var(--accent)" stroke-width="1.2"><path d="M1127,589 V669 M1087,629 H1167"></path></g>
+                  <circle cx="1127" cy="629" r="21" fill="none" stroke="var(--accent)" stroke-width="1.2" stroke-dasharray="3 5"></circle>
+                  <circle cx="1127" cy="629" r="7" fill="var(--accent)" stroke="var(--card)" stroke-width="2.4"></circle>
+                  <g font-family="Inter, sans-serif" font-size="13" font-weight="600" letter-spacing="1.4" fill="var(--ink-soft)" opacity=".62">
+                    <text x="850" y="704">SH-43</text><text x="1372" y="626">SH-45</text><text x="1096" y="878">SH-51</text><text x="1092" y="432">SH-38</text>
+                  </g>
+                </svg>
+
+                <div style="position: absolute; left: 533px; top: 370px; display: flex; align-items: center; gap: 8px; padding: 8px 13px; background: var(--card); border: 1px solid var(--rule-strong); border-radius: 8px; box-shadow: 0 12px 26px -14px rgba(60,44,22,.4);">
+                  <span style="width: 7px; height: 7px; border-radius: 50%; background: var(--accent);"></span>
+                  <span style="font-size: 13px; font-weight: 600;">1420 Maple Street</span>
+                </div>
+                <div style="position: absolute; left: 22px; top: 22px; padding: 14px 18px; background: var(--card); border: 1px solid var(--rule); border-radius: 10px; box-shadow: 0 14px 30px -18px rgba(60,44,22,.4); display: flex; flex-direction: column; gap: 3px;">
+                  <span style="font-size: 10.5px; font-weight: 600; letter-spacing: .15em; text-transform: uppercase; color: var(--accent);">Showing</span>
+                  <span style="font-family: var(--display); font-weight: 600; font-size: 21px; letter-spacing: -0.02em;">State House · District 44</span>
+                  <span style="font-size: 12.5px; color: var(--ink-soft);">Greenlake County · 71,400 residents</span>
+                </div>
+                <div style="position: absolute; right: 22px; top: 22px; display: flex; flex-direction: column; border-radius: 8px; overflow: hidden; box-shadow: 0 10px 24px -16px rgba(60,44,22,.4);">
+                  <div class="zoom" style="border-bottom: none;">+</div>
+                  <div class="zoom">−</div>
+                </div>
+                <div style="position: absolute; left: 22px; bottom: 22px; padding: 13px 16px; background: var(--card); border: 1px solid var(--rule); border-radius: 10px; display: flex; flex-direction: column; gap: 8px;">
+                  <span style="font-size: 10.5px; font-weight: 600; letter-spacing: .15em; text-transform: uppercase; color: var(--ink-soft);">On this map</span>
+                  <div style="display: flex; align-items: center; gap: 9px; font-size: 12.5px;">
+                    <svg width="24" height="8"><path d="M1,4 H23" stroke="var(--accent)" stroke-width="3"></path></svg><span>State House 44 — selected</span>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 9px; font-size: 12.5px; color: var(--ink-soft);">
+                    <svg width="24" height="8"><path d="M1,4 H23" stroke="var(--accent)" stroke-width="2.4" stroke-dasharray="6 4" opacity=".7"></path></svg><span>County Commission 3</span>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 9px; font-size: 12.5px; color: var(--ink-soft);">
+                    <svg width="24" height="8"><path d="M1,4 H23" stroke="var(--accent)" stroke-width="2.4" stroke-dasharray="1 4" stroke-linecap="round" opacity=".7"></path></svg><span>School Board Zone 5</span>
+                  </div>
+                </div>
+                <div style="position: absolute; right: 22px; bottom: 22px; display: flex; flex-direction: column; align-items: flex-end; gap: 5px;">
+                  <div style="display: flex;">
+                    <span style="width: 46px; height: 6px; border: 1px solid var(--ink-soft); border-right: none; background: var(--ink-soft);"></span>
+                    <span style="width: 46px; height: 6px; border: 1px solid var(--ink-soft); background: var(--card);"></span>
+                  </div>
+                  <span style="font-size: 11px; letter-spacing: .05em; color: var(--ink-soft);">0 &nbsp;&nbsp;&nbsp;&nbsp; 1 mi</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <span class="cap">Phone · 390 × 844</span>
+        <div class="frame">
+          <div class="page m" style="display: flex; flex-direction: column;">
+            <header style="flex-shrink: 0; height: 54px; display: flex; align-items: center; gap: 8px; padding: 0 16px; background: var(--card); border-bottom: 1px solid var(--rule);">
+              <span style="display: flex; color: var(--accent);">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4 3 6.5v14L9 18l6 2.5 6-2.5v-14L15 6.5 9 4Z"></path><path d="M9 4v14M15 6.5v14"></path></svg>
+              </span>
+              <span style="font-family: var(--display); font-weight: 600; font-size: 17px; letter-spacing: -0.02em;">YourElectionMap</span>
+            </header>
+
+            <div style="flex-shrink: 0; padding: 10px 16px; background: var(--card); border-bottom: 1px solid var(--rule); display: flex; align-items: center; gap: 8px;">
+              <label for="mr-addr" class="hide">Home address</label>
+              <div style="position: relative; flex-grow: 1; min-width: 0; display: flex; align-items: center;">
+                <span style="position: absolute; left: 12px; display: flex; color: var(--ink-soft);">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                </span>
+                <input id="mr-addr" type="text" value="1420 Maple Street" style="width: 100%; height: 40px; padding: 0 10px 0 34px; font-family: inherit; font-size: 14px; color: var(--ink); background: var(--field); border: 1px solid var(--rule-strong); border-radius: 8px; outline: none;">
+              </div>
+              <button type="button" style="height: 40px; padding: 0 14px; font-family: inherit; font-size: 13.5px; font-weight: 600; color: var(--on-accent); background: var(--accent); border: none; border-radius: 8px; cursor: pointer;">Update</button>
+            </div>
+
+            <div style="position: relative; flex-shrink: 0; height: 320px; overflow: hidden;">
+              <svg viewBox="930 470 400 340" preserveAspectRatio="xMidYMid slice" aria-hidden="true" style="position: absolute; inset: 0; width: 100%; height: 100%; display: block;">
+                <rect x="900" y="440" width="460" height="400" fill="var(--bg)"></rect>
+                <rect x="900" y="440" width="460" height="400" fill="url(#gFine)"></rect>
+                <rect x="900" y="440" width="460" height="400" fill="url(#gBold)"></rect>
+                <use href="#riv" fill="var(--water)"></use>
+                <use href="#roads" stroke="var(--road)" stroke-width="3" opacity=".5"></use>
+                <use href="#dists" stroke="var(--district)" stroke-width="1.4"></use>
+                <polygon points="700,300 1520,330 1480,930 740,900" fill="none" stroke="var(--accent)" stroke-width="2" stroke-dasharray="8 5" opacity=".65"></polygon>
+                <polygon points="965,455 1345,478 1305,800 1010,825" fill="none" stroke="var(--accent)" stroke-width="2" stroke-dasharray="1.5 5" stroke-linecap="round" opacity=".65"></polygon>
+                <polygon points="930,495 1310,520 1270,735 1000,765" fill="var(--accent-tint)" stroke="var(--accent)" stroke-width="3" stroke-linejoin="round"></polygon>
+                <g stroke="var(--accent)" stroke-width="0.8" opacity=".45">
+                  <path d="M948,724 L1290,506 M978,752 L1305,536 M938,668 L1244,466 M1000,776 L1312,580"></path>
+                </g>
+                <g stroke="var(--accent)" stroke-width="1.1"><path d="M1127,597 V661 M1095,629 H1159"></path></g>
+                <circle cx="1127" cy="629" r="16" fill="none" stroke="var(--accent)" stroke-width="1.1" stroke-dasharray="3 4"></circle>
+                <circle cx="1127" cy="629" r="6" fill="var(--accent)" stroke="var(--card)" stroke-width="2"></circle>
+              </svg>
+
+              <div style="position: absolute; left: 12px; top: 12px; padding: 9px 13px; background: var(--card); border: 1px solid var(--rule); border-radius: 9px; box-shadow: 0 10px 22px -14px rgba(60,44,22,.4); display: flex; flex-direction: column; gap: 2px;">
+                <span style="font-size: 9.5px; font-weight: 600; letter-spacing: .15em; text-transform: uppercase; color: var(--accent);">Showing</span>
+                <span style="font-family: var(--display); font-weight: 600; font-size: 16px; letter-spacing: -0.02em;">State House · 44</span>
+              </div>
+              <div style="position: absolute; right: 12px; top: 12px; display: flex; flex-direction: column; border-radius: 8px; overflow: hidden;">
+                <div class="zoom" style="width: 34px; height: 34px; border-bottom: none; font-size: 17px;">+</div>
+                <div class="zoom" style="width: 34px; height: 34px; font-size: 17px;">−</div>
+              </div>
+              <div style="position: absolute; right: 12px; bottom: 12px; display: flex; align-items: center; gap: 6px; padding: 6px 10px; background: var(--card); border: 1px solid var(--rule); border-radius: 999px;">
+                <svg width="20" height="6"><path d="M1,3 H19" stroke="var(--accent)" stroke-width="2.5"></path></svg>
+                <span style="font-size: 11px; color: var(--ink-soft);">3 boundaries</span>
+              </div>
+            </div>
+
+            <div style="flex-grow: 1; min-height: 0; background: var(--card); border-top: 1px solid var(--rule); border-radius: 16px 16px 0 0; margin-top: -14px; position: relative; padding: 14px 16px 0; display: flex; flex-direction: column; gap: 10px; overflow: hidden;">
+              <span style="align-self: center; width: 38px; height: 4px; border-radius: 999px; background: var(--rule-strong);"></span>
+              <div style="display: flex; align-items: baseline; justify-content: space-between;">
+                <h2 style="margin: 0; font-family: var(--display); font-weight: 600; font-size: 20px; letter-spacing: -0.02em;">6 districts cover you</h2>
+                <span style="font-size: 12px; color: var(--ink-soft);">Tap to draw</span>
+              </div>
+              <div style="display: flex; flex-direction: column;">
+                <div style="display: flex; align-items: center; gap: 10px; padding: 9px 10px; margin: 0 -6px; border-radius: 8px; background: var(--accent-soft); border: 1px solid var(--accent);">
+                  <svg width="22" height="8"><path d="M1,4 H21" stroke="var(--accent)" stroke-width="3"></path></svg>
+                  <div style="flex-grow: 1;"><div style="font-size: 13.5px; font-weight: 600; color: var(--accent);">State House · District 44</div><div style="font-size: 11.5px; color: var(--ink-soft);">Shown on the map</div></div>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.2" stroke-linecap="round"><path d="M20 6L9 17l-5-5"></path></svg>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px; padding: 9px 4px; border-bottom: 1px solid var(--rule);">
+                  <svg width="22" height="8"><path d="M1,4 H21" stroke="var(--ink-soft)" stroke-width="2.2" stroke-dasharray="6 4"></path></svg>
+                  <div style="flex-grow: 1;"><div style="font-size: 13.5px; font-weight: 600;">U.S. House · District 7</div><div style="font-size: 11.5px; color: var(--ink-soft);">Federal</div></div>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--ink-soft)" stroke-width="2" stroke-linecap="round"><path d="M9 5l7 7-7 7"></path></svg>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px; padding: 9px 4px; border-bottom: 1px solid var(--rule);">
+                  <svg width="22" height="8"><path d="M1,4 H21" stroke="var(--ink-soft)" stroke-width="2.2" stroke-dasharray="6 4"></path></svg>
+                  <div style="flex-grow: 1;"><div style="font-size: 13.5px; font-weight: 600;">State Senate · District 22</div><div style="font-size: 11.5px; color: var(--ink-soft);">State</div></div>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--ink-soft)" stroke-width="2" stroke-linecap="round"><path d="M9 5l7 7-7 7"></path></svg>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px; padding: 9px 4px; border-bottom: 1px solid var(--rule);">
+                  <svg width="22" height="8"><path d="M1,4 H21" stroke="var(--ink-soft)" stroke-width="2.2" stroke-dasharray="2 4" stroke-linecap="round"></path></svg>
+                  <div style="flex-grow: 1;"><div style="font-size: 13.5px; font-weight: 600;">County Commission · 3</div><div style="font-size: 11.5px; color: var(--ink-soft);">Greenlake County</div></div>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--ink-soft)" stroke-width="2" stroke-linecap="round"><path d="M9 5l7 7-7 7"></path></svg>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px; padding: 9px 4px; border-bottom: 1px solid var(--rule);">
+                  <svg width="22" height="8"><path d="M1,4 H21" stroke="var(--ink-soft)" stroke-width="2.2" stroke-dasharray="6 4"></path></svg>
+                  <div style="flex-grow: 1;"><div style="font-size: 13.5px; font-weight: 600;">City Council · Ward 2</div><div style="font-size: 11.5px; color: var(--ink-soft);">City of Springfield</div></div>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--ink-soft)" stroke-width="2" stroke-linecap="round"><path d="M9 5l7 7-7 7"></path></svg>
+                </div>
+              </div>
+              <div style="position: absolute; left: 0; right: 0; bottom: 0; padding: 11px 16px; background: var(--field); border-top: 1px solid var(--rule); display: flex; align-items: center; gap: 10px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--ink-soft)" stroke-width="1.7" stroke-linecap="round"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M3 10h18M8 3v4M16 3v4"></path></svg>
+                <span style="flex-grow: 1; font-size: 12.5px; color: var(--ink-soft);">Next election <strong style="color: var(--ink); font-weight: 600;">Tue, Nov 4</strong> · 14 candidates</span>
+                <span style="font-size: 12.5px; font-weight: 600; color: var(--accent);">Ballot →</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── 03 · type & colour ────────────────────────────── -->
+  <div style="display: flex; flex-direction: column; gap: 18px;">
+    <div class="sec">
+      <span class="num">03</span>
+      <h2>Type &amp; colour</h2>
+      <p>Two families, both from Google Fonts — one <span style="color: var(--sheet-ink);">&lt;link&gt;</span> in index.html. Every colour below is a custom property on <span style="color: var(--sheet-ink);">:root</span>, redefined under the dark block; nothing is defined only inside a media query.</p>
+    </div>
+
+    <div class="row" style="gap: 40px;">
+
+      <div style="flex: 1; background: var(--card); border: 1px solid var(--sheet-rule); border-radius: 12px; padding: 26px 28px 28px; display: flex; flex-direction: column; gap: 22px; color: var(--ink);">
+        <div style="display: flex; align-items: baseline; gap: 12px;">
+          <span class="kicker" style="color: var(--ink-soft);">Display</span>
+          <span style="font-family: var(--mono); font-size: 12.5px; color: var(--accent);">Fraunces · 500, 600 · opsz 9–144</span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 14px;">
+          <div style="display: flex; align-items: baseline; gap: 16px;">
+            <span style="font-family: var(--mono); font-size: 11px; color: var(--ink-soft); width: 132px; flex-shrink: 0;">h1 desktop · 44 / -.022em</span>
+            <span style="font-family: var(--display); font-weight: 600; font-size: 44px; letter-spacing: -0.022em; line-height: 1;">YourElectionMap</span>
+          </div>
+          <div style="display: flex; align-items: baseline; gap: 16px;">
+            <span style="font-family: var(--mono); font-size: 11px; color: var(--ink-soft); width: 132px; flex-shrink: 0;">h1 phone · 32 / -.022em</span>
+            <span style="font-family: var(--display); font-weight: 600; font-size: 32px; letter-spacing: -0.022em; line-height: 1;">YourElectionMap</span>
+          </div>
+          <div style="display: flex; align-items: baseline; gap: 16px;">
+            <span style="font-family: var(--mono); font-size: 11px; color: var(--ink-soft); width: 132px; flex-shrink: 0;">h2 rail · 25 / -.02em</span>
+            <span style="font-family: var(--display); font-weight: 600; font-size: 25px; letter-spacing: -0.02em;">6 districts cover you</span>
+          </div>
+          <div style="display: flex; align-items: baseline; gap: 16px;">
+            <span style="font-family: var(--mono); font-size: 11px; color: var(--ink-soft); width: 132px; flex-shrink: 0;">h3 map chip · 21</span>
+            <span style="font-family: var(--display); font-weight: 600; font-size: 21px; letter-spacing: -0.02em;">State House · District 44</span>
+          </div>
+        </div>
+
+        <div style="border-top: 1px solid var(--rule); padding-top: 20px; display: flex; align-items: baseline; gap: 12px;">
+          <span class="kicker" style="color: var(--ink-soft);">Interface</span>
+          <span style="font-family: var(--mono); font-size: 12.5px; color: var(--accent);">Inter · 400, 500, 600</span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 11px;">
+          <div style="display: flex; align-items: baseline; gap: 16px;">
+            <span style="font-family: var(--mono); font-size: 11px; color: var(--ink-soft); width: 132px; flex-shrink: 0;">Tagline · 16 / 1.55</span>
+            <span style="font-size: 16px; line-height: 1.55;">See the district maps you vote in.</span>
+          </div>
+          <div style="display: flex; align-items: baseline; gap: 16px;">
+            <span style="font-family: var(--mono); font-size: 11px; color: var(--ink-soft); width: 132px; flex-shrink: 0;">Field · 15.5 / 400</span>
+            <span style="font-size: 15.5px;">Enter your home address</span>
+          </div>
+          <div style="display: flex; align-items: baseline; gap: 16px;">
+            <span style="font-family: var(--mono); font-size: 11px; color: var(--ink-soft); width: 132px; flex-shrink: 0;">Button · 15 / 600</span>
+            <span style="font-size: 15px; font-weight: 600;">Find My Maps</span>
+          </div>
+          <div style="display: flex; align-items: baseline; gap: 16px;">
+            <span style="font-family: var(--mono); font-size: 11px; color: var(--ink-soft); width: 132px; flex-shrink: 0;">List row · 14.5 / 600</span>
+            <span style="font-size: 14.5px; font-weight: 600;">County Commission · District 3</span>
+          </div>
+          <div style="display: flex; align-items: baseline; gap: 16px;">
+            <span style="font-family: var(--mono); font-size: 11px; color: var(--ink-soft); width: 132px; flex-shrink: 0;">Meta · 12.5 / 400</span>
+            <span style="font-size: 12.5px; color: var(--ink-soft);">Address used only to look up your districts.</span>
+          </div>
+          <div style="display: flex; align-items: baseline; gap: 16px;">
+            <span style="font-family: var(--mono); font-size: 11px; color: var(--ink-soft); width: 132px; flex-shrink: 0;">Eyebrow · 11 / 600 / .17em</span>
+            <span style="font-size: 11px; font-weight: 600; letter-spacing: .17em; text-transform: uppercase; color: var(--accent);">Local election maps</span>
+          </div>
+        </div>
+
+        <div style="border-top: 1px solid var(--rule); padding-top: 18px; font-size: 13px; line-height: 1.6; color: var(--ink-soft);">
+          <span style="color: var(--ink); font-weight: 600;">Stacks ·</span>
+          <span style="font-family: var(--mono); font-size: 12px;">--display: 'Fraunces', Georgia, 'Times New Roman', serif;</span><br>
+          <span style="font-family: var(--mono); font-size: 12px; margin-left: 62px;">--ui: 'Inter', 'Segoe UI', system-ui, sans-serif;</span><br>
+          Map coordinate ticks use Inter 500 with 1.2px tracking. No third family — the mono here is for this spec sheet only.
+        </div>
+      </div>
+
+      <div style="flex: 1; display: flex; flex-direction: column; gap: 14px;">
+
+        <div style="background: var(--card); border: 1px solid var(--sheet-rule); border-radius: 12px; padding: 22px 24px 8px; color: var(--ink);">
+          <div style="display: flex; align-items: baseline; gap: 12px; margin-bottom: 12px;">
+            <span class="kicker" style="color: var(--ink-soft);">Light — default</span>
+            <span style="font-family: var(--mono); font-size: 12px; color: var(--accent);">:root</span>
+          </div>
+          <div class="srow"><span class="sw" style="background: #FAF5EB;"></span><span class="tk">--bg</span><span class="hx">#FAF5EB</span><span class="us">page &amp; map ground</span></div>
+          <div class="srow"><span class="sw" style="background: #FFFDF8;"></span><span class="tk">--card</span><span class="hx">#FFFDF8</span><span class="us">card, header, rail, chips</span></div>
+          <div class="srow"><span class="sw" style="background: #FBF7EF;"></span><span class="tk">--field</span><span class="hx">#FBF7EF</span><span class="us">input fill, phone bottom strip</span></div>
+          <div class="srow"><span class="sw" style="background: #241C12;"></span><span class="tk">--ink</span><span class="hx">#241C12</span><span class="us">headings &amp; body</span></div>
+          <div class="srow"><span class="sw" style="background: #6E6252;"></span><span class="tk">--ink-soft</span><span class="hx">#6E6252</span><span class="us">secondary text, icons</span></div>
+          <div class="srow"><span class="sw" style="background: #E7DCC8;"></span><span class="tk">--rule</span><span class="hx">#E7DCC8</span><span class="us">dividers, card border</span></div>
+          <div class="srow"><span class="sw" style="background: #CFC0A4;"></span><span class="tk">--rule-strong</span><span class="hx">#CFC0A4</span><span class="us">input border, drag handle</span></div>
+          <div class="srow"><span class="sw" style="background: #EEE5D2;"></span><span class="tk">--grid</span><span class="hx">#EEE5D2</span><span class="us">25-unit graticule</span></div>
+          <div class="srow"><span class="sw" style="background: #E2D6BC;"></span><span class="tk">--grid-strong</span><span class="hx">#E2D6BC</span><span class="us">100-unit graticule</span></div>
+          <div class="srow"><span class="sw" style="background: #C9BA9C;"></span><span class="tk">--district</span><span class="hx">#C9BA9C</span><span class="us">unselected boundaries</span></div>
+          <div class="srow"><span class="sw" style="background: #E4EAE1;"></span><span class="tk">--water</span><span class="hx">#E4EAE1</span><span class="us">river fill</span></div>
+          <div class="srow"><span class="sw" style="background: #DCD0B6;"></span><span class="tk">--road</span><span class="hx">#DCD0B6</span><span class="us">road lines</span></div>
+          <div class="srow"><span class="sw" style="background: #B4552B;"></span><span class="tk">--accent</span><span class="hx">#B4552B</span><span class="us">primary, selection, crosshair</span></div>
+          <div class="srow" style="border-bottom: none;"><span class="sw" style="background: #FFFDF8;"></span><span class="tk">--on-accent</span><span class="hx">#FFFDF8</span><span class="us">ink on accent · 6.4:1</span></div>
+        </div>
+
+        <div style="background: #221C16; border: 1px solid #33291F; border-radius: 12px; padding: 22px 24px 8px; color: #F2EBE0;">
+          <div style="display: flex; align-items: baseline; gap: 12px; margin-bottom: 12px;">
+            <span class="kicker" style="color: #A0927F;">Dark</span>
+            <span style="font-family: var(--mono); font-size: 12px; color: #E08A5A;">@media (prefers-color-scheme: dark)</span>
+          </div>
+          <div class="srow" style="border-color: #33291F;"><span class="sw" style="background: #191410;"></span><span class="tk" style="color: #F2EBE0;">--bg</span><span class="hx" style="color: #E08A5A;">#191410</span><span class="us" style="color: #A0927F;">page &amp; map ground</span></div>
+          <div class="srow" style="border-color: #33291F;"><span class="sw" style="background: #221C16;"></span><span class="tk" style="color: #F2EBE0;">--card</span><span class="hx" style="color: #E08A5A;">#221C16</span><span class="us" style="color: #A0927F;">card, header, rail, chips</span></div>
+          <div class="srow" style="border-color: #33291F;"><span class="sw" style="background: #1D1813;"></span><span class="tk" style="color: #F2EBE0;">--field</span><span class="hx" style="color: #E08A5A;">#1D1813</span><span class="us" style="color: #A0927F;">input fill, phone bottom strip</span></div>
+          <div class="srow" style="border-color: #33291F;"><span class="sw" style="background: #F2EBE0;"></span><span class="tk" style="color: #F2EBE0;">--ink</span><span class="hx" style="color: #E08A5A;">#F2EBE0</span><span class="us" style="color: #A0927F;">headings &amp; body</span></div>
+          <div class="srow" style="border-color: #33291F;"><span class="sw" style="background: #A0927F;"></span><span class="tk" style="color: #F2EBE0;">--ink-soft</span><span class="hx" style="color: #E08A5A;">#A0927F</span><span class="us" style="color: #A0927F;">secondary text, icons</span></div>
+          <div class="srow" style="border-color: #33291F;"><span class="sw" style="background: #33291F;"></span><span class="tk" style="color: #F2EBE0;">--rule</span><span class="hx" style="color: #E08A5A;">#33291F</span><span class="us" style="color: #A0927F;">dividers, card border</span></div>
+          <div class="srow" style="border-color: #33291F;"><span class="sw" style="background: #4A3C2D;"></span><span class="tk" style="color: #F2EBE0;">--rule-strong</span><span class="hx" style="color: #E08A5A;">#4A3C2D</span><span class="us" style="color: #A0927F;">input border, drag handle</span></div>
+          <div class="srow" style="border-color: #33291F;"><span class="sw" style="background: #201A13;"></span><span class="tk" style="color: #F2EBE0;">--grid</span><span class="hx" style="color: #E08A5A;">#201A13</span><span class="us" style="color: #A0927F;">25-unit graticule</span></div>
+          <div class="srow" style="border-color: #33291F;"><span class="sw" style="background: #2B2318;"></span><span class="tk" style="color: #F2EBE0;">--grid-strong</span><span class="hx" style="color: #E08A5A;">#2B2318</span><span class="us" style="color: #A0927F;">100-unit graticule</span></div>
+          <div class="srow" style="border-color: #33291F;"><span class="sw" style="background: #4A3D2C;"></span><span class="tk" style="color: #F2EBE0;">--district</span><span class="hx" style="color: #E08A5A;">#4A3D2C</span><span class="us" style="color: #A0927F;">unselected boundaries</span></div>
+          <div class="srow" style="border-color: #33291F;"><span class="sw" style="background: #1A2018;"></span><span class="tk" style="color: #F2EBE0;">--water</span><span class="hx" style="color: #E08A5A;">#1A2018</span><span class="us" style="color: #A0927F;">river fill</span></div>
+          <div class="srow" style="border-color: #33291F;"><span class="sw" style="background: #3A3020;"></span><span class="tk" style="color: #F2EBE0;">--road</span><span class="hx" style="color: #E08A5A;">#3A3020</span><span class="us" style="color: #A0927F;">road lines</span></div>
+          <div class="srow" style="border-color: #33291F;"><span class="sw" style="background: #E08A5A;"></span><span class="tk" style="color: #F2EBE0;">--accent</span><span class="hx" style="color: #E08A5A;">#E08A5A</span><span class="us" style="color: #A0927F;">primary, selection, crosshair</span></div>
+          <div class="srow" style="border-bottom: none;"><span class="sw" style="background: #241C12;"></span><span class="tk" style="color: #F2EBE0;">--on-accent</span><span class="hx" style="color: #E08A5A;">#241C12</span><span class="us" style="color: #A0927F;">ink on accent · 6.9:1</span></div>
+        </div>
+
+        <div style="background: var(--card); border: 1px solid var(--sheet-rule); border-radius: 12px; padding: 20px 24px; color: var(--ink); font-size: 13px; line-height: 1.65;">
+          <span class="kicker" style="color: var(--ink-soft);">Tints, derived</span><br>
+          <span style="font-family: var(--mono); font-size: 12px;">--accent-tint</span> — selected district fill · <span style="color: var(--ink-soft);">accent at 11% light / 18% dark</span><br>
+          <span style="font-family: var(--mono); font-size: 12px;">--accent-soft</span> — selected list row · <span style="color: var(--ink-soft);">accent at 7% light / 11% dark</span><br>
+          <span style="color: var(--ink-soft);">Boundaries are told apart by line style as well as colour — solid for the selection, 9/6 dash for county, 1.5/6 dot for school zone — so the map still reads in greyscale and to colour-blind viewers.</span>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+<script data-dc-script data-props='{"theme":{"editor":"enum","options":["light","dark"],"default":"light","section":"Theme"},"$preview":{"width":2020,"height":3920}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const theme = this.props.theme ?? 'light';
+    return { theme: theme, accentHex: theme === 'dark' ? '#E08A5A' : '#B4552B' };
+  }
+}
+</script>
+</body>
+</html>

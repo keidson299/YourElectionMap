@@ -1,0 +1,26 @@
+{
+  "artboards": [
+    { "file": "Main.dc.html", "title": "A · Atlas — landing", "x": 0, "y": 0, "w": 1440, "h": 900 },
+    { "file": "SurveyLanding.dc.html", "title": "B · Survey — landing", "x": 1560, "y": 0, "w": 1440, "h": 900 },
+    { "file": "AtlasResult.dc.html", "title": "A · Atlas — result for an address", "x": 0, "y": 1100, "w": 1440, "h": 900 },
+    { "file": "SurveyResult.dc.html", "title": "B · Survey — result for an address", "x": 1560, "y": 1100, "w": 1440, "h": 900 },
+    { "file": "Notes.dc.html", "title": "What changed, and what it takes to build", "x": 3120, "y": 0, "w": 1440, "h": 1020 }
+  ],
+  "annotations": [
+    {
+      "id": "brief",
+      "x": -560,
+      "y": 0,
+      "w": 440,
+      "text": "Two finals, built from your feedback.\n\nBoth use direction 1's page — card on the left, map full-bleed behind it — with direction 2's survey-instrument map drawing: hairline boundaries on a coordinate grid, hatching and a crosshair where your address lands.\n\nThe veil is now a partial gradient rather than a solid wash, so the map stays readable right up to the card. Headline is down from 58px to 44/46px and the field from 58px to 50/52px.\n\nTop row is the landing page, bottom row the result page for an address."
+    },
+    {
+      "id": "sample",
+      "x": -560,
+      "y": 420,
+      "w": 440,
+      "text": "On the result boards: every name and number is invented — 1420 Maple Street, Springfield, Greenlake County, State House 44, the candidate counts. Nothing is a real lookup, and the polygons are hand-drawn, not real district geometry.\n\nThe rail's selected row is the boundary drawn solid; the two districts that overlap it are dashed and dotted, keyed in the legend. Line style rather than colour alone, so it survives greyscale and colour-blind vision.\n\nDetails and the build notes — including where Chakra UI would and wouldn't help — are on the notes board to the right."
+    }
+  ],
+  "launch": { "view": "canvas" }
+}

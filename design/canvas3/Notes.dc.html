@@ -1,0 +1,122 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Inter:wght@400;500;600&family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; }
+    .nt {
+      --bg: #FBFAF7; --card: #FFFFFF; --ink: #17201C; --ink-soft: #626E68; --rule: #E4E2DA;
+      --ui: 'Inter', 'Segoe UI', system-ui, sans-serif;
+    }
+    .nt .kicker { font-size: 11px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--ink-soft); }
+    .nt .card { background: var(--card); border: 1px solid var(--rule); border-radius: 12px; padding: 24px 26px 26px; display: flex; flex-direction: column; gap: 16px; }
+    .nt .spec { display: flex; justify-content: space-between; gap: 14px; font-size: 13.5px; padding: 7px 0; border-bottom: 1px dashed var(--rule); }
+    .nt .spec span:last-child { color: var(--ink-soft); text-align: right; }
+    .nt .chip { flex: 1; height: 50px; border-radius: 6px; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 5px; font-size: 9.5px; font-weight: 600; font-family: 'IBM Plex Mono', monospace; }
+    .nt li { margin-bottom: 7px; }
+  </style>
+</helmet>
+
+<div class="nt" style="width: 1440px; height: 1020px; background: var(--bg); color: var(--ink); font-family: var(--ui); font-size: 15px; padding: 38px 40px; display: flex; flex-direction: column; gap: 22px;">
+
+  <div style="display: flex; flex-direction: column; gap: 8px;">
+    <span class="kicker">YourElectionMap · final round</span>
+    <h2 style="margin: 0; font-size: 26px; font-weight: 600; letter-spacing: -0.015em;">Two finals — the layout you liked, the map you wanted</h2>
+    <p style="margin: 0; max-width: 108ch; font-size: 14.5px; line-height: 1.6; color: var(--ink-soft);">Both finals take direction 1's page — card on the left, map running full-bleed behind it — and swap in direction 2's survey-instrument map: hairline district outlines on a coordinate grid, no filled shapes, hatching and a crosshair on the district you land in. The veil is now a partial gradient instead of a solid wash, so the grid and the boundaries stay readable all the way to the card's edge. Headline, tagline and field are all a step smaller.</p>
+  </div>
+
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+
+    <div class="card">
+      <div style="display: flex; flex-direction: column; gap: 4px;">
+        <span class="kicker">Final A</span>
+        <span style="font-family: 'Fraunces', Georgia, serif; font-weight: 600; font-size: 28px; letter-spacing: -0.02em;">Atlas</span>
+        <span style="font-size: 13.5px; color: var(--ink-soft);">Fraunces + Inter · warm paper, rust accent</span>
+      </div>
+      <div style="display: flex; gap: 6px;">
+        <div class="chip" style="background: #FAF5EB; color: #6E6252; border: 1px solid #E7DCC8;">FAF5EB</div>
+        <div class="chip" style="background: #EEE5D2; color: #6E6252;">EEE5D2</div>
+        <div class="chip" style="background: #C9BA9C; color: #241C12;">C9BA9C</div>
+        <div class="chip" style="background: #B4552B; color: #FFFDF8;">B4552B</div>
+        <div class="chip" style="background: #241C12; color: #FFFDF8;">241C12</div>
+      </div>
+      <div>
+        <div class="spec"><span>Headline</span><span>Fraunces 600 · 44px (was 58)</span></div>
+        <div class="spec"><span>Field</span><span>50px · radius 8 · button beside</span></div>
+        <div class="spec"><span>Card</span><span>560px (was 636) · radius 12</span></div>
+        <div class="spec"><span>Veil</span><span>90% → 0 across 76% of the width</span></div>
+        <div class="spec"><span>Map labels</span><span>Inter 500, letterspaced</span></div>
+      </div>
+      <p style="margin: 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft);">The warm ground softens the grid — it reads as a printed survey sheet rather than a screen. Rust on cream is the highest-contrast accent pairing of the two.</p>
+    </div>
+
+    <div class="card">
+      <div style="display: flex; flex-direction: column; gap: 4px;">
+        <span class="kicker">Final B</span>
+        <span style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 28px; letter-spacing: -0.035em;">Survey</span>
+        <span style="font-size: 13.5px; color: var(--ink-soft);">Space Grotesk + IBM Plex Mono · cool grey, deep cyan</span>
+      </div>
+      <div style="display: flex; gap: 6px;">
+        <div class="chip" style="background: #F1F4F5; color: #5A6871; border: 1px solid #D8DEE2;">F1F4F5</div>
+        <div class="chip" style="background: #E4EAEC; color: #5A6871;">E4EAEC</div>
+        <div class="chip" style="background: #AFBBC2; color: #10181D;">AFBBC2</div>
+        <div class="chip" style="background: #12657F; color: #FFFFFF;">12657F</div>
+        <div class="chip" style="background: #10181D; color: #FFFFFF;">10181D</div>
+      </div>
+      <div>
+        <div class="spec"><span>Headline</span><span>Space Grotesk 700 · 46px (was 76)</span></div>
+        <div class="spec"><span>Field</span><span>52px · radius 2 · button inside</span></div>
+        <div class="spec"><span>Card</span><span>560px · radius 3 · hard border</span></div>
+        <div class="spec"><span>Veil</span><span>90% → 0 across 76% of the width</span></div>
+        <div class="spec"><span>Map labels</span><span>IBM Plex Mono</span></div>
+      </div>
+      <p style="margin: 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft);">Square corners and mono microcopy keep the instrument feeling that direction 2 had, but the card now carries the text instead of a fade — so nothing is lost behind a blur.</p>
+    </div>
+
+  </div>
+
+  <div class="card" style="gap: 20px;">
+    <div style="display: flex; flex-direction: column; gap: 6px;">
+      <span class="kicker">The result page</span>
+      <p style="margin: 0; font-size: 14px; line-height: 1.6; color: var(--ink-soft);">Same shell in both finals: a 68px header keeping the address editable, a 400px rail listing every district that covers the address, and the map taking the rest. The rail's selected row is the boundary drawn solid on the map; the two overlapping districts are drawn dashed and dotted, keyed in the legend. Everything that isn't a map — next election date, candidate count, ballot measures — sits demoted at the foot of the rail behind one link.</p>
+    </div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 22px;">
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <span class="kicker">Sample data</span>
+        <p style="margin: 0; font-size: 13.5px; line-height: 1.6; color: var(--ink-soft);">Every name, number and boundary on the result boards is invented — <span style="color: var(--ink);">1420 Maple Street, Springfield</span>, Greenlake County, State House 44, the 14 candidates. Nothing is a real lookup, and the shapes are hand-drawn polygons, not real district geometry.</p>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <span class="kicker">Decided at design time</span>
+        <ul style="margin: 0; padding-left: 17px; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft);">
+          <li>Hidden <span style="color: var(--ink);">&lt;label&gt;</span> on every field; submit through a <span style="color: var(--ink);">&lt;form&gt;</span> so Enter works.</li>
+          <li>Line style, not colour alone, distinguishes the three boundaries — it survives a greyscale print and colour-blind vision.</li>
+          <li>Every colour is a <span style="color: var(--ink);">:root</span> token overridden for dark, never defined only in a media query.</li>
+          <li>Controls are 50px+; 40px in the result header, still over the 44px target with padding.</li>
+        </ul>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <span class="kicker">Building this</span>
+        <ul style="margin: 0; padding-left: 17px; font-size: 13.5px; line-height: 1.55; color: var(--ink-soft);">
+          <li>Plain CSS throughout — no library needed for either final.</li>
+          <li>With Chakra UI: field → <span style="color: var(--ink);">InputGroup</span>, primary → <span style="color: var(--ink);">Button</span>, rail rows → <span style="color: var(--ink);">List</span> + <span style="color: var(--ink);">Badge</span>, palettes → a <span style="color: var(--ink);">theme</span> token set. The SVG map stays hand-written either way.</li>
+          <li>Real boundaries later mean real geometry — the SVG here is a stand-in for whatever shapes the districts API returns.</li>
+          <li>Webfonts need one Google Fonts link; say so and I'll refit to system fonts.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+<script data-dc-script data-props='{"$preview":{"width":1440,"height":1020}}'>
+class Component extends DCLogic {}
+</script>
+</body>
+</html>
