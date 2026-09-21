@@ -1,0 +1,193 @@
+/* Spacing is set with margins rather than a flex gap because the message below
+   is a live region: it stays in the DOM while empty so screen readers keep
+   watching it, and a gap would reserve space for it even then. */
+.address-form {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.address-form__controls {
+  display: flex;
+  gap: 9px;
+}
+
+.address-form__field {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex-grow: 1;
+  min-width: 0;
+}
+
+.address-form__field-icon {
+  position: absolute;
+  left: 15px;
+  display: flex;
+  color: var(--ink-soft);
+  pointer-events: none;
+}
+
+.address-form__input {
+  width: 100%;
+  height: 50px;
+  padding: 0 14px 0 42px;
+  font-size: 15.5px;
+  color: var(--ink);
+  background: var(--field);
+  border: 1px solid var(--rule-strong);
+  border-radius: 8px;
+}
+
+.address-form__input::placeholder {
+  color: var(--ink-soft);
+  opacity: 0.8;
+}
+
+.address-form__input:focus-visible {
+  border-color: var(--accent);
+  outline-offset: 1px;
+}
+
+.address-form__input[aria-invalid='true'] {
+  border-color: var(--accent);
+}
+
+.address-form__submit {
+  height: 50px;
+  padding: 0 22px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--on-accent);
+  background: var(--accent);
+  border: none;
+  border-radius: 8px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.address-form__secondary {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  margin-top: 14px;
+}
+
+.address-form__locate {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent);
+  background: none;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.address-form__locate:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.address-form__divider {
+  width: 1px;
+  height: 14px;
+  background: var(--rule-strong);
+}
+
+.address-form__note {
+  font-size: 12.5px;
+  color: var(--ink-soft);
+}
+
+.address-form__message {
+  margin-top: 10px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--accent);
+}
+
+/* Silent: no height, no margin, still in the accessibility tree. */
+.address-form__message:empty {
+  margin-top: 0;
+}
+
+/* ── Header variant: the same form at 40px, inside the result header ─────── */
+
+.address-form--header {
+  flex-grow: 1;
+  max-width: 520px;
+}
+
+.address-form--header .address-form__input {
+  height: 40px;
+  padding: 0 12px 0 38px;
+  font-size: 14.5px;
+}
+
+.address-form--header .address-form__field-icon {
+  left: 13px;
+}
+
+.address-form--header .address-form__submit {
+  height: 40px;
+  padding: 0 17px;
+  font-size: 14px;
+}
+
+.address-form--header .address-form__message {
+  position: absolute;
+  top: calc(100% + 5px);
+  left: 0;
+}
+
+/* ── Phone: the home controls stack and run full width ───────────────────── */
+
+@media (max-width: 860px) {
+  .address-form--home .address-form__secondary {
+    margin-top: 10px;
+  }
+
+  .address-form--home .address-form__controls {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .address-form--home .address-form__input {
+    /* 16px keeps iOS from zooming the page on focus. */
+    font-size: 16px;
+    padding-left: 41px;
+  }
+
+  .address-form--home .address-form__field-icon {
+    left: 14px;
+  }
+
+  .address-form--home .address-form__submit {
+    width: 100%;
+    font-size: 15.5px;
+  }
+
+  .address-form--home .address-form__secondary {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .address-form--home .address-form__locate {
+    height: 32px;
+  }
+
+  .address-form--home .address-form__divider {
+    display: none;
+  }
+
+  .address-form--home .address-form__note,
+  .address-form--home .address-form__message {
+    font-size: 12px;
+    line-height: 1.45;
+    text-align: center;
+  }
+}
