@@ -1,50 +1,33 @@
-import { LayersIcon } from '../components/icons'
+import { ResultView } from '../components/result/ResultView'
 import { SiteHeader } from '../components/SiteHeader'
-import { SurveyMap } from '../components/SurveyMap'
-import { AppLink } from '../routing/AppLink'
-import { HOME_URL, type Coordinates } from '../routing/routes'
+import { sampleLookup } from '../districts/sampleLookup'
+import { navigate } from '../routing/history'
+import { mapUrl, type LookupTarget } from '../routing/routes'
 import './MapPage.css'
 
-// Provisional. Slice 2 replaces this panel with the district rail, the map
-// chrome and the phone bottom sheet from design/canvas4/Main.dc.html; the
-// header and the map behind it stay.
-
 type MapPageProps = {
-  address: string | null
-  coords: Coordinates | null
+  target: LookupTarget
+  district: string | null
 }
 
-export function MapPage({ address, coords }: MapPageProps) {
-  const lookup =
-    address ?? (coords === null ? '' : `${coords.lat}, ${coords.lon}`)
+export function MapPage({ target, district }: MapPageProps) {
+  // Invented for now. Slice 3 fetches the lookup from the districts API.
+  const lookup = sampleLookup(target)
+
+  function handleSelect(districtId: string) {
+    // Replace rather than push, so Back leaves the page instead of stepping
+    // through every district that was looked at.
+    navigate(mapUrl(target, { district: districtId }), { replace: true })
+  }
 
   return (
     <div className="map-page">
-      <SiteHeader address={address} />
-
-      <main className="map-page__body">
-        <SurveyMap variant="detail" />
-        <div className="map-page__veil" aria-hidden="true" />
-
-        <section className="map-page__panel card">
-          <p className="map-page__eyebrow">
-            <LayersIcon size={13} />
-            <span>{coords === null ? 'Looking up' : 'Looking up location'}</span>
-          </p>
-          <h1 className="map-page__lookup">{lookup}</h1>
-          <p className="map-page__lede">
-            Every district that covers this address belongs here: U.S. House,
-            both state chambers, county, city and school board, each drawn on
-            the map with the dates and candidates that come with it.
-          </p>
-          <p className="map-page__note">
-            The lookup itself arrives in the next slice.
-          </p>
-          <AppLink href={HOME_URL} className="map-page__back">
-            Start over
-          </AppLink>
-        </section>
-      </main>
+      <SiteHeader address={'address' in target ? target.address : null} />
+      <ResultView
+        lookup={lookup}
+        requestedDistrict={district}
+        onSelect={handleSelect}
+      />
     </div>
   )
 }

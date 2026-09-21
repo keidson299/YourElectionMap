@@ -1,15 +1,17 @@
-// The URL is the app's source of truth for what is being looked up. Slice 3
-// reads these values to call the districts API; for now they only decide which
-// screen renders and what the map shell echoes back.
+// The URL is the app's source of truth for what is being looked up and which
+// district is on the map. Slice 3 reads the target to call the districts API.
 
 export type Coordinates = {
   lat: number
   lon: number
 }
 
+/** What a lookup starts from: a typed address, or the browser's location. */
+export type LookupTarget = { address: string } | { coords: Coordinates }
+
 export type Route =
   | { name: 'home' }
-  | { name: 'map'; address: string | null; coords: Coordinates | null }
+  | { name: 'map'; target: LookupTarget; district: string | null }
 
 export const HOME_URL = '/'
 
@@ -23,18 +25,26 @@ export function parseRoute(location: string): Route {
   }
 
   const params = new URLSearchParams(query)
-  const address = normalizeAddress(params.get('address'))
+  const address = normalizeText(params.get('address'))
   const coords = parseCoordinates(params.get('lat'), params.get('lon'))
+  const district = normalizeText(params.get('district'))
 
-  // A map URL with nothing to look up has nothing to show.
-  if (address === null && coords === null) {
-    return HOME
+  if (address !== null) {
+    return { name: 'map', target: { address }, district }
   }
 
-  return { name: 'map', address, coords }
+  if (coords !== null) {
+    return { name: 'map', target: { coords }, district }
+  }
+
+  // A map URL with nothing to look up has nothing to show.
+  return HOME
 }
 
-export function mapUrl(target: { address: string } | { coords: Coordinates }): string {
+export function mapUrl(
+  target: LookupTarget,
+  options: { district?: string | null } = {},
+): string {
   const params = new URLSearchParams()
 
   if ('address' in target) {
@@ -42,6 +52,10 @@ export function mapUrl(target: { address: string } | { coords: Coordinates }): s
   } else {
     params.set('lat', formatCoordinate(target.coords.lat))
     params.set('lon', formatCoordinate(target.coords.lon))
+  }
+
+  if (options.district) {
+    params.set('district', options.district)
   }
 
   return `/map?${params.toString()}`
@@ -52,7 +66,7 @@ function normalizePath(path: string): string {
   return trimmed === '' ? '/' : trimmed.toLowerCase()
 }
 
-function normalizeAddress(value: string | null): string | null {
+function normalizeText(value: string | null): string | null {
   const trimmed = value?.trim() ?? ''
   return trimmed === '' ? null : trimmed
 }

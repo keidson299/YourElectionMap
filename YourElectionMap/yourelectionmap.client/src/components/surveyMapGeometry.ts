@@ -3,8 +3,7 @@
 // like, not data: no shape here corresponds to a real place.
 //
 // Slice 5 replaces this file with district boundaries projected from TIGERweb
-// GeoJSON. Everything that consumes it goes through SurveyMap, so the swap is
-// confined to these two files.
+// GeoJSON. It is read only by SurveyGround, SurveyMap and DistrictMap.
 
 export const DISTRICT_POLYGONS = [
   '0,0 320,-10 350,215 0,240',
@@ -64,14 +63,6 @@ export const NARROW_FOCUS = {
   ringRadius: 30,
 }
 
-/** Where the address sits on the closer detail view. */
-export const DETAIL_FOCUS = {
-  crosshair: 'M1127,589 V669 M1087,629 H1167',
-  center: { x: 1127, y: 629 },
-  pinRadius: 7,
-  ringRadius: 21,
-}
-
 export const WIDE_TICKS = {
   top: [
     { value: '800', x: 806 },
@@ -93,9 +84,28 @@ export const NARROW_TICKS = [
   { value: '1000', x: 1000 },
 ]
 
-export const VIEW_BOXES = {
-  /** The whole survey sheet, behind the home card. */
-  overview: { viewBox: '0 0 1600 1000', ground: { x: 0, y: 0, width: 1600, height: 1000 } },
-  /** Zoomed to the address, for the result view. */
-  detail: { viewBox: '820 380 620 520', ground: { x: 780, y: 340, width: 700, height: 600 } },
+/** The whole survey sheet, behind the home card. */
+export const OVERVIEW = {
+  viewBox: '0 0 1600 1000',
+  ground: { x: 0, y: 0, width: 1600, height: 1000 },
 }
+
+/**
+ * The result map refits and zooms, so its ground runs well past the drawing on
+ * every side: spare room at any window shape shows paper, never a gap.
+ */
+export const DETAIL_GROUND = { x: -800, y: -800, width: 3200, height: 2600 }
+
+/** Names for the neighbouring cells of the mesh, as the result view labels them. */
+export const MESH_LABELS = [
+  { text: 'SH-43', x: 850, y: 704 },
+  { text: 'SH-45', x: 1372, y: 626 },
+  { text: 'SH-51', x: 1096, y: 878 },
+  { text: 'SH-38', x: 1092, y: 432 },
+]
+
+/**
+ * The drawing's invented scale. At the design frame this makes the spec's
+ * 92px scale bar read one mile.
+ */
+export const SURVEY_UNITS_PER_MILE = 55

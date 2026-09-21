@@ -1,0 +1,309 @@
+/* Sizes from design/canvas4/Main.dc.html, Result: the 400px rail on desktop,
+   the bottom sheet on a phone. */
+
+.district-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 0;
+  padding: 22px 20px 20px;
+  overflow-y: auto;
+  background: var(--card);
+  border-right: 1px solid var(--rule);
+}
+
+.district-rail__head {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.district-rail__eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.district-rail__title {
+  font-size: 25px;
+  line-height: 1.2;
+}
+
+.district-rail__lede {
+  margin-top: 2px;
+  font-size: 13.5px;
+  color: var(--ink-soft);
+}
+
+/* Stays on screen for as long as the districts are invented. */
+.sample-tag {
+  padding: 1px 7px;
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  line-height: 1.5;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--ink-soft);
+  border: 1px solid var(--rule-strong);
+  border-radius: 999px;
+}
+
+.district-rail__list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* ── Rows ──────────────────────────────────────────────────────────────── */
+
+/* Positioned so the visually hidden radio sits inside its own row, and focus
+   scrolls the row into view rather than somewhere else on the page. */
+.district-row {
+  position: relative;
+  display: block;
+}
+
+.district-row__body {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.district-row:hover .district-row__body {
+  background: var(--field);
+}
+
+.district-row--selected .district-row__body,
+.district-row--selected:hover .district-row__body {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+.district-row input:focus-visible + .district-row__body {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.district-row__text {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  min-width: 0;
+}
+
+.district-row__name {
+  font-size: 14.5px;
+  font-weight: 600;
+}
+
+.district-row--selected .district-row__name {
+  color: var(--accent);
+}
+
+.district-row__detail {
+  font-size: 12.5px;
+  color: var(--ink-soft);
+}
+
+.district-row__icon {
+  flex-shrink: 0;
+  color: var(--ink-soft);
+}
+
+.district-row--selected .district-row__icon {
+  color: var(--accent);
+}
+
+/* ── Footer ────────────────────────────────────────────────────────────── */
+
+.district-rail__foot {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  margin-top: auto;
+  padding-top: 16px;
+  border-top: 1px solid var(--rule);
+}
+
+.district-rail__foot-title {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.district-rail__facts {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.district-rail__fact {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13.5px;
+  color: var(--ink-soft);
+}
+
+.district-rail__fact svg,
+.district-rail__strip svg {
+  flex-shrink: 0;
+}
+
+.district-rail__fact strong,
+.district-rail__strip strong {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* ── Phone: a sheet that laps 14px over the bottom of the map ──────────── */
+
+@media (max-width: 860px) {
+  .district-rail {
+    position: relative;
+    z-index: 2;
+    flex: 1 1 auto;
+    gap: 10px;
+    margin-top: -14px;
+    padding: 14px 16px 0;
+    overflow: hidden;
+    border-top: 1px solid var(--rule);
+    border-right: none;
+    border-radius: 16px 16px 0 0;
+  }
+
+  /* A 120×32 target around the 38×4 bar. The negative margins give back all
+     but the bar's own 4px, so the sheet keeps the spec's spacing. */
+  .district-rail__handle {
+    flex-shrink: 0;
+    align-self: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 120px;
+    height: 32px;
+    margin: -14px 0;
+    padding: 0;
+    background: none;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+
+  .district-rail__handle::before {
+    content: '';
+    width: 38px;
+    height: 4px;
+    border-radius: 999px;
+    background: var(--rule-strong);
+  }
+
+  .district-rail__handle:focus-visible {
+    outline-offset: -2px;
+  }
+
+  .district-rail__head {
+    gap: 0;
+  }
+
+  .district-rail__title-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .district-rail__title {
+    font-size: 20px;
+  }
+
+  .district-rail__hint {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    white-space: nowrap;
+    color: var(--ink-soft);
+  }
+
+  /* The list scrolls inside the sheet. Its side padding makes room for the
+     selected row, which runs 6px wider than the others. */
+  .district-rail__list {
+    flex: 1 1 auto;
+    min-height: 0;
+    gap: 0;
+    margin: 0 -6px;
+    padding: 0 6px 14px;
+    overflow-y: auto;
+  }
+
+  .district-row__body {
+    gap: 10px;
+    padding: 9px 4px;
+    border-width: 0 0 1px;
+    border-bottom-color: var(--rule);
+    border-radius: 0;
+  }
+
+  .district-row:hover .district-row__body {
+    background: none;
+  }
+
+  .district-row--selected .district-row__body {
+    margin: 0 -6px;
+    padding: 9px 10px;
+    border-width: 1px;
+    border-radius: 8px;
+  }
+
+  /* No doubled line where a row's rule meets the selected row's border. */
+  .district-row:has(+ .district-row--selected) .district-row__body {
+    border-bottom-color: transparent;
+  }
+
+  /* Inset, because the scrolling list would clip a ring drawn outside. */
+  .district-row input:focus-visible + .district-row__body {
+    outline-offset: -2px;
+  }
+
+  .district-row__name {
+    font-size: 13.5px;
+  }
+
+  .district-row__detail {
+    font-size: 11.5px;
+  }
+
+  .district-row__icon {
+    width: 14px;
+    height: 14px;
+  }
+
+  .district-rail__strip {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0 -16px;
+    padding: 11px 16px;
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    background: var(--field);
+    border-top: 1px solid var(--rule);
+  }
+}

@@ -17,7 +17,7 @@ export function HomePage() {
 
   return (
     <main className="home">
-      <SurveyMap variant="overview" />
+      <SurveyMap />
       <div className="home__veil" aria-hidden="true" />
 
       <div className="home__content">

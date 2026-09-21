@@ -6,7 +6,7 @@ function App() {
   const route = useRoute()
 
   if (route.name === 'map') {
-    return <MapPage address={route.address} coords={route.coords} />
+    return <MapPage target={route.target} district={route.district} />
   }
 
   return <HomePage />

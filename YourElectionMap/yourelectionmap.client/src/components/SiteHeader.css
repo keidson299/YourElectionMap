@@ -1,4 +1,8 @@
+/* Stacked above the page so the form's error message, which hangs below the
+   header, is never painted over by the map. */
 .site-header {
+  position: relative;
+  z-index: 3;
   flex-shrink: 0;
   display: flex;
   align-items: center;
@@ -36,11 +40,23 @@
   color: var(--ink-soft);
 }
 
+/* Below this the note would squeeze the address field; the toggle takes its
+   place at the far right. */
+@media (max-width: 1100px) {
+  .site-header__note {
+    display: none;
+  }
+
+  .site-header__theme {
+    margin-left: auto;
+  }
+}
+
 @media (max-width: 860px) {
   .site-header {
     flex-wrap: wrap;
     height: auto;
-    gap: 8px;
+    gap: 0 8px;
     padding: 0 16px 10px;
   }
 
@@ -62,9 +78,13 @@
     display: none;
   }
 
+  /* The address gets its own full-bleed row under a rule, as in the spec. */
   .site-header .address-form--header {
     order: 3;
-    flex-basis: 100%;
+    flex-basis: calc(100% + 32px);
     max-width: none;
+    margin: 0 -16px;
+    padding: 10px 16px 0;
+    border-top: 1px solid var(--rule);
   }
 }

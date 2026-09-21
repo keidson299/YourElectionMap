@@ -1,0 +1,39 @@
+.line-swatch {
+  flex-shrink: 0;
+  display: block;
+  fill: none;
+  stroke-width: 2.4;
+}
+
+.line-swatch--accent {
+  stroke: var(--accent);
+}
+
+.line-swatch--muted {
+  stroke: var(--ink-soft);
+}
+
+.line-swatch--selected {
+  stroke: var(--accent);
+  stroke-width: 3;
+}
+
+.line-swatch--dashed {
+  stroke-dasharray: 6 4;
+}
+
+.line-swatch--dotted {
+  stroke-dasharray: 1 4;
+  stroke-linecap: round;
+}
+
+.line-swatch--accent.line-swatch--dashed,
+.line-swatch--accent.line-swatch--dotted {
+  opacity: 0.7;
+}
+
+/* A district the map is not drawing gets no pattern at all. */
+.line-swatch--none {
+  stroke: var(--rule-strong);
+  stroke-width: 1.5;
+}

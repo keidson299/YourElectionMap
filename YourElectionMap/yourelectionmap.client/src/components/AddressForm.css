@@ -144,6 +144,45 @@
   left: 0;
 }
 
+/* It hangs over the map, so it needs a surface of its own to stay legible. */
+.address-form--header .address-form__message:not(:empty) {
+  padding: 5px 9px;
+  white-space: nowrap;
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  box-shadow: var(--shadow-chip);
+}
+
+/* ── Phone: the header field on its own row ──────────────────────────────── */
+
+@media (max-width: 860px) {
+  .address-form--header .address-form__controls {
+    gap: 8px;
+  }
+
+  .address-form--header .address-form__input {
+    /* 16px, not the spec's 14px: iOS zooms the page on focus below 16px. */
+    font-size: 16px;
+    padding: 0 10px 0 34px;
+  }
+
+  .address-form--header .address-form__field-icon {
+    left: 12px;
+    width: 15px;
+    height: 15px;
+  }
+
+  .address-form--header .address-form__submit {
+    padding: 0 14px;
+    font-size: 13.5px;
+  }
+
+  .address-form--header .address-form__message {
+    left: 16px;
+  }
+}
+
 /* ── Phone: the home controls stack and run full width ───────────────────── */
 
 @media (max-width: 860px) {

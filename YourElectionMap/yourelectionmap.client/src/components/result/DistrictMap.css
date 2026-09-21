@@ -1,0 +1,129 @@
+/* Widths from design/canvas4/Main.dc.html, Result. Everything drawn in the
+   map's own space is multiplied by --k (see SurveyGround.css) so lines keep
+   the spec's weight while the view refits and zooms. The pin group is scaled
+   as a whole instead, so its widths are plain. */
+
+.district-map {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--bg);
+}
+
+.district-map__svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.district-map .survey-ground__roads {
+  stroke-width: calc(2.6px * var(--k, 1));
+  opacity: 0.5;
+}
+
+.district-map .survey-ground__mesh {
+  stroke-width: calc(1.6px * var(--k, 1));
+}
+
+.district-map__labels {
+  font-family: var(--ui);
+  font-size: calc(13px * var(--k, 1));
+  font-weight: 600;
+  letter-spacing: calc(1.4px * var(--k, 1));
+  fill: var(--ink-soft);
+  opacity: 0.62;
+}
+
+.district-map__context {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: calc(2.4px * var(--k, 1));
+  stroke-linejoin: round;
+  opacity: 0.68;
+}
+
+.district-map__context--dotted {
+  stroke-linecap: round;
+}
+
+.district-map__selected {
+  fill: var(--accent-tint);
+  fill-rule: evenodd;
+  stroke: var(--accent);
+  stroke-width: calc(3.4px * var(--k, 1));
+  stroke-linejoin: round;
+}
+
+.district-map__hatch {
+  fill-rule: evenodd;
+  stroke: none;
+}
+
+.district-map__hatch-line {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: calc(0.9px * var(--k, 1));
+  opacity: 0.45;
+}
+
+.district-map__crosshair {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.2;
+}
+
+.district-map__ring {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.2;
+  stroke-dasharray: 3 5;
+}
+
+.district-map__dot {
+  fill: var(--accent);
+  stroke: var(--card);
+  stroke-width: 2.4;
+}
+
+@media (max-width: 860px) {
+  .district-map .survey-ground__roads {
+    stroke-width: calc(3px * var(--k, 1));
+  }
+
+  .district-map .survey-ground__mesh {
+    stroke-width: calc(1.4px * var(--k, 1));
+  }
+
+  .district-map__labels {
+    display: none;
+  }
+
+  .district-map__context {
+    stroke-width: calc(2px * var(--k, 1));
+    opacity: 0.65;
+  }
+
+  .district-map__selected {
+    stroke-width: calc(3px * var(--k, 1));
+  }
+
+  .district-map__hatch-line {
+    stroke-width: calc(0.8px * var(--k, 1));
+  }
+
+  .district-map__crosshair,
+  .district-map__ring {
+    stroke-width: 1.1;
+  }
+
+  .district-map__ring {
+    stroke-dasharray: 3 4;
+  }
+
+  .district-map__dot {
+    stroke-width: 2;
+  }
+}

@@ -1,0 +1,48 @@
+/* The rail comes first in the DOM, so it is first in Tab order at every width.
+   On a phone the map is moved above it visually. */
+
+.result {
+  flex-grow: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 400px minmax(0, 1fr);
+}
+
+.result--empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.result__empty {
+  padding: 22px 24px;
+  font-size: 14.5px;
+  color: var(--ink-soft);
+}
+
+@media (max-width: 860px) {
+  .result {
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* The top third of the screen, but never so tall that a landscape phone
+     loses the list under it. */
+  .result > .district-map {
+    order: -1;
+    flex-shrink: 0;
+    height: min(320px, 38svh);
+    transition: height 0.2s ease;
+  }
+
+  /* Expanded, the sheet takes most of the screen; the map keeps just enough
+     height for the chip and the zoom buttons. */
+  .result--expanded > .district-map {
+    height: 120px;
+  }
+
+  .result--expanded .map-pill {
+    display: none;
+  }
+}

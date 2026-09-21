@@ -4,7 +4,7 @@ import { SurveyMap } from './SurveyMap'
 
 describe('SurveyMap', () => {
   it('is decoration, so assistive technology never sees it', () => {
-    const { container } = render(<SurveyMap variant="overview" />)
+    const { container } = render(<SurveyMap />)
     const svg = container.querySelector('svg')
 
     expect(svg).toHaveAttribute('aria-hidden', 'true')
@@ -12,8 +12,20 @@ describe('SurveyMap', () => {
     expect(screen.queryByRole('graphics-document')).toBeNull()
   })
 
-  it('draws both focus groups on the overview, for the two board widths', () => {
-    const { container } = render(<SurveyMap variant="overview" />)
+  it('draws the whole sheet on the shared survey ground', () => {
+    const { container } = render(<SurveyMap />)
+
+    expect(container.querySelector('svg')).toHaveAttribute(
+      'viewBox',
+      '0 0 1600 1000',
+    )
+    expect(
+      container.querySelectorAll('.survey-ground__mesh polygon'),
+    ).toHaveLength(20)
+  })
+
+  it('draws both focus groups, for the two board widths', () => {
+    const { container } = render(<SurveyMap />)
 
     expect(
       container.querySelector('.survey-map__focus--wide'),
@@ -21,12 +33,5 @@ describe('SurveyMap', () => {
     expect(
       container.querySelector('.survey-map__focus--narrow'),
     ).toBeInTheDocument()
-  })
-
-  it('highlights no district on the detail view, since nothing is looked up yet', () => {
-    const { container } = render(<SurveyMap variant="detail" />)
-
-    expect(container.querySelector('.survey-map__selected')).toBeNull()
-    expect(container.querySelector('.survey-map__pin')).toBeInTheDocument()
   })
 })
