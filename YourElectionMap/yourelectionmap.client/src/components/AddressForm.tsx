@@ -1,4 +1,4 @@
-import { useId, useRef, useState, type FormEvent } from 'react'
+import { useEffect, useId, useRef, useState, type FormEvent } from 'react'
 import { CrosshairIcon, PinIcon } from './icons'
 import type { Coordinates } from '../routing/routes'
 import './AddressForm.css'
@@ -11,26 +11,38 @@ type AddressFormProps = {
   variant: 'home' | 'header'
   submitLabel: string
   initialAddress?: string
-  showLocationButton?: boolean
   onSubmit: (address: string) => void
+  /** Passing this shows the "Use my current location" button. */
   onLocate?: (coords: Coordinates) => void
 }
+
+/** `field` marks a problem with the address itself, which flags the input. */
+type Message = { text: string; field: boolean }
 
 export function AddressForm({
   variant,
   submitLabel,
   initialAddress = '',
-  showLocationButton = false,
   onSubmit,
   onLocate,
 }: AddressFormProps) {
   const fieldId = useId()
   const messageId = useId()
   const inputRef = useRef<HTMLInputElement>(null)
+  // A location fix can arrive after a submitted address has left the page.
+  const mounted = useRef(false)
 
   const [address, setAddress] = useState(initialAddress)
-  const [message, setMessage] = useState<string | null>(null)
+  const [message, setMessage] = useState<Message | null>(null)
   const [locating, setLocating] = useState(false)
+
+  useEffect(() => {
+    mounted.current = true
+
+    return () => {
+      mounted.current = false
+    }
+  }, [])
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -38,7 +50,7 @@ export function AddressForm({
     const trimmed = address.trim()
 
     if (trimmed === '') {
-      setMessage('Enter an address to continue.')
+      setMessage({ text: 'Enter an address to continue.', field: true })
       inputRef.current?.focus()
       return
     }
@@ -48,8 +60,16 @@ export function AddressForm({
   }
 
   function handleLocate() {
+    // aria-disabled rather than disabled, so focus stays on the button.
+    if (locating) {
+      return
+    }
+
     if (!('geolocation' in navigator)) {
-      setMessage('This browser cannot share your location. Enter an address instead.')
+      setMessage({
+        text: 'This browser cannot share your location. Enter an address instead.',
+        field: false,
+      })
       return
     }
 
@@ -58,6 +78,10 @@ export function AddressForm({
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
+        if (!mounted.current) {
+          return
+        }
+
         setLocating(false)
         onLocate?.({
           lat: position.coords.latitude,
@@ -65,8 +89,15 @@ export function AddressForm({
         })
       },
       () => {
+        if (!mounted.current) {
+          return
+        }
+
         setLocating(false)
-        setMessage('We could not get your location. Enter an address instead.')
+        setMessage({
+          text: 'We could not get your location. Enter an address instead.',
+          field: false,
+        })
       },
       { timeout: 10000 },
     )
@@ -96,8 +127,14 @@ export function AddressForm({
             placeholder="Enter your home address"
             autoComplete="street-address"
             value={address}
-            onChange={(event) => setAddress(event.target.value)}
-            aria-invalid={message === null ? undefined : true}
+            onChange={(event) => {
+              setAddress(event.target.value)
+
+              if (message?.field) {
+                setMessage(null)
+              }
+            }}
+            aria-invalid={message?.field ? true : undefined}
             aria-describedby={messageId}
           />
         </div>
@@ -106,13 +143,13 @@ export function AddressForm({
         </button>
       </div>
 
-      {showLocationButton ? (
+      {onLocate === undefined ? null : (
         <div className="address-form__secondary">
           <button
             type="button"
             className="address-form__locate"
             onClick={handleLocate}
-            disabled={locating}
+            aria-disabled={locating || undefined}
           >
             <CrosshairIcon size={15} />
             {locating ? 'Finding you…' : 'Use my current location'}
@@ -122,11 +159,11 @@ export function AddressForm({
             Address used only to look up your districts.
           </p>
         </div>
-      ) : null}
+      )}
 
       {/* Always present so the live region exists before it has anything to say. */}
       <p id={messageId} className="address-form__message" role="status">
-        {message}
+        {message?.text}
       </p>
     </form>
   )

@@ -7,11 +7,10 @@ import { navigate } from './history'
 type AppLinkProps = {
   href: string
   className?: string
-  replace?: boolean
   children: ReactNode
 }
 
-export function AppLink({ href, className, replace, children }: AppLinkProps) {
+export function AppLink({ href, className, children }: AppLinkProps) {
   function handleClick(event: MouseEvent<HTMLAnchorElement>) {
     const modified =
       event.metaKey || event.ctrlKey || event.shiftKey || event.altKey
@@ -21,7 +20,7 @@ export function AppLink({ href, className, replace, children }: AppLinkProps) {
     }
 
     event.preventDefault()
-    navigate(href, { replace })
+    navigate(href)
   }
 
   return (

@@ -24,12 +24,25 @@ export function readStoredPreference(): ThemePreference {
   return 'system'
 }
 
+export function nextPreference(current: ThemePreference): ThemePreference {
+  const next = THEME_PREFERENCES.indexOf(current) + 1
+  return THEME_PREFERENCES[next % THEME_PREFERENCES.length]
+}
+
+// The attribute on <html> is what is applied right now, set by index.html or
+// by an earlier toggle. Reading it first keeps a choice that storage refused
+// to hold when a new page mounts a new toggle.
+function appliedPreference(): ThemePreference {
+  const applied = document.documentElement.getAttribute('data-theme')
+  return isThemePreference(applied) ? applied : readStoredPreference()
+}
+
 export function useTheme(): {
   preference: ThemePreference
   cycleTheme: () => void
 } {
   const [preference, setPreference] =
-    useState<ThemePreference>(readStoredPreference)
+    useState<ThemePreference>(appliedPreference)
 
   useEffect(() => {
     const root = document.documentElement
@@ -52,10 +65,7 @@ export function useTheme(): {
   }, [preference])
 
   const cycleTheme = useCallback(() => {
-    setPreference((current) => {
-      const next = THEME_PREFERENCES.indexOf(current) + 1
-      return THEME_PREFERENCES[next % THEME_PREFERENCES.length]
-    })
+    setPreference(nextPreference)
   }, [])
 
   return { preference, cycleTheme }

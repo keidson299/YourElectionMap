@@ -70,9 +70,18 @@ describe('ThemeToggle', () => {
       throw new Error('storage blocked')
     })
 
-    render(<ThemeToggle />)
+    const { unmount } = render(<ThemeToggle />)
     await userEvent.click(screen.getByRole('button', { name: /theme/i }))
 
     expect(theme()).toBe('light')
+
+    // A new page mounts a new toggle, which must not forget the choice.
+    unmount()
+    render(<ThemeToggle />)
+
+    expect(theme()).toBe('light')
+    expect(screen.getByRole('button', { name: /theme/i })).toHaveTextContent(
+      /light/i,
+    )
   })
 })

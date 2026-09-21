@@ -12,17 +12,16 @@ function renderForm() {
   const onSubmit = vi.fn()
   const onLocate = vi.fn()
 
-  render(
+  const { unmount } = render(
     <AddressForm
       variant="home"
       submitLabel="Find My Maps"
-      showLocationButton
       onSubmit={onSubmit}
       onLocate={onLocate}
     />,
   )
 
-  return { onSubmit, onLocate }
+  return { onSubmit, onLocate, unmount }
 }
 
 function stubGeolocation(getCurrentPosition: unknown) {
@@ -88,6 +87,18 @@ describe('AddressForm', () => {
     )
   })
 
+  it('stops flagging the field once something is typed', async () => {
+    renderForm()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Find My Maps' }))
+    await userEvent.type(screen.getByLabelText('Home address'), '1')
+
+    expect(screen.getByLabelText('Home address')).not.toHaveAttribute(
+      'aria-invalid',
+    )
+    expect(screen.getByRole('status')).toBeEmptyDOMElement()
+  })
+
   it('hands over the coordinates the browser reports', async () => {
     stubGeolocation((success: (position: unknown) => void) => {
       success({ coords: { latitude: 42.1, longitude: -71.2 } })
@@ -117,6 +128,31 @@ describe('AddressForm', () => {
     expect(screen.getByRole('status')).toHaveTextContent(
       'We could not get your location.',
     )
+    // The address field did nothing wrong.
+    expect(screen.getByLabelText('Home address')).not.toHaveAttribute(
+      'aria-invalid',
+    )
+  })
+
+  it('ignores a location that arrives after the form has gone', async () => {
+    let succeed: (position: unknown) => void = () => {}
+    stubGeolocation((success: (position: unknown) => void) => {
+      succeed = success
+    })
+
+    const { onLocate, unmount } = renderForm()
+    const locate = screen.getByRole('button', {
+      name: /use my current location/i,
+    })
+
+    await userEvent.click(locate)
+    expect(locate).toHaveAttribute('aria-disabled', 'true')
+    expect(locate).toHaveFocus()
+
+    unmount()
+    succeed({ coords: { latitude: 42.1, longitude: -71.2 } })
+
+    expect(onLocate).not.toHaveBeenCalled()
   })
 
   it('explains when the browser has no geolocation at all', async () => {

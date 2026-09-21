@@ -1,7 +1,7 @@
 /* Widths from design/canvas4/Main.dc.html, Result. Everything drawn in the
    map's own space is multiplied by --k (see SurveyGround.css) so lines keep
-   the spec's weight while the view refits and zooms. The pin group is scaled
-   as a whole instead, so its widths are plain. */
+   the spec's weight as the view refits and zooms and the window resizes. The
+   pin group is scaled as a whole instead, so its widths are plain. */
 
 .district-map {
   position: relative;

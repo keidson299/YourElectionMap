@@ -26,6 +26,7 @@ repository: the main session, subagents, background tasks, scheduled/cron runs, 
 ## Requires explicit approval
 
 ### Network and outbound data
+
 - Web searches and web fetches of any kind.
 - HTTP/HTTPS calls to anything outside `localhost` — `curl`, `wget`, `Invoke-WebRequest`,
   `Invoke-RestMethod`, `fetch`, SDK clients, MCP tools that reach the internet.
@@ -34,6 +35,7 @@ repository: the main session, subagents, background tasks, scheduled/cron runs, 
 - Cloning or pulling from remote repositories.
 
 ### Installing, downloading, or changing dependencies
+
 - `npm install` / `npm ci` / `npm update` / `npx <anything>` / `npm audit fix`.
 - `dotnet add package`, `dotnet restore` against new packages, `nuget install`,
   `dotnet tool install/update`, `dotnet workload install`.
@@ -43,6 +45,7 @@ repository: the main session, subagents, background tasks, scheduled/cron runs, 
 - Downloading files, binaries, datasets, models, or certificates from anywhere.
 
 ### Running executables and processes
+
 - Starting the app or any server: `dotnet run`, `dotnet watch`, `npm run dev`, `vite`, VS Code tasks
   that launch things, anything that binds a port or stays alive.
 - Docker: `docker build`, `docker run`, `docker compose`, or anything touching the daemon.
@@ -53,6 +56,7 @@ repository: the main session, subagents, background tasks, scheduled/cron runs, 
 - Background or detached processes, and anything scheduled to run later (cron, wakeups, loops).
 
 ### Git and version control
+
 - `git commit`, `git push`, `git tag`, branch creation, merges, rebases.
 - Anything destructive or history-rewriting: `git reset --hard`, `git checkout -- <file>`,
   `git clean`, `git restore`, `git stash drop`, `--force` / `--force-with-lease`, `git rm`.
@@ -60,6 +64,7 @@ repository: the main session, subagents, background tasks, scheduled/cron runs, 
 - Read-only inspection (`git status`, `git diff`, `git log`, `git show`) is fine.
 
 ### Destructive or wide-reaching file operations
+
 - Deleting or renaming any file or directory.
 - Overwriting a file you have not read in full first.
 - Bulk edits across many files, or any find-and-replace applied repo-wide.
@@ -69,14 +74,16 @@ repository: the main session, subagents, background tasks, scheduled/cron runs, 
   `.esproj` / `.csproj` project files.
 
 ### Secrets and configuration
+
 - Reading, writing, printing, or moving credentials: `.env` files, user secrets
   (`dotnet user-secrets`), certificates, API keys, connection strings, tokens.
 - `dotnet dev-certs` in any form.
 - Changing `appsettings*.json` values that point at hosts, ports, or credentials.
 
 ### Delegation
+
 - Spawning subagents (`Agent` tool) or handing work to another session. Only when asked by name.
-- Any action above performed *by* a subagent is still gated — inherit these rules, do not relax them.
+- Any action above performed _by_ a subagent is still gated — inherit these rules, do not relax them.
 
 ## Always allowed without asking
 
@@ -103,13 +110,16 @@ and let the owner decide whether to authorize a search or paste the information 
 ## What this is
 
 `YourElectionMap` is an ASP.NET Core 9 Web API (`YourElectionMap.Server`) serving a React 19 + Vite
-SPA (`yourelectionmap.client`), with an xUnit test project (`YourElectionMap.Server.Tests`). It is
-currently the freshly scaffolded template — `WeatherForecast` is placeholder code, and `App.tsx` is
-still the Vite starter page. Nothing election-specific has been built yet.
+SPA (`yourelectionmap.client`), with an xUnit test project (`YourElectionMap.Server.Tests`). The
+client has a Home page (the address form over a decorative survey map) and a result page (a rail
+of districts beside the map; on a phone, the map above a bottom sheet). It runs on invented sample
+data for now. The server is still the template, with `WeatherForecast` as placeholder code.
 
-Note the nesting: the git repository root holds `README.md` and this file; everything else lives one
-level down in `YourElectionMap/`, which is where `YourElectionMap.sln` sits and where all commands
-below are run from.
+## Project priorities
+
+This is a one-person project with a small audience: voters looking up the districts they vote in.
+Prefer simple, direct code over abstraction, and treat verbosity and over-architecture as real
+problems in reviews.There are no accounts and no stored personal data.
 
 ## Commands
 
@@ -127,11 +137,17 @@ dotnet publish YourElectionMap.Server/YourElectionMap.Server.csproj         # al
 cd yourelectionmap.client
 npm test                                              # vitest run
 npm test -- src/App.test.tsx                          # one test file
-npm test -- -t "counts up when the counter button is clicked"   # one test by name
+npm test -- -t "sends a submitted address to the result page"   # one test by name
 npm run test:watch                                    # vitest in watch mode
 npm run lint                                          # oxlint
 npm run build                                         # tsc -b && vite build
 ```
+
+Run client scripts through a path with an uppercase drive letter
+(`D:/VisualStudio/GitProjects/YourElectionMap/Repo/YourElectionMap/yourelectionmap.client`).
+Spelled `d:/`, Vitest loads two copies of its modules and every suite fails in `src/test/setup.ts`
+with "Vitest failed to find the current suite" before any test runs. VS Code terminals can open
+with the lowercase form, so check this first if every suite fails at once.
 
 VS Code equivalents live in [YourElectionMap/.vscode/tasks.json](YourElectionMap/.vscode/tasks.json)
 (`build`, `clean`, `publish`, `watch server`, `client: install/build/lint`, `test: server`,
@@ -179,6 +195,23 @@ controllers + OpenAPI (dev only, at `/openapi/v1.json`), static assets, then
 routing and JSON serialization over HTTP. New endpoints deserve the second kind. Client tests are
 Vitest + Testing Library in `jsdom`, matching `src/**/*.{test,spec}.{ts,tsx}`, with
 `src/test/setup.ts` as the setup file.
+
+**Client structure.**
+
+- There is no router dependency. `src/routing/history.ts` wraps the History API, and `useRoute`
+  reads it through `useSyncExternalStore`. The URL decides what is looked up and which district is
+  shown, so change it only through `navigate()`.
+- `DistrictLookup` in `src/districts/types.ts` is the contract the result page renders.
+  `src/districts/sampleLookup.ts` (invented districts) and `src/components/surveyMapGeometry.ts`
+  (the drawn stand-in map) are placeholders that later slices replace.
+- The phone layout switches at 860px. That value is set in `PHONE_QUERY`
+  (`src/hooks/useMediaQuery.ts`) and again in every stylesheet's media query, so change them
+  together.
+- Sizes, colours and line weights come from the build spec, `design/canvas4/Main.dc.html`. The
+  colour tokens live in `src/index.css`, where the dark set appears twice on purpose.
+- jsdom has no `matchMedia` or `ResizeObserver`, so client tests render the desktop layout with the
+  map at its design size. To test the phone layout, stub `matchMedia` as `ResultView.test.tsx`
+  does.
 
 **Linting is oxlint, not ESLint** — configured in
 [YourElectionMap/yourelectionmap.client/.oxlintrc.json](YourElectionMap/yourelectionmap.client/.oxlintrc.json).

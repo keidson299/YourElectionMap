@@ -1,7 +1,8 @@
 import type { SurveyPoint, SurveyRing } from '../districts/types'
 
 // Where the result map looks, how far it zooms, and what its scale bar says.
-// Everything is in survey units, the drawing's coordinate space.
+// Everything is in survey units, the drawing's coordinate space, except a
+// map element's size, which is in CSS pixels.
 
 export type Span = { width: number; height: number }
 
@@ -9,19 +10,22 @@ export type Span = { width: number; height: number }
 export type Frame = { center: SurveyPoint; width: number; height: number }
 
 /**
- * The spans that reproduce the spec's scale at its two design frames: the
- * 1040×832 desktop map beside the rail, and the 390×320 phone map.
+ * One of the spec's design frames: `span` is how much of the drawing it
+ * shows, in survey units, and `map` is the map element's size in CSS pixels.
  */
-export const DESIGN_SPANS = {
-  desktop: { width: 620, height: 496 },
-  phone: { width: 400, height: 328 },
-} satisfies Record<string, Span>
+export type Design = { span: Span; map: Span }
 
-/**
- * The desktop map at the design frame. The scale bar assumes this size until
- * slice 5 measures the real element.
- */
-const DESIGN_MAP_SIZE = { width: 1040, height: 832 }
+/** The 1040×832 desktop map beside the rail, and the 390×320 phone map. */
+export const DESIGN = {
+  desktop: {
+    span: { width: 620, height: 496 },
+    map: { width: 1040, height: 832 },
+  },
+  phone: {
+    span: { width: 400, height: 328 },
+    map: { width: 390, height: 320 },
+  },
+} satisfies Record<string, Design>
 
 const FIT_PADDING = 0.08
 
@@ -84,13 +88,19 @@ export function viewBoxOf(frame: Frame): string {
     .join(' ')
 }
 
+/** CSS pixels per survey unit when `span` is fitted into `map` ('meet'). */
+export function pixelsPerUnit(span: Span, map: Span): number {
+  return Math.min(map.width / span.width, map.height / span.height)
+}
+
 /**
- * How much wider than the design span the view has become. Line weights are
- * multiplied by this so they stay the width the spec draws them on screen
- * while the geometry grows and shrinks.
+ * How many times smaller the drawing appears on screen than at the design
+ * frame. Line weights and the pin are multiplied by this, so they stay the
+ * size the spec draws them whatever the zoom, the fitted boundary or the size
+ * of the window.
  */
-export function lineScale(frame: Frame, design: Span): number {
-  return Math.max(frame.width / design.width, frame.height / design.height)
+export function lineScale(frame: Frame, map: Span, design: Design): number {
+  return pixelsPerUnit(design.span, design.map) / pixelsPerUnit(frame, map)
 }
 
 export type ScaleBar = { miles: number; width: number }
@@ -114,13 +124,12 @@ export function pickScaleBar(pixelsPerMile: number): ScaleBar {
   return { miles: best, width: round(best * pixelsPerMile) }
 }
 
-export function scaleBarFor(frame: Frame, unitsPerMile: number): ScaleBar {
-  const pixelsPerUnit = Math.min(
-    DESIGN_MAP_SIZE.width / frame.width,
-    DESIGN_MAP_SIZE.height / frame.height,
-  )
-
-  return pickScaleBar(pixelsPerUnit * unitsPerMile)
+export function scaleBarFor(
+  frame: Frame,
+  map: Span,
+  unitsPerMile: number,
+): ScaleBar {
+  return pickScaleBar(pixelsPerUnit(frame, map) * unitsPerMile)
 }
 
 /** A boundary as SVG path data, one closed subpath per ring. */

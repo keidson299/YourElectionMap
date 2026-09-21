@@ -162,6 +162,11 @@ button {
   outline-offset: 2px;
 }
 
+/* Headings take focus only so a route change can announce the new page. */
+h1[tabindex='-1']:focus {
+  outline: none;
+}
+
 /* The spec's hidden-label pattern: present to a screen reader, not on screen. */
 .visually-hidden {
   position: absolute;

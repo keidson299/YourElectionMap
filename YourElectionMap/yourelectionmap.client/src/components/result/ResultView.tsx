@@ -32,7 +32,9 @@ export function ResultView({
   const districts = orderDistricts(lookup.districts)
   const selected = resolveSelection(districts, requestedDistrict)
   const heading = (
-    <h1 className="visually-hidden">Districts for {lookup.label}</h1>
+    <h1 className="visually-hidden" tabIndex={-1}>
+      Districts for {lookup.label}
+    </h1>
   )
 
   // Slice 3 gives an address with no districts a designed state of its own.

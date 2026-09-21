@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  DESIGN_SPANS,
+  DESIGN,
   MAX_ZOOM,
   MIN_ZOOM,
   clampZoom,
@@ -15,7 +15,8 @@ import {
 import type { SurveyPoint, SurveyRing } from '../districts/types'
 
 const ADDRESS: SurveyPoint = [1127, 629]
-const desktop = DESIGN_SPANS.desktop
+const design = DESIGN.desktop
+const desktop = design.span
 
 // State House 44 from the spec: small enough to sit inside the design frame.
 const SMALL: SurveyRing[] = [
@@ -77,15 +78,23 @@ describe('zoom', () => {
   })
 
   it('scales line weights with how far the view has widened', () => {
-    expect(lineScale(frame, desktop)).toBe(1)
-    expect(lineScale(zoomFrame(frame, -1), desktop)).toBeCloseTo(1.5)
-    expect(lineScale(zoomFrame(frame, 1), desktop)).toBeCloseTo(1 / 1.5)
+    expect(lineScale(frame, design.map, design)).toBe(1)
+    expect(lineScale(zoomFrame(frame, -1), design.map, design)).toBeCloseTo(1.5)
+    expect(lineScale(zoomFrame(frame, 1), design.map, design)).toBeCloseTo(
+      1 / 1.5,
+    )
+  })
+
+  it('thins line weights on a map drawn larger than the design', () => {
+    const larger = { width: 1560, height: 1248 }
+
+    expect(lineScale(frame, larger, design)).toBeCloseTo(1040 / 1560)
   })
 })
 
 describe('scale bar', () => {
   it('reads one mile at the design frame, as the spec draws it', () => {
-    const scale = scaleBarFor(fitFrame(ADDRESS, SMALL, desktop), 55)
+    const scale = scaleBarFor(fitFrame(ADDRESS, SMALL, desktop), design.map, 55)
 
     expect(scale.miles).toBe(1)
     expect(scale.width).toBeCloseTo(92, 0)
@@ -94,8 +103,17 @@ describe('scale bar', () => {
   it('shortens the distance as the view zooms in', () => {
     const frame = fitFrame(ADDRESS, SMALL, desktop)
 
-    expect(scaleBarFor(zoomFrame(frame, 1), 55).miles).toBe(0.5)
-    expect(scaleBarFor(zoomFrame(frame, 2), 55).miles).toBe(0.5)
+    expect(scaleBarFor(zoomFrame(frame, 1), design.map, 55).miles).toBe(0.5)
+    expect(scaleBarFor(zoomFrame(frame, 2), design.map, 55).miles).toBe(0.5)
+  })
+
+  // A 1366×768 laptop: the short side limits the fit, so a mile is ~64px.
+  it('measures against the map at the size it is really drawn', () => {
+    const frame = fitFrame(ADDRESS, SMALL, desktop)
+    const scale = scaleBarFor(frame, { width: 966, height: 582 }, 55)
+
+    expect(scale.miles).toBe(1)
+    expect(scale.width).toBeCloseTo(64.5, 0)
   })
 
   it('picks the round distance closest to the drawn length', () => {

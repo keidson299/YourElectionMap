@@ -44,9 +44,13 @@ const ELECTION_DATE = new Intl.DateTimeFormat('en-US', {
   timeZone: 'UTC',
 })
 
-/** '2026-11-03' becomes 'Tue, Nov 3'. */
+/**
+ * '2026-11-03' becomes 'Tue, Nov 3'. Any time part is ignored, and a value
+ * that is not a date comes back as given rather than throwing mid-render.
+ */
 export function formatElectionDate(isoDate: string): string {
-  return ELECTION_DATE.format(new Date(`${isoDate}T00:00:00Z`))
+  const date = new Date(`${isoDate.slice(0, 10)}T00:00:00Z`)
+  return Number.isNaN(date.getTime()) ? isoDate : ELECTION_DATE.format(date)
 }
 
 const WHOLE_NUMBER = new Intl.NumberFormat('en-US')

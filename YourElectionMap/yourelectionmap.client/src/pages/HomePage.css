@@ -95,11 +95,10 @@
   color: var(--ink-soft);
 }
 
+/* In flow after the card, so a short window scrolls it below the card rather
+   than laying it over the form. */
 .home__meta {
-  position: absolute;
-  left: 84px;
-  right: 84px;
-  bottom: 26px;
+  padding: 16px 0 26px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -174,9 +173,9 @@
   }
 
   .home__meta {
-    position: static;
     flex-direction: column-reverse;
     gap: 4px;
+    padding: 0;
     margin-top: 10px;
   }
 

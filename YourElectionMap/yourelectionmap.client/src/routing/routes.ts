@@ -26,7 +26,11 @@ export function parseRoute(location: string): Route {
 
   const params = new URLSearchParams(query)
   const address = normalizeText(params.get('address'))
-  const coords = parseCoordinates(params.get('lat'), params.get('lon'))
+  // Blank values must not reach Number(), which reads '' as 0.
+  const coords = parseCoordinates(
+    normalizeText(params.get('lat')),
+    normalizeText(params.get('lon')),
+  )
   const district = normalizeText(params.get('district'))
 
   if (address !== null) {

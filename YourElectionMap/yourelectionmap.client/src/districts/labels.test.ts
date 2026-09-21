@@ -70,6 +70,15 @@ describe('formatElectionDate', () => {
     expect(formatElectionDate('2026-11-03')).toBe('Tue, Nov 3')
     expect(formatElectionDate('2027-01-01')).toBe('Fri, Jan 1')
   })
+
+  // ASP.NET serialises a DateTime with a time part by default.
+  it('ignores a time part', () => {
+    expect(formatElectionDate('2026-11-03T00:00:00')).toBe('Tue, Nov 3')
+  })
+
+  it('hands back a value it cannot read instead of throwing', () => {
+    expect(formatElectionDate('soon')).toBe('soon')
+  })
 })
 
 describe('districtMeta', () => {

@@ -87,7 +87,7 @@
   cursor: pointer;
 }
 
-.address-form__locate:disabled {
+.address-form__locate[aria-disabled='true'] {
   opacity: 0.6;
   cursor: default;
 }

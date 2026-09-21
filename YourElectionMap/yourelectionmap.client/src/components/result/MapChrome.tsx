@@ -36,6 +36,9 @@ type ZoomControlsProps = {
   onZoomOut: () => void
 }
 
+// aria-disabled rather than disabled: a button disabled while it has focus
+// drops focus to the page. The zoom is clamped, so a press at a limit is a
+// no-op anyway.
 export function ZoomControls({
   canZoomIn,
   canZoomOut,
@@ -48,7 +51,7 @@ export function ZoomControls({
         type="button"
         className="map-zoom__button"
         aria-label="Zoom in"
-        disabled={!canZoomIn}
+        aria-disabled={!canZoomIn || undefined}
         onClick={onZoomIn}
       >
         +
@@ -57,7 +60,7 @@ export function ZoomControls({
         type="button"
         className="map-zoom__button"
         aria-label="Zoom out"
-        disabled={!canZoomOut}
+        aria-disabled={!canZoomOut || undefined}
         onClick={onZoomOut}
       >
         −

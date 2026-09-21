@@ -15,8 +15,9 @@ import {
 } from '../surveyMapGeometry'
 import { layerCount, type MapLayers } from '../../districts/selection'
 import type { SurveyPoint } from '../../districts/types'
+import { useElementSize } from '../../hooks/useElementSize'
 import {
-  DESIGN_SPANS,
+  DESIGN,
   MAX_ZOOM,
   MIN_ZOOM,
   clampZoom,
@@ -70,14 +71,18 @@ export function DistrictMap({
 }: DistrictMapProps) {
   const titleId = useId()
   const [zoom, setZoom] = useState(0)
+  const [mapRef, measured] = useElementSize<HTMLElement>()
 
   const size = compact ? 'phone' : 'desktop'
-  const design = DESIGN_SPANS[size]
+  const design = DESIGN[size]
+  // Until the element is measured (never, in jsdom) it is taken to be at the
+  // spec's size, which makes the first paint match the design frame.
+  const map = measured ?? design.map
   const frame = zoomFrame(
-    fitFrame(location, layers.selected.boundary, design),
+    fitFrame(location, layers.selected.boundary, design.span),
     zoom,
   )
-  const k = lineScale(frame, design)
+  const k = lineScale(frame, map, design)
   const [x, y] = location
   const pin = PIN[size]
   const hatch = HATCH_SPACING * k
@@ -87,7 +92,7 @@ export function DistrictMap({
     pattern.map((length) => (length * k).toFixed(2)).join(' ')
 
   return (
-    <section className="district-map" aria-labelledby={titleId}>
+    <section ref={mapRef} className="district-map" aria-labelledby={titleId}>
       <svg
         className="district-map__svg"
         viewBox={viewBoxOf(frame)}
@@ -176,7 +181,7 @@ export function DistrictMap({
       ) : (
         <>
           <MapLegend layers={layers} />
-          <ScaleBar scale={scaleBarFor(frame, SURVEY_UNITS_PER_MILE)} />
+          <ScaleBar scale={scaleBarFor(frame, map, SURVEY_UNITS_PER_MILE)} />
           <AddressMarker label={label} />
         </>
       )}

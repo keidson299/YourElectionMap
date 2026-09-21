@@ -1,7 +1,8 @@
-/* Line weights are multiplied by --k, which the result map sets to how far it
-   has zoomed out from the spec's frame, so lines keep their drawn width on
-   screen while the geometry scales. Home never sets it, so it defaults to 1.
-   Inside an SVG, px here means one survey unit. */
+/* Line weights are multiplied by --k, which the result map sets to how many
+   times smaller the drawing appears than at the spec's design frame (lineScale
+   in map/frame.ts), so lines keep their drawn width on screen at any zoom or
+   window size. Home never sets it, so it defaults to 1. Inside an SVG, px
+   here means one survey unit. */
 
 .survey-ground__paper {
   fill: var(--bg);

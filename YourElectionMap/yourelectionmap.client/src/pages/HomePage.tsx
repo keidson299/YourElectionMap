@@ -27,7 +27,9 @@ export function HomePage() {
               <LayersIcon size={14} />
               <span>Local election maps</span>
             </p>
-            <h1 className="home__title">YourElectionMap</h1>
+            <h1 className="home__title" tabIndex={-1}>
+              YourElectionMap
+            </h1>
             <p className="home__tagline">
               See the district maps you vote in — plus the candidates and dates
               that come with them.
@@ -37,7 +39,6 @@ export function HomePage() {
           <AddressForm
             variant="home"
             submitLabel="Find My Maps"
-            showLocationButton
             onSubmit={handleAddress}
             onLocate={handleCoordinates}
           />

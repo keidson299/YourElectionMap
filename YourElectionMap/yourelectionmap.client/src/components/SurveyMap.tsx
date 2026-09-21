@@ -15,59 +15,19 @@ import './SurveyMap.css'
 // than by measuring the window, because the phone board slices a narrower
 // window out of the same drawing and lands on a different district.
 
-type SurveyMapProps = {
-  className?: string
-}
-
-export function SurveyMap({ className }: SurveyMapProps) {
+export function SurveyMap() {
   return (
     <svg
       viewBox={OVERVIEW.viewBox}
       preserveAspectRatio="xMidYMid slice"
-      className={['survey-map', className].filter(Boolean).join(' ')}
+      className="survey-map"
       aria-hidden="true"
       focusable="false"
     >
       <SurveyGround ground={OVERVIEW.ground} />
 
-      <g className="survey-map__focus survey-map__focus--wide">
-        <polygon className="survey-map__selected" points={WIDE_FOCUS.polygon} />
-        <path className="survey-map__hatching" d={WIDE_FOCUS.hatching} />
-        <path className="survey-map__crosshair" d={WIDE_FOCUS.crosshair} />
-        <circle
-          className="survey-map__ring"
-          cx={WIDE_FOCUS.center.x}
-          cy={WIDE_FOCUS.center.y}
-          r={WIDE_FOCUS.ringRadius}
-        />
-        <circle
-          className="survey-map__pin"
-          cx={WIDE_FOCUS.center.x}
-          cy={WIDE_FOCUS.center.y}
-          r={WIDE_FOCUS.pinRadius}
-        />
-      </g>
-
-      <g className="survey-map__focus survey-map__focus--narrow">
-        <polygon
-          className="survey-map__selected"
-          points={NARROW_FOCUS.polygon}
-        />
-        <path className="survey-map__hatching" d={NARROW_FOCUS.hatching} />
-        <path className="survey-map__crosshair" d={NARROW_FOCUS.crosshair} />
-        <circle
-          className="survey-map__ring"
-          cx={NARROW_FOCUS.center.x}
-          cy={NARROW_FOCUS.center.y}
-          r={NARROW_FOCUS.ringRadius}
-        />
-        <circle
-          className="survey-map__pin"
-          cx={NARROW_FOCUS.center.x}
-          cy={NARROW_FOCUS.center.y}
-          r={NARROW_FOCUS.pinRadius}
-        />
-      </g>
+      <FocusGroup variant="wide" focus={WIDE_FOCUS} />
+      <FocusGroup variant="narrow" focus={NARROW_FOCUS} />
 
       <g className="survey-map__ticks survey-map__ticks--wide">
         {WIDE_TICKS.top.map((tick) => (
@@ -90,5 +50,25 @@ export function SurveyMap({ className }: SurveyMapProps) {
         ))}
       </g>
     </svg>
+  )
+}
+
+type FocusGroupProps = {
+  variant: 'wide' | 'narrow'
+  focus: typeof WIDE_FOCUS
+}
+
+/** The address's district, hatched, with the pin over the address. */
+function FocusGroup({ variant, focus }: FocusGroupProps) {
+  const { x, y } = focus.center
+
+  return (
+    <g className={`survey-map__focus survey-map__focus--${variant}`}>
+      <polygon className="survey-map__selected" points={focus.polygon} />
+      <path className="survey-map__hatching" d={focus.hatching} />
+      <path className="survey-map__crosshair" d={focus.crosshair} />
+      <circle className="survey-map__ring" cx={x} cy={y} r={focus.ringRadius} />
+      <circle className="survey-map__pin" cx={x} cy={y} r={focus.pinRadius} />
+    </g>
   )
 }

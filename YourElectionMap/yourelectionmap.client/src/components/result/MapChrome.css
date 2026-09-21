@@ -81,7 +81,7 @@
   border-radius: 0 0 8px 8px;
 }
 
-.map-zoom__button:disabled {
+.map-zoom__button[aria-disabled='true'] {
   color: var(--ink-soft);
   cursor: default;
   opacity: 0.55;

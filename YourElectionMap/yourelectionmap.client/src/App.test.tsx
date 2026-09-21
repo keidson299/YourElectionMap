@@ -56,6 +56,25 @@ describe('App', () => {
     )
   })
 
+  it('moves focus to the new page and names it in the title', async () => {
+    render(<App />)
+
+    await userEvent.type(
+      screen.getByLabelText('Home address'),
+      '1420 Maple Street, Springfield{enter}',
+    )
+
+    expect(
+      screen.getByRole('heading', {
+        level: 1,
+        name: 'Districts for 1420 Maple Street',
+      }),
+    ).toHaveFocus()
+    expect(document.title).toBe(
+      'Districts for 1420 Maple Street, Springfield — YourElectionMap',
+    )
+  })
+
   it('returns to the home screen when the browser goes back', async () => {
     render(<App />)
 
@@ -90,13 +109,16 @@ describe('App', () => {
     render(<App />)
 
     const entriesBefore = window.history.length
+    const county = screen.getByRole('radio', {
+      name: 'County Commission · District 3',
+    })
 
-    await userEvent.click(
-      screen.getByRole('radio', { name: 'County Commission · District 3' }),
-    )
+    await userEvent.click(county)
 
     expect(currentUrl()).toBe('/map?address=1420+Maple+Street&district=county-3')
     expect(window.history.length).toBe(entriesBefore)
+    // Same page, so focus stays in the list rather than jumping to the heading.
+    expect(county).toHaveFocus()
     expect(checkedDistrict()).toHaveAccessibleName(
       'County Commission · District 3',
     )
@@ -135,6 +157,23 @@ describe('App', () => {
 
     expect(currentUrl()).toBe('/map?address=88+Harbor+Road')
     expect(checkedDistrict()).toHaveAccessibleName('State House · District 44')
+  })
+
+  it('opens a new lookup on its fitted view, not the last zoom', async () => {
+    goTo('/map?address=1420+Maple+Street')
+    const { container } = render(<App />)
+    const viewBox = () =>
+      container.querySelector('svg.district-map__svg')?.getAttribute('viewBox')
+
+    await userEvent.click(screen.getByRole('button', { name: 'Zoom in' }))
+    expect(viewBox()).not.toBe('817 381 620 496')
+
+    const field = screen.getByLabelText('Home address')
+    await userEvent.clear(field)
+    await userEvent.type(field, '88 Harbor Road')
+    await userEvent.click(screen.getByRole('button', { name: 'Update' }))
+
+    expect(viewBox()).toBe('817 381 620 496')
   })
 
   it('falls back to the home screen for an unknown path', () => {

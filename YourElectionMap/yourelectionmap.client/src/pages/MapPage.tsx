@@ -23,7 +23,9 @@ export function MapPage({ target, district }: MapPageProps) {
   return (
     <div className="map-page">
       <SiteHeader address={'address' in target ? target.address : null} />
+      {/* Keyed on the lookup so zoom and the sheet start fresh for each one. */}
       <ResultView
+        key={mapUrl(target)}
         lookup={lookup}
         requestedDistrict={district}
         onSelect={handleSelect}

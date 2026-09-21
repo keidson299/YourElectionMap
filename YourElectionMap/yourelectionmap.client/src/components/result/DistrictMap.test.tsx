@@ -79,13 +79,28 @@ describe('DistrictMap', () => {
     expect(screen.getByText('0.5 mi')).toBeInTheDocument()
 
     await userEvent.click(zoomIn)
-    expect(zoomIn).toBeDisabled()
+    expect(zoomIn).toHaveAttribute('aria-disabled', 'true')
 
     await userEvent.click(zoomOut)
     await userEvent.click(zoomOut)
     await userEvent.click(zoomOut)
     expect(viewBoxWidth()).toBeGreaterThan(620)
-    expect(zoomOut).toBeDisabled()
-    expect(zoomIn).toBeEnabled()
+    expect(zoomOut).toHaveAttribute('aria-disabled', 'true')
+    expect(zoomIn).not.toHaveAttribute('aria-disabled')
+  })
+
+  // aria-disabled rather than disabled, so a keyboard user is not dropped
+  // back to the top of the page when a limit is reached.
+  it('keeps focus on a zoom button that has reached its limit', async () => {
+    const { viewBoxWidth } = renderMap()
+    const zoomIn = screen.getByRole('button', { name: 'Zoom in' })
+
+    zoomIn.focus()
+    await userEvent.keyboard('{Enter}{Enter}')
+    const closest = viewBoxWidth()
+    await userEvent.keyboard('{Enter}')
+
+    expect(zoomIn).toHaveFocus()
+    expect(viewBoxWidth()).toBe(closest)
   })
 })

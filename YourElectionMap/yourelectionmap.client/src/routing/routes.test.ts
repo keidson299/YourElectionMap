@@ -61,6 +61,12 @@ describe('parseRoute', () => {
     expect(parseRoute('/map?lat=200&lon=-71.2')).toEqual({ name: 'home' })
     expect(parseRoute('/map?lat=42.1')).toEqual({ name: 'home' })
   })
+
+  // Number('') is 0, so a blank value would otherwise read as the point (0, 0).
+  it('rejects blank coordinates rather than reading them as zero', () => {
+    expect(parseRoute('/map?lat=&lon=')).toEqual({ name: 'home' })
+    expect(parseRoute('/map?lat=%20&lon=1')).toEqual({ name: 'home' })
+  })
 })
 
 describe('mapUrl', () => {
