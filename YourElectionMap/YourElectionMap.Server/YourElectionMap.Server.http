@@ -1,6 +1,15 @@
 @YourElectionMap.Server_HostAddress = http://localhost:5026
 
-GET {{YourElectionMap.Server_HostAddress}}/weatherforecast/
+### A match: the sample districts for a typed address
+GET {{YourElectionMap.Server_HostAddress}}/api/districts?address=1420%20Maple%20Street,%20Springfield
+Accept: application/json
+
+### The same, from a point
+GET {{YourElectionMap.Server_HostAddress}}/api/districts?lat=39.8&lon=-89.65
+Accept: application/json
+
+### No match: 404, because the stub wants a house number
+GET {{YourElectionMap.Server_HostAddress}}/api/districts?address=Main%20Street
 Accept: application/json
 
 ###

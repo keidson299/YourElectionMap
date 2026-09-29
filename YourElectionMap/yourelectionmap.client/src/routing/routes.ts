@@ -45,10 +45,11 @@ export function parseRoute(location: string): Route {
   return HOME
 }
 
-export function mapUrl(
-  target: LookupTarget,
-  options: { district?: string | null } = {},
-): string {
+/**
+ * What is being looked up, as query parameters. The page URL and the districts
+ * API take the same ones, and it doubles as the key a lookup is cached under.
+ */
+export function targetQuery(target: LookupTarget): string {
   const params = new URLSearchParams()
 
   if ('address' in target) {
@@ -58,11 +59,20 @@ export function mapUrl(
     params.set('lon', formatCoordinate(target.coords.lon))
   }
 
-  if (options.district) {
-    params.set('district', options.district)
+  return params.toString()
+}
+
+export function mapUrl(
+  target: LookupTarget,
+  options: { district?: string | null } = {},
+): string {
+  const query = targetQuery(target)
+
+  if (!options.district) {
+    return `/map?${query}`
   }
 
-  return `/map?${params.toString()}`
+  return `/map?${query}&district=${encodeURIComponent(options.district)}`
 }
 
 function normalizePath(path: string): string {

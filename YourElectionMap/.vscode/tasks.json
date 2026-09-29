@@ -78,7 +78,7 @@
     },
     {
       "label": "client: dev server",
-      "detail": "Starts Vite on https://localhost:52462 (proxies /api and /weatherforecast to the server)",
+      "detail": "Starts Vite on https://localhost:52462 (proxies /api to the server)",
       "type": "shell",
       "command": "npm run dev",
       "options": {

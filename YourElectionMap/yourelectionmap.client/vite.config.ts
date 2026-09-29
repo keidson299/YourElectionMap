@@ -12,7 +12,7 @@ const devServerPort = 52462
 
 // Requests matching these prefixes are forwarded to the ASP.NET Core server instead
 // of being handled by Vite. Add new server routes here as the API grows.
-const apiProxyRoutes = ['/api', '/weatherforecast']
+const apiProxyRoutes = ['/api']
 
 // The dev server runs over HTTPS with the same certificate ASP.NET Core uses, so the
 // browser does not complain when the SPA and the API share an origin.

@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import { DistrictMap } from './DistrictMap'
-import { sampleLookup } from '../../districts/sampleLookup'
+import { sampleLookup } from '../../test/sampleLookup'
 import { mapLayers, resolveSelection } from '../../districts/selection'
 
 const lookup = sampleLookup({ address: '1420 Maple Street, Springfield' })

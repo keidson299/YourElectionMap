@@ -1,6 +1,7 @@
+import { LookupStatus } from '../components/result/LookupStatus'
 import { ResultView } from '../components/result/ResultView'
 import { SiteHeader } from '../components/SiteHeader'
-import { sampleLookup } from '../districts/sampleLookup'
+import { useLookup } from '../districts/lookups'
 import { navigate } from '../routing/history'
 import { mapUrl, type LookupTarget } from '../routing/routes'
 import './MapPage.css'
@@ -11,8 +12,9 @@ type MapPageProps = {
 }
 
 export function MapPage({ target, district }: MapPageProps) {
-  // Invented for now. Slice 3 fetches the lookup from the districts API.
-  const lookup = sampleLookup(target)
+  // Already in hand when the lookup was run by a form; fetched here when a map
+  // URL is opened or reloaded.
+  const { state, retry } = useLookup(target)
 
   function handleSelect(districtId: string) {
     // Replace rather than push, so Back leaves the page instead of stepping
@@ -23,13 +25,18 @@ export function MapPage({ target, district }: MapPageProps) {
   return (
     <div className="map-page">
       <SiteHeader address={'address' in target ? target.address : null} />
-      {/* Keyed on the lookup so zoom and the sheet start fresh for each one. */}
-      <ResultView
-        key={mapUrl(target)}
-        lookup={lookup}
-        requestedDistrict={district}
-        onSelect={handleSelect}
-      />
+
+      {state.status === 'found' ? (
+        /* Keyed on the lookup so zoom and the sheet start fresh for each one. */
+        <ResultView
+          key={mapUrl(target)}
+          lookup={state.lookup}
+          requestedDistrict={district}
+          onSelect={handleSelect}
+        />
+      ) : (
+        <LookupStatus state={state.status} target={target} onRetry={retry} />
+      )}
     </div>
   )
 }

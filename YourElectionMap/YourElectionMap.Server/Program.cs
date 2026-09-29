@@ -1,3 +1,5 @@
+using YourElectionMap.Server.Districts;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -5,6 +7,9 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
+
+// Holds no per-request state, so one instance serves every lookup.
+builder.Services.AddSingleton<DistrictLookupService>();
 
 var app = builder.Build();
 

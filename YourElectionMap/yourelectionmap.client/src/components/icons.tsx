@@ -72,6 +72,16 @@ export function CrosshairIcon({ size = 15, className }: IconProps) {
   )
 }
 
+/** Spins while a lookup runs; the stylesheet supplies the animation. */
+export function SpinnerIcon({ size = 15, className }: IconProps) {
+  return (
+    <Icon size={size} className={className} weight={2.6}>
+      <circle cx="12" cy="12" r="9" strokeOpacity="0.35" />
+      <path d="M21 12a9 9 0 0 0-9-9" />
+    </Icon>
+  )
+}
+
 export function CalendarIcon({ size = 16, className }: IconProps) {
   return (
     <Icon size={size} className={className} weight={1.7}>

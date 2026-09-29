@@ -37,7 +37,8 @@ export function ResultView({
     </h1>
   )
 
-  // Slice 3 gives an address with no districts a designed state of its own.
+  // A guard only: the data layer turns a lookup with no districts into the
+  // no-match state, which the map page shows instead of this view.
   if (selected === undefined) {
     return (
       <main className="result result--empty">

@@ -112,8 +112,9 @@ and let the owner decide whether to authorize a search or paste the information 
 `YourElectionMap` is an ASP.NET Core 9 Web API (`YourElectionMap.Server`) serving a React 19 + Vite
 SPA (`yourelectionmap.client`), with an xUnit test project (`YourElectionMap.Server.Tests`). The
 client has a Home page (the address form over a decorative survey map) and a result page (a rail
-of districts beside the map; on a phone, the map above a bottom sheet). It runs on invented sample
-data for now. The server is still the template, with `WeatherForecast` as placeholder code.
+of districts beside the map; on a phone, the map above a bottom sheet). The client fetches its
+districts from the server's one real endpoint, `GET /api/districts`, which still answers with
+invented sample data.
 
 ## Project priorities
 
@@ -129,7 +130,7 @@ All from `YourElectionMap/` unless noted. Every one of these is gated by Part 1 
 dotnet build YourElectionMap.sln
 dotnet test YourElectionMap.sln                       # all server tests
 dotnet test YourElectionMap.Server.Tests/YourElectionMap.Server.Tests.csproj `
-  --filter "FullyQualifiedName~GetWeatherForecast_ReturnsOkWithForecasts"   # one test
+  --filter "FullyQualifiedName~Get_WithAnAddress_ReturnsTheLookupTheClientReads"   # one test
 dotnet publish YourElectionMap.Server/YourElectionMap.Server.csproj         # also builds SPA into wwwroot
 ```
 
@@ -163,7 +164,7 @@ matching paths to the API, so there is no CORS configuration anywhere in the cod
 
 **The proxy route list is the coupling point.** Only prefixes listed in `apiProxyRoutes` in
 [YourElectionMap/yourelectionmap.client/vite.config.ts](YourElectionMap/yourelectionmap.client/vite.config.ts)
-reach the server — currently `/api` and `/weatherforecast`. **Any new server route must be added
+reach the server — currently `/api` only. **Any new server route must be added
 there**, or it silently falls through to the SPA's `index.html` fallback and returns HTML instead of
 JSON. This is the single most common way to break the dev loop.
 
@@ -190,9 +191,11 @@ controllers + OpenAPI (dev only, at `/openapi/v1.json`), static assets, then
 `Program` is declared `public partial` at the bottom of the file **solely** so
 `WebApplicationFactory<Program>` can host the app in memory; do not remove it.
 
-**Tests come in two flavors.** `WeatherForecastControllerTests` instantiates the controller directly;
-`WeatherForecastEndpointTests` uses `IClassFixture<WebApplicationFactory<Program>>` to exercise real
-routing and JSON serialization over HTTP. New endpoints deserve the second kind. Client tests are
+**Server tests host the whole app in memory.** `DistrictsEndpointTests` uses
+`IClassFixture<WebApplicationFactory<Program>>` and reads the raw JSON, so routing, model binding
+and the names and formats on the wire are all covered — that JSON is the contract the client reads,
+so new endpoints deserve the same kind of test. A controller can also be instantiated directly
+where only its own logic is in question. Client tests are
 Vitest + Testing Library in `jsdom`, matching `src/**/*.{test,spec}.{ts,tsx}`, with
 `src/test/setup.ts` as the setup file.
 
@@ -201,9 +204,16 @@ Vitest + Testing Library in `jsdom`, matching `src/**/*.{test,spec}.{ts,tsx}`, w
 - There is no router dependency. `src/routing/history.ts` wraps the History API, and `useRoute`
   reads it through `useSyncExternalStore`. The URL decides what is looked up and which district is
   shown, so change it only through `navigate()`.
-- `DistrictLookup` in `src/districts/types.ts` is the contract the result page renders.
-  `src/districts/sampleLookup.ts` (invented districts) and `src/components/surveyMapGeometry.ts`
-  (the drawn stand-in map) are placeholders that later slices replace.
+- `DistrictLookup` in `src/districts/types.ts` is the contract the result page renders, and the
+  twin of the server's records in `Districts/DistrictLookup.cs` — change the two together. The
+  invented districts behind it live in the server's `DistrictLookupService`; the client's copy,
+  `src/test/sampleLookup.ts`, is a test fixture, and `src/components/surveyMapGeometry.ts` (the
+  drawn stand-in map) is the other placeholder a later slice replaces.
+- `src/districts/lookups.ts` is the whole data layer: it fetches a lookup, keeps every answer of
+  the visit keyed by the target's query, and holds the wording for the waiting, no-match and error
+  states. Home and the header go through `openLookup`, which looks the target up *before* changing
+  the URL, so the map page normally renders a result it already has. Tests drive it with
+  `src/test/fakeDistrictsApi.ts`.
 - The phone layout switches at 860px. That value is set in `PHONE_QUERY`
   (`src/hooks/useMediaQuery.ts`) and again in every stylesheet's media query, so change them
   together.

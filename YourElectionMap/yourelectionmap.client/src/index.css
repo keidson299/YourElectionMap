@@ -177,6 +177,20 @@ h1[tabindex='-1']:focus {
   white-space: nowrap;
 }
 
+/* Turns while something is being looked up. It takes its colour from the text
+   beside it, and the reduced-motion rule below stops it. */
+.spin {
+  flex-shrink: 0;
+  animation: yem-spin 900ms linear infinite;
+  transform-origin: 50% 50%;
+}
+
+@keyframes yem-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 /* The Atlas card surface, shared by the home card and the map panels. */
 .card {
   background: var(--card);

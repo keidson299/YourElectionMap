@@ -1,9 +1,9 @@
 import { AddressForm } from './AddressForm'
 import { LayersIcon } from './icons'
 import { ThemeToggle } from './ThemeToggle'
+import { openLookup } from '../districts/lookups'
 import { AppLink } from '../routing/AppLink'
-import { navigate } from '../routing/history'
-import { HOME_URL, mapUrl } from '../routing/routes'
+import { HOME_URL } from '../routing/routes'
 import './SiteHeader.css'
 
 type SiteHeaderProps = {
@@ -24,7 +24,9 @@ export function SiteHeader({ address }: SiteHeaderProps) {
         variant="header"
         submitLabel="Update"
         initialAddress={address ?? ''}
-        onSubmit={(next) => navigate(mapUrl({ address: next }), { replace: true })}
+        // Replace rather than push, so Back returns Home rather than stepping
+        // through every address that was tried.
+        onSubmit={(next) => openLookup({ address: next }, { replace: true })}
       />
 
       <p className="site-header__note">

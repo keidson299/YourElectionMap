@@ -1,19 +1,23 @@
 import { useEffect, useId, useRef, useState, type FormEvent } from 'react'
-import { CrosshairIcon, PinIcon } from './icons'
+import { CrosshairIcon, PinIcon, SpinnerIcon } from './icons'
 import type { Coordinates } from '../routing/routes'
 import './AddressForm.css'
 
 // One form serves the home card and the result header; only the sizes differ.
 // It submits through a real <form> so Enter works, and the label is hidden
 // rather than absent, both decisions recorded in design/canvas3/Notes.dc.html.
+//
+// Submitting runs the caller's lookup and waits for it, so a place that cannot
+// be found is said here rather than on a page that has nothing to show.
 
 type AddressFormProps = {
   variant: 'home' | 'header'
   submitLabel: string
   initialAddress?: string
-  onSubmit: (address: string) => void
+  /** Resolves to the message to show, or null once the page has moved on. */
+  onSubmit: (address: string) => Promise<Message | null>
   /** Passing this shows the "Use my current location" button. */
-  onLocate?: (coords: Coordinates) => void
+  onLocate?: (coords: Coordinates) => Promise<Message | null>
 }
 
 /** `field` marks a problem with the address itself, which flags the input. */
@@ -35,6 +39,9 @@ export function AddressForm({
   const [address, setAddress] = useState(initialAddress)
   const [message, setMessage] = useState<Message | null>(null)
   const [locating, setLocating] = useState(false)
+  const [checking, setChecking] = useState(false)
+
+  const busy = checking || locating
 
   useEffect(() => {
     mounted.current = true
@@ -44,8 +51,13 @@ export function AddressForm({
     }
   }, [])
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+
+    // The buttons are aria-disabled rather than disabled, so they still fire.
+    if (busy) {
+      return
+    }
 
     const trimmed = address.trim()
 
@@ -56,12 +68,25 @@ export function AddressForm({
     }
 
     setMessage(null)
-    onSubmit(trimmed)
+    setChecking(true)
+
+    const problem = await onSubmit(trimmed)
+
+    if (!mounted.current) {
+      return
+    }
+
+    setChecking(false)
+
+    if (problem !== null) {
+      setMessage(problem)
+      inputRef.current?.focus()
+    }
   }
 
   function handleLocate() {
     // aria-disabled rather than disabled, so focus stays on the button.
-    if (locating) {
+    if (busy) {
       return
     }
 
@@ -77,16 +102,27 @@ export function AddressForm({
     setLocating(true)
 
     navigator.geolocation.getCurrentPosition(
-      (position) => {
+      async (position) => {
+        if (!mounted.current) {
+          return
+        }
+
+        // Still "Finding you…" while the fix is looked up: to the visitor it is
+        // one action.
+        const problem = await onLocate?.({
+          lat: position.coords.latitude,
+          lon: position.coords.longitude,
+        })
+
         if (!mounted.current) {
           return
         }
 
         setLocating(false)
-        onLocate?.({
-          lat: position.coords.latitude,
-          lon: position.coords.longitude,
-        })
+
+        if (problem) {
+          setMessage(problem)
+        }
       },
       () => {
         if (!mounted.current) {
@@ -127,6 +163,9 @@ export function AddressForm({
             placeholder="Enter your home address"
             autoComplete="street-address"
             value={address}
+            // Readable and selectable while the lookup runs, but not editable:
+            // the answer coming back is about the text that was sent.
+            readOnly={checking}
             onChange={(event) => {
               setAddress(event.target.value)
 
@@ -138,8 +177,19 @@ export function AddressForm({
             aria-describedby={messageId}
           />
         </div>
-        <button type="submit" className="address-form__submit">
-          {submitLabel}
+        <button
+          type="submit"
+          className="address-form__submit"
+          aria-disabled={busy || undefined}
+        >
+          {checking ? (
+            <>
+              <SpinnerIcon className="spin" />
+              Checking…
+            </>
+          ) : (
+            submitLabel
+          )}
         </button>
       </div>
 
@@ -149,7 +199,7 @@ export function AddressForm({
             type="button"
             className="address-form__locate"
             onClick={handleLocate}
-            aria-disabled={locating || undefined}
+            aria-disabled={busy || undefined}
           >
             <CrosshairIcon size={15} />
             {locating ? 'Finding you…' : 'Use my current location'}

@@ -130,7 +130,7 @@ The page relies on two rules. It never assumes six districts, and handles any nu
 
 The back end is built with C# on ASP.NET Core 9. As with the client, both have great familiarity and a wealth of resources to help address any issues that come up.
 
-**Today** the server is still the project template: a placeholder `WeatherForecast` endpoint, OpenAPI in development, and a fallback that serves the front end for any other path. Its tests come in two kinds. One calls a controller directly; the other hosts the whole app in memory and calls it over HTTP. The districts endpoint should get the second kind, so that routing and JSON are covered too.
+**Today** the server is still the project template: no endpoint of its own yet, OpenAPI in development, and a fallback that serves the front end for any other path. Its tests come in two kinds. One calls a controller directly; the other hosts the whole app in memory and calls it over HTTP. The districts endpoint should get the second kind, so that routing and JSON are covered too.
 
 **The districts endpoint (slice 3)** is a GET under `/api`, the prefix the development proxy already forwards. It takes either an `address` (free text, as typed) or `lat` and `lon`: the same inputs the result page's URL carries. The exact route is settled in slice 3. For each request it:
 

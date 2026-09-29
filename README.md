@@ -26,7 +26,7 @@ Press <kbd>F5</kbd> and pick **Full stack (Edge)** or **Full stack (Chrome)**. T
 | Vite dev server | https://localhost:52462 | HMR, and the URL to browse |
 | ASP.NET Core API | https://localhost:7132 (http://localhost:5026) | debuggable, breakpoints in C# work |
 
-Vite proxies `/api/*` and `/weatherforecast` to the API, so the browser only ever talks to
+Vite proxies `/api/*` to the API, so the browser only ever talks to
 port 52462 and there is no CORS setup to maintain. New server routes need to be added to
 `apiProxyRoutes` in [vite.config.ts](YourElectionMap/yourelectionmap.client/vite.config.ts).
 

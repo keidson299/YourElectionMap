@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { act, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { AddressForm } from './AddressForm'
@@ -8,9 +8,10 @@ const originalGeolocation = Object.getOwnPropertyDescriptor(
   'geolocation',
 )
 
-function renderForm() {
-  const onSubmit = vi.fn()
-  const onLocate = vi.fn()
+/** The caller's lookup answers with `notice`: null when the page moved on. */
+function renderForm(notice: { text: string; field: boolean } | null = null) {
+  const onSubmit = vi.fn().mockResolvedValue(notice)
+  const onLocate = vi.fn().mockResolvedValue(notice)
 
   const { unmount } = render(
     <AddressForm
@@ -97,6 +98,85 @@ describe('AddressForm', () => {
       'aria-invalid',
     )
     expect(screen.getByRole('status')).toBeEmptyDOMElement()
+  })
+
+  it('says it is checking, and holds the field, until the lookup answers', async () => {
+    let answer: (notice: null) => void = () => {}
+    const onSubmit = vi.fn(
+      () =>
+        new Promise<null>((resolve) => {
+          answer = resolve
+        }),
+    )
+
+    render(
+      <AddressForm
+        variant="home"
+        submitLabel="Find My Maps"
+        onSubmit={onSubmit}
+      />,
+    )
+
+    await userEvent.type(
+      screen.getByLabelText('Home address'),
+      '1420 Maple Street',
+    )
+    await userEvent.click(screen.getByRole('button', { name: 'Find My Maps' }))
+
+    const checking = screen.getByRole('button', { name: 'Checking…' })
+
+    expect(checking).toHaveAttribute('aria-disabled', 'true')
+    expect(screen.getByLabelText('Home address')).toHaveAttribute('readonly')
+
+    // Pressing again while it waits would look up the same address twice.
+    await userEvent.click(checking)
+    expect(onSubmit).toHaveBeenCalledTimes(1)
+
+    await act(async () => {
+      answer(null)
+    })
+
+    expect(
+      screen.getByRole('button', { name: 'Find My Maps' }),
+    ).toBeInTheDocument()
+    expect(screen.getByLabelText('Home address')).not.toHaveAttribute('readonly')
+  })
+
+  it('says what the lookup said, and flags the field it was about', async () => {
+    renderForm({
+      text: 'We could not match that address. Try adding your city or ZIP code.',
+      field: true,
+    })
+
+    await userEvent.type(screen.getByLabelText('Home address'), 'Main Street')
+    await userEvent.click(screen.getByRole('button', { name: 'Find My Maps' }))
+
+    expect(screen.getByRole('status')).toHaveTextContent(
+      'We could not match that address.',
+    )
+    expect(screen.getByLabelText('Home address')).toHaveAttribute(
+      'aria-invalid',
+      'true',
+    )
+    expect(screen.getByLabelText('Home address')).toHaveFocus()
+  })
+
+  it('leaves the field alone when the lookup itself failed', async () => {
+    renderForm({
+      text: 'The district lookup is not responding. Try again in a moment.',
+      field: false,
+    })
+
+    await userEvent.type(
+      screen.getByLabelText('Home address'),
+      '1420 Maple Street',
+    )
+    await userEvent.click(screen.getByRole('button', { name: 'Find My Maps' }))
+
+    expect(screen.getByRole('status')).toHaveTextContent('is not responding')
+    expect(screen.getByLabelText('Home address')).not.toHaveAttribute(
+      'aria-invalid',
+    )
   })
 
   it('hands over the coordinates the browser reports', async () => {

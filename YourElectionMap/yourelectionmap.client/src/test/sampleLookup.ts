@@ -1,9 +1,9 @@
+import type { District, DistrictLookup } from '../districts/types'
 import type { LookupTarget } from '../routing/routes'
-import type { District, DistrictLookup } from './types'
 
-// Invented, every name, number and shape, and the same for any address: the
-// sample the design used. Nothing here is a real district. Slice 3 replaces
-// this with the districts API; the page reads only the DistrictLookup shape.
+// A test fixture: the same invented sample the server's DistrictLookupService
+// returns, so component tests can render a result without a fetch. Keep the two
+// in step — the endpoint tests pin the server's copy.
 //
 // Boundaries are in the stand-in drawing's survey units. State House 44, the
 // county and the school zone are the spec's own shapes; the other three are

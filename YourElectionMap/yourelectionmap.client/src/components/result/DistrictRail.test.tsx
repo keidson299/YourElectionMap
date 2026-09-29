@@ -2,7 +2,7 @@ import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { DistrictRail } from './DistrictRail'
-import { sampleLookup } from '../../districts/sampleLookup'
+import { sampleLookup } from '../../test/sampleLookup'
 import { mapLayers, resolveSelection } from '../../districts/selection'
 import type { ElectionSummary } from '../../districts/types'
 

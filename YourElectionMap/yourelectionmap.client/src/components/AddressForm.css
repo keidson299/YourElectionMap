@@ -54,6 +54,10 @@
 }
 
 .address-form__submit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   height: 50px;
   padding: 0 22px;
   font-size: 15px;
@@ -64,6 +68,11 @@
   border-radius: 8px;
   white-space: nowrap;
   cursor: pointer;
+}
+
+/* Checking: still legible and still focusable, but nothing more to press. */
+.address-form__submit[aria-disabled='true'] {
+  cursor: default;
 }
 
 .address-form__secondary {

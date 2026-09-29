@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ResultView } from './ResultView'
-import { sampleLookup } from '../../districts/sampleLookup'
+import { sampleLookup } from '../../test/sampleLookup'
 
 // jsdom has no matchMedia, so the result view renders its desktop layout by
 // default. These tests stand in a phone-sized window.

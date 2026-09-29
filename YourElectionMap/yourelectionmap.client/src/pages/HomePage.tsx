@@ -2,17 +2,19 @@ import { AddressForm } from '../components/AddressForm'
 import { LayersIcon } from '../components/icons'
 import { SurveyMap } from '../components/SurveyMap'
 import { ThemeToggle } from '../components/ThemeToggle'
-import { navigate } from '../routing/history'
-import { mapUrl, type Coordinates } from '../routing/routes'
+import { openLookup } from '../districts/lookups'
+import type { Coordinates } from '../routing/routes'
 import './HomePage.css'
 
 export function HomePage() {
+  // The lookup runs before the page changes, so an address that cannot be found
+  // is said here, under the field the visitor typed it into.
   function handleAddress(address: string) {
-    navigate(mapUrl({ address }))
+    return openLookup({ address })
   }
 
   function handleCoordinates(coords: Coordinates) {
-    navigate(mapUrl({ coords }))
+    return openLookup({ coords })
   }
 
   return (
