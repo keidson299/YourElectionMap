@@ -5,8 +5,8 @@ import { mapUrl, targetQuery, type LookupTarget } from '../routing/routes'
 
 // The districts API, and the state of every lookup this visit has made. The
 // server's half of the contract is DistrictsController; it answers 200 with a
-// DistrictLookup, 404 when it cannot place the address, and an error status
-// otherwise.
+// DistrictLookup, 404 when it cannot place the address, 400 for a query it will
+// not take, and an error status otherwise.
 //
 // Lookups are kept here rather than in component state so that a check made on
 // Home is still in hand when the map page renders, and so that a slow answer
@@ -98,12 +98,14 @@ export function problemNotice(
     }
   }
 
+  const typed = 'address' in target
+
   return {
-    text:
-      'address' in target
-        ? 'We could not match that address. Try adding your city or ZIP code.'
-        : 'We could not find districts at your location. Enter an address instead.',
-    field: true,
+    text: typed
+      ? 'We could not match that address. Try adding your city or ZIP code.'
+      : 'We could not find districts at your location. Enter an address instead.',
+    // A location that could not be placed says nothing about the empty field.
+    field: typed,
   }
 }
 
@@ -163,7 +165,10 @@ async function fetchLookup(query: string): Promise<SettledLookup> {
       signal: AbortSignal.timeout(TIMEOUT_MS),
     })
 
-    if (response.status === 404) {
+    // 404 is a place with no districts; 400 is a query the server will not take,
+    // which the field's maxLength leaves only a hand-edited URL able to send.
+    // Neither is worth asking again, and neither has anything to draw.
+    if (response.status === 404 || response.status === 400) {
       return NO_MATCH
     }
 

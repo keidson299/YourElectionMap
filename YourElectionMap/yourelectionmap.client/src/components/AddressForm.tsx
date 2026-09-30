@@ -23,6 +23,15 @@ type AddressFormProps = {
 /** `field` marks a problem with the address itself, which flags the input. */
 type Message = { text: string; field: boolean }
 
+/** The server's cap, from DistrictsController.MaxAddressLength. */
+const MAX_ADDRESS_LENGTH = 200
+
+/** When the caller itself threw, which leaves nothing more specific to say. */
+const CALLER_FAILED: Message = {
+  text: 'Something went wrong. Try again.',
+  field: false,
+}
+
 export function AddressForm({
   variant,
   submitLabel,
@@ -70,17 +79,23 @@ export function AddressForm({
     setMessage(null)
     setChecking(true)
 
-    const problem = await onSubmit(trimmed)
+    // finally, so a caller that throws cannot leave the form stuck on "Checking…"
+    // with nothing the visitor can do but reload.
+    try {
+      const problem = await onSubmit(trimmed)
 
-    if (!mounted.current) {
-      return
-    }
-
-    setChecking(false)
-
-    if (problem !== null) {
-      setMessage(problem)
-      inputRef.current?.focus()
+      if (mounted.current && problem) {
+        setMessage(problem)
+        inputRef.current?.focus()
+      }
+    } catch {
+      if (mounted.current) {
+        setMessage(CALLER_FAILED)
+      }
+    } finally {
+      if (mounted.current) {
+        setChecking(false)
+      }
     }
   }
 
@@ -108,20 +123,24 @@ export function AddressForm({
         }
 
         // Still "Finding you…" while the fix is looked up: to the visitor it is
-        // one action.
-        const problem = await onLocate?.({
-          lat: position.coords.latitude,
-          lon: position.coords.longitude,
-        })
+        // one action. Guarded like handleSubmit, and for the same reason.
+        try {
+          const problem = await onLocate?.({
+            lat: position.coords.latitude,
+            lon: position.coords.longitude,
+          })
 
-        if (!mounted.current) {
-          return
-        }
-
-        setLocating(false)
-
-        if (problem) {
-          setMessage(problem)
+          if (mounted.current && problem) {
+            setMessage(problem)
+          }
+        } catch {
+          if (mounted.current) {
+            setMessage(CALLER_FAILED)
+          }
+        } finally {
+          if (mounted.current) {
+            setLocating(false)
+          }
         }
       },
       () => {
@@ -162,6 +181,9 @@ export function AddressForm({
             className="address-form__input"
             placeholder="Enter your home address"
             autoComplete="street-address"
+            // The server rejects anything longer, so stop it at the field rather
+            // than sending it and reporting a failure.
+            maxLength={MAX_ADDRESS_LENGTH}
             value={address}
             // Readable and selectable while the lookup runs, but not editable:
             // the answer coming back is about the text that was sent.

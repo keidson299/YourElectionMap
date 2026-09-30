@@ -11,8 +11,9 @@ namespace YourElectionMap.Server.Controllers
     /// <item>404 when the place could not be found or has no districts;</item>
     /// <item>400 when the query itself is wrong, which only a bug can cause.</item>
     /// </list>
-    /// The address arrives in the query string, as it already does in the page URL,
-    /// and is not logged.
+    /// The address arrives in the query string, as it already does in the page URL.
+    /// It is not logged, and the answer is sent no-store, so nothing between here and
+    /// the browser keeps the address this endpoint echoes back.
     /// </summary>
     [ApiController]
     [Route("api/districts")]
@@ -28,6 +29,9 @@ namespace YourElectionMap.Server.Controllers
         }
 
         [HttpGet]
+        // The answer names the address it was asked about, so no proxy, CDN or disk
+        // cache should hold on to it.
+        [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
         [ProducesResponseType(typeof(DistrictLookup), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]

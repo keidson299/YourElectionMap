@@ -125,8 +125,10 @@ namespace YourElectionMap.Server.Districts
         }
 
         /// <summary>
-        /// A box loose enough to hold Alaska, Hawaii and Puerto Rico. Slice 4 asks the
-        /// real data whether a point is covered; until then this keeps the ocean out.
+        /// A rough box over the mainland, Alaska, Hawaii and most of Puerto Rico. It
+        /// misses the western Aleutians, Guam and the Marianas, which sit at positive
+        /// longitude, along with the US Virgin Islands and American Samoa. Slice 4 asks
+        /// the real data whether a point is covered; until then this keeps the ocean out.
         /// </summary>
         private static bool IsInUnitedStates(double latitude, double longitude) =>
             latitude is >= 18 and <= 72 && longitude is >= -180 and <= -64;

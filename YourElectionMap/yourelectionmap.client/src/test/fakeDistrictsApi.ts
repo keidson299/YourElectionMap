@@ -3,8 +3,12 @@ import { sampleLookup } from './sampleLookup'
 import { resetLookups } from '../districts/lookups'
 
 // Stands in for GET /api/districts. It answers from the same invented sample the
-// server holds, under the same rules the stub applies — an address needs a house
-// number, a point has to be in the country — and can be told to fail instead.
+// server holds, and can be told to fail instead.
+//
+// The server's rules are mirrored here by hand, so keep the two in step:
+// DistrictsController decides the 400s (nothing to look up, an address too long,
+// a point off the globe) and DistrictLookupService decides what can be placed
+// (an address needs a house number, a point has to be in the country).
 //
 // Responses are the few members the client reads, not real Response objects, so
 // nothing here depends on fetch existing in jsdom.
@@ -50,23 +54,46 @@ export function stopFakeDistrictsApi(): void {
   resetLookups()
 }
 
-function answer(params: URLSearchParams): Response {
-  const address = params.get('address')
+/** The server's cap, from DistrictsController.MaxAddressLength. */
+const MAX_ADDRESS_LENGTH = 200
 
-  if (address !== null && address.trim() !== '') {
-    return /\d/.test(address)
-      ? response(200, sampleLookup({ address: address.trim() }))
+function answer(params: URLSearchParams): Response {
+  const typed = params.get('address')?.trim() ?? ''
+
+  if (typed !== '') {
+    if (typed.length > MAX_ADDRESS_LENGTH) {
+      return response(400, {})
+    }
+
+    return /\d/.test(typed)
+      ? response(200, sampleLookup({ address: typed }))
       : response(404, {})
   }
 
-  const lat = Number(params.get('lat'))
-  const lon = Number(params.get('lon'))
+  const rawLat = params.get('lat')?.trim() ?? ''
+  const rawLon = params.get('lon')?.trim() ?? ''
 
-  if (lat >= 18 && lat <= 72 && lon >= -180 && lon <= -64) {
-    return response(200, sampleLookup({ coords: { lat, lon } }))
+  // Blank values must not reach Number(), which reads '' as 0.
+  if (rawLat === '' || rawLon === '') {
+    return response(400, {})
   }
 
-  return response(404, {})
+  const lat = Number(rawLat)
+  const lon = Number(rawLon)
+
+  if (
+    !Number.isFinite(lat) ||
+    !Number.isFinite(lon) ||
+    Math.abs(lat) > 90 ||
+    Math.abs(lon) > 180
+  ) {
+    return response(400, {})
+  }
+
+  // A point on the globe, but only the country the stub knows has districts.
+  return lat >= 18 && lat <= 72 && lon >= -180 && lon <= -64
+    ? response(200, sampleLookup({ coords: { lat, lon } }))
+    : response(404, {})
 }
 
 function response(status: number, body: unknown): Response {

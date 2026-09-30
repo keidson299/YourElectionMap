@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { SpinnerIcon } from '../icons'
 import { SurveyGround } from '../SurveyGround'
 import { DETAIL_GROUND, OVERVIEW } from '../surveyMapGeometry'
@@ -28,11 +29,25 @@ const SHEET_VIEW_BOX = viewBoxOf(
 )
 
 export function LookupStatus({ state, target, onRetry }: LookupStatusProps) {
+  // Set once Try again has been pressed, so the button can stay put while the
+  // lookup it started runs rather than unmounting and dropping focus to nowhere.
+  const [retried, setRetried] = useState(false)
+
   const waiting = state === 'loading'
   const place = 'address' in target ? target.address : 'your location'
   const card = waiting
     ? { heading: `Looking up districts for ${place}`, body: '' }
     : problemCard(state, target)
+
+  function handleRetry() {
+    // aria-disabled rather than disabled, so the button still fires.
+    if (waiting) {
+      return
+    }
+
+    setRetried(true)
+    onRetry()
+  }
 
   return (
     <main className={waiting ? 'lookup-status lookup-status--waiting' : 'lookup-status'}>
@@ -70,13 +85,14 @@ export function LookupStatus({ state, target, onRetry }: LookupStatusProps) {
           )}
         </p>
 
-        {state === 'error' ? (
+        {state === 'error' || (waiting && retried) ? (
           <button
             type="button"
             className="lookup-status__retry"
-            onClick={onRetry}
+            aria-disabled={waiting || undefined}
+            onClick={handleRetry}
           >
-            Try again
+            {waiting ? 'Trying again…' : 'Try again'}
           </button>
         ) : null}
       </div>

@@ -53,6 +53,13 @@ describe('lookups', () => {
     expect(state.status).toBe('no-match')
   })
 
+  // Not an error: asking again would send the same rejected query.
+  it('reads a 400 the same way, not as a server that is down', async () => {
+    const state = await requestLookup({ address: `1 ${'x'.repeat(250)} Road` })
+
+    expect(state.status).toBe('no-match')
+  })
+
   it('reads a lookup with no districts the same way', async () => {
     vi.stubGlobal('fetch', () =>
       Promise.resolve({
@@ -148,6 +155,8 @@ describe('openLookup', () => {
 
     expect(currentUrl()).toBe('/')
     expect(notice?.text).toContain('at your location')
+    // The address field is empty and was not the problem, so it is not flagged.
+    expect(notice?.field).toBe(false)
   })
 })
 

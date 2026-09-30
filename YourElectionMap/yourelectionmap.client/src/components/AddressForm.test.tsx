@@ -179,6 +179,64 @@ describe('AddressForm', () => {
     )
   })
 
+  it('stops the address at the length the server accepts', () => {
+    renderForm()
+
+    expect(screen.getByLabelText('Home address')).toHaveAttribute(
+      'maxlength',
+      '200',
+    )
+  })
+
+  // Without this the form stays on "Checking…" for good: the field is readOnly
+  // and the button aria-disabled, so only a reload gets the visitor out.
+  it('unlocks the form when the lookup throws rather than answering', async () => {
+    const onSubmit = vi.fn().mockRejectedValue(new Error('pushState blocked'))
+
+    render(
+      <AddressForm
+        variant="home"
+        submitLabel="Find My Maps"
+        onSubmit={onSubmit}
+      />,
+    )
+
+    await userEvent.type(
+      screen.getByLabelText('Home address'),
+      '1420 Maple Street{enter}',
+    )
+
+    expect(
+      await screen.findByRole('button', { name: 'Find My Maps' }),
+    ).toBeInTheDocument()
+    expect(screen.getByLabelText('Home address')).not.toHaveAttribute('readonly')
+    expect(screen.getByRole('status')).toHaveTextContent('Something went wrong.')
+  })
+
+  it('unlocks the locate button when that lookup throws too', async () => {
+    stubGeolocation((success: (position: unknown) => void) => {
+      success({ coords: { latitude: 42.1, longitude: -71.2 } })
+    })
+
+    render(
+      <AddressForm
+        variant="home"
+        submitLabel="Find My Maps"
+        onSubmit={vi.fn().mockResolvedValue(null)}
+        onLocate={vi.fn().mockRejectedValue(new Error('pushState blocked'))}
+      />,
+    )
+
+    await userEvent.click(
+      screen.getByRole('button', { name: /use my current location/i }),
+    )
+
+    expect(
+      await screen.findByRole('button', { name: /use my current location/i }),
+    ).not.toHaveAttribute('aria-disabled')
+    expect(screen.getByRole('status')).toHaveTextContent('Something went wrong.')
+  })
+
   it('hands over the coordinates the browser reports', async () => {
     stubGeolocation((success: (position: unknown) => void) => {
       success({ coords: { latitude: 42.1, longitude: -71.2 } })

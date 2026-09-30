@@ -35,7 +35,22 @@ namespace YourElectionMap.Server.Tests
 
             var districts = lookup.GetProperty("districts");
 
-            Assert.Equal(6, districts.GetArrayLength());
+            // Broad to local, which is the order DistrictLookup promises and the rail
+            // and the map's neighbour rule both read.
+            Assert.Equal(
+                new[]
+                {
+                    "congressional-7",
+                    "state-upper-22",
+                    "state-lower-44",
+                    "county-3",
+                    "city-2",
+                    "school-5",
+                },
+                districts
+                    .EnumerateArray()
+                    .Select(district => district.GetProperty("id").GetString())
+                    .ToArray());
 
             var house = districts
                 .EnumerateArray()
@@ -130,6 +145,14 @@ namespace YourElectionMap.Server.Tests
             var response = await GetAsync(AddressQuery(new string('x', 201)));
 
             Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task Get_TellsNothingToKeepTheAddressItEchoes()
+        {
+            var response = await GetAsync(AddressQuery("1420 Maple Street"));
+
+            Assert.True(response.Headers.CacheControl?.NoStore);
         }
 
         private Task<HttpResponseMessage> GetAsync(string query) =>

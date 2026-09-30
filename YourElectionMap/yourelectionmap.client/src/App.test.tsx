@@ -203,6 +203,14 @@ describe('App', () => {
     })
 
     expect(await districtList()).toBeInTheDocument()
+    // Nothing else would say the districts are here: the URL never changed, so
+    // App's page-change effect does not fire.
+    expect(
+      screen.getByRole('heading', {
+        level: 1,
+        name: 'Districts for 1420 Maple Street',
+      }),
+    ).toHaveFocus()
   })
 
   it('says a deep-linked address could not be matched', async () => {
@@ -237,6 +245,68 @@ describe('App', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Try again' }))
 
     expect(await districtList()).toBeInTheDocument()
+  })
+
+  it('says an address the server will not take could not be matched', async () => {
+    goTo(`/map?address=1+${'x'.repeat(250)}+Road`)
+    render(<App />)
+
+    expect(
+      await screen.findByRole('heading', {
+        level: 1,
+        name: 'We could not match that address',
+      }),
+    ).toBeInTheDocument()
+    // Not a failure, so there is nothing to keep trying.
+    expect(screen.queryByRole('button', { name: 'Try again' })).toBeNull()
+  })
+
+  it('keeps focus on Try again while it retries, then hands it to the result', async () => {
+    let deliver = () => {}
+
+    api.fail()
+    goTo('/map?address=1420+Maple+Street')
+    render(<App />)
+
+    const retry = await screen.findByRole('button', { name: 'Try again' })
+
+    // A held answer, so the button can be looked at mid-retry.
+    vi.stubGlobal(
+      'fetch',
+      () =>
+        new Promise((resolve) => {
+          deliver = () =>
+            resolve({
+              ok: true,
+              status: 200,
+              json: () =>
+                Promise.resolve(
+                  JSON.parse(
+                    JSON.stringify(sampleLookup({ address: '1420 Maple Street' })),
+                  ),
+                ),
+            })
+        }),
+    )
+
+    await userEvent.click(retry)
+
+    const trying = screen.getByRole('button', { name: 'Trying again…' })
+
+    expect(trying).toHaveFocus()
+    expect(trying).toHaveAttribute('aria-disabled', 'true')
+
+    await act(async () => {
+      deliver()
+    })
+
+    expect(await districtList()).toBeInTheDocument()
+    expect(
+      screen.getByRole('heading', {
+        level: 1,
+        name: 'Districts for 1420 Maple Street',
+      }),
+    ).toHaveFocus()
   })
 
   it('records a picked district in the URL without adding to history', async () => {
