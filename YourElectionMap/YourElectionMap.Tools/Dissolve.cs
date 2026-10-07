@@ -9,23 +9,18 @@ namespace YourElectionMap.Tools
     /// get rings back out.
     /// </para>
     /// <para>
-    /// Parity rather than "counted exactly once" matters, and not as a nicety: with the
-    /// stricter rule every one of these 184 districts failed to come back as a ring. A
-    /// few hundred segments across the state are described three times — precincts laid
-    /// over one another rather than beside one another — and leaving those out tears a
-    /// hole in the outline, which the walk then dead-ends in. Parity cannot do that:
-    /// every closed ring gives each of its vertices an
-    /// even number of edges, removing edges in pairs keeps that even, and a graph whose
-    /// vertices all have even degree is made only of closed loops. So the walk is
-    /// always able to get back to where it started.
+    /// Parity, not "counted exactly once". A few hundred segments in this data are
+    /// described three times (precincts laid over one another, not beside), and the
+    /// stricter rule drops them, tearing holes the walk dead-ends in. Every one of the
+    /// 184 districts failed that way. Parity cannot: each closed ring gives every vertex
+    /// an even number of edges, removing edges in pairs keeps it even, and a graph whose
+    /// vertices all have even degree is made only of closed loops.
     /// </para>
     /// <para>
-    /// What parity does not fix is a neighbour that put a vertex in the middle of a
-    /// border this precinct drew as one segment. Neither description has a twin, so both
-    /// survive and that border stays in the outline. The ground is still covered
-    /// correctly; it just comes back as two rings meeting along the border rather than
-    /// one around both. Rare enough in this data that nearly every district dissolves to
-    /// a single ring, and the leftovers are slivers the caller drops by size.
+    /// What parity does not fix: a neighbour with an extra vertex midway along a border
+    /// this precinct drew as one segment. Neither description has a twin, so the border
+    /// stays, and the ground comes back as two rings meeting along it rather than one.
+    /// It is rare here, and the leftovers are slivers the caller drops by size.
     /// </para>
     /// </summary>
     public static class Dissolve
@@ -98,10 +93,9 @@ namespace YourElectionMap.Tools
         /// <summary>
         /// Walks the outline edges into closed rings: start anywhere, keep taking an
         /// unused edge from the vertex just reached, and stop on arriving back at the
-        /// start. Where four outline edges meet at one vertex — a district pinched to a
-        /// point — which one gets taken is arbitrary, and the result is still a set of
-        /// closed rings covering the same ground. A dead end would mean the parity
-        /// argument above had failed, so it is counted rather than ignored.
+        /// start. Where four outline edges meet at one vertex (a district pinched to a
+        /// point), which one is taken is arbitrary; the rings still cover the same ground.
+        /// A dead end would mean the parity argument above had failed, so it is counted.
         /// </summary>
         private static (List<double[]> Rings, int Dropped) Stitch(List<Edge> outline)
         {
@@ -144,7 +138,7 @@ namespace YourElectionMap.Tools
 
                     if (next < 0)
                     {
-                        // A dead end: this is one of the slivers, not a ring.
+                        // A dead end, which parity should rule out. Dropped and counted.
                         break;
                     }
 
@@ -255,8 +249,8 @@ namespace YourElectionMap.Tools
         /// beside one another. Parity copes, but it is worth knowing how much of it there is.
         /// </param>
         /// <param name="DroppedRings">
-        /// Rings too small to be a boundary — the slivers left by a neighbour's extra
-        /// vertex — plus, if the data is worse than expected, any walk that dead-ended.
+        /// Walks that dead-ended or closed on fewer than three points. Expected to be
+        /// zero; the slivers dropped by size are the caller's, not counted here.
         /// </param>
         public sealed record Result(
             List<double[]> Rings,

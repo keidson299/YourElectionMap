@@ -74,7 +74,6 @@ describe('DistrictMap', () => {
     expect(svg.querySelector('.survey-ground__mesh')).toBeNull()
   })
 
-  // The paper follows the view, because a real address is anywhere in the state.
   it('lays the paper under wherever the address is', () => {
     const { svg } = renderMap()
     const paper = svg.querySelector('.survey-ground__paper')

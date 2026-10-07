@@ -3,16 +3,12 @@ using System.Text.Json;
 namespace YourElectionMap.Server.Districts
 {
     /// <summary>
-    /// Turns a typed address into a point, using the US Census Bureau's geocoder. It is
-    /// free, needs no key, and is the same agency's view of the ground as the boundary
-    /// data, so an address and a district line agree about where they are.
+    /// Turns a typed address into a point, using the US Census Bureau's geocoder, which
+    /// is free and needs no key.
     /// <para>
     /// This is the only call this app makes out to the internet, and the address is what
     /// it sends. Nothing is logged here, and nothing is kept: see the privacy section of
-    /// the design plan. An address the geocoder does not know comes back as no matches.
-    /// A timeout, a refusal or a reply that is not JSON is a
-    /// <see cref="GeocoderUnavailableException"/> instead, because it says nothing about
-    /// the address and the page should offer to try again rather than doubt it.
+    /// the design plan.
     /// </para>
     /// </summary>
     public sealed class CensusGeocoder
@@ -41,7 +37,10 @@ namespace YourElectionMap.Server.Districts
         /// cannot be placed. An address with no state can match in several. Latitude and
         /// longitude come back as WGS84, which is what <see cref="StatePlane"/> expects.
         /// </summary>
-        /// <exception cref="GeocoderUnavailableException">No answer could be had.</exception>
+        /// <exception cref="GeocoderUnavailableException">
+        /// No usable answer: a timeout, a refusal or a reply that is not JSON. This says
+        /// nothing about the address, so the page offers to try again rather than doubt it.
+        /// </exception>
         public async Task<IReadOnlyList<(double Latitude, double Longitude)>> FindAsync(
             string address,
             CancellationToken cancellationToken)

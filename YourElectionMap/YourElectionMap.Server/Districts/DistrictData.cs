@@ -69,10 +69,9 @@ namespace YourElectionMap.Server.Districts
         }
 
         /// <summary>
-        /// How finely to draw this district: about a thousandth of its own width, which
-        /// is roughly a pixel at the frame the map fits it into. A congressional district
-        /// a hundred miles across then travels as a thousand points rather than six, and
-        /// looks no different.
+        /// How finely to draw this district: 1/1500 of its longer side, roughly a pixel
+        /// at the frame the map fits it into. A congressional district then sends about
+        /// a thousand points instead of tens of thousands, and looks no different.
         /// </summary>
         private static double ToleranceFor(Stored district)
         {
@@ -112,10 +111,7 @@ namespace YourElectionMap.Server.Districts
             _ => 6,
         };
 
-        /// <summary>
-        /// A district as the file stores it: rings flattened to <c>[x, y, x, y, …]</c>,
-        /// which is half the punctuation of nested pairs across four megabytes.
-        /// </summary>
+        /// <summary>A district as the file stores it, rings flattened to <c>[x, y, x, y, …]</c>.</summary>
         private sealed class Stored
         {
             public string Id { get; init; } = "";

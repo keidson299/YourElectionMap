@@ -97,11 +97,8 @@ namespace YourElectionMap.Server.Tests
         [Fact]
         public void Rings_ClosesEveryRingWhenABorderIsDescribedThreeTimes()
         {
-            // A precinct described twice, beside its neighbour: the border between them is
-            // now described three times, which the real files do in places. Keeping only
-            // the edges seen exactly once would leave that border out, and the vertices at
-            // its ends with an odd number of edges, which is where a walk dead-ends.
-            // Parity cannot do that: it leaves every vertex with an even number.
+            // A precinct described twice beside its neighbour, so their border is
+            // described three times, as in places in the real files.
             var result = Dissolve.Rings(
                 [Closed(0, 0, 1, 1), Closed(1, 0, 2, 1), Closed(1, 0, 2, 1)]);
 
@@ -114,11 +111,8 @@ namespace YourElectionMap.Server.Tests
             Assert.Equal(ring[0], ring[^2]);
             Assert.Equal(ring[1], ring[^1]);
 
-            // What it costs: adding up edges two at a time is a symmetric difference, so
-            // ground described an even number of times drops out, and here that is the
-            // whole of the repeated square. Harmless on the real files, where the
-            // precincts of a district are side by side rather than on top of one another —
-            // and DistrictDataTests checks that by making the three levels agree.
+            // The cost: parity is a symmetric difference, so the doubled square drops out.
+            // Harmless where precincts sit side by side, which DistrictDataTests checks.
             Assert.Equal(new double[] { 0, 0, 1, 1 }, Geometry.BoxOf(result.Rings));
         }
 

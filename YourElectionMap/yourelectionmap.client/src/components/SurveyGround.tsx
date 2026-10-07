@@ -16,9 +16,8 @@ type SurveyGroundProps = {
   /** How much paper to lay down, in map units. */
   ground: Rect
   /**
-   * The drawn stand-in: the river, the roads and the mesh. Home's board is
-   * decoration and says so, so it asks for them. The result map draws real
-   * boundaries, where a hand-drawn river would be claiming a place has one.
+   * The hand-drawn river, roads and mesh. Only Home's decorative board asks for
+   * them; on the result map they would invent features of a real place.
    */
   standIn?: boolean
 }

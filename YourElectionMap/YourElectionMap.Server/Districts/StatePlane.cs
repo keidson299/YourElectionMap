@@ -11,11 +11,6 @@ namespace YourElectionMap.Server.Districts
     /// are used as if they were NAD83. The two differ by about a metre in this part of
     /// the world, against a map whose boundaries are thinned to tens of feet.
     /// </para>
-    /// <para>
-    /// The map the client draws works in <em>map units</em> rather than feet: one unit
-    /// is <see cref="FeetPerMapUnit"/> feet, chosen so that 55 units make a mile and
-    /// every size in the design spec keeps its meaning.
-    /// </para>
     /// </summary>
     public static class StatePlane
     {
@@ -42,17 +37,15 @@ namespace YourElectionMap.Server.Districts
 
         private static readonly double Eccentricity = EccentricityOf(InverseFlattening);
 
-        // The cone the projection wraps the state in. Constant for these parallels, so
-        // it is worked out once rather than per request.
+        // The cone, fixed by the standard parallels.
         private static readonly double ConeConstant = ConeConstantOf();
         private static readonly double ScaleFactor = ScaleFactorOf();
         private static readonly double OriginRadius =
             SemiMajorMetres * ScaleFactor * Math.Pow(TangentOf(LatitudeOfOrigin), ConeConstant);
 
         /// <summary>
-        /// A latitude and longitude as the map's own point: x east, y <em>down</em>, in
-        /// map units. South is positive y because that is the direction SVG counts in,
-        /// so north ends up where a reader expects it without any further flipping.
+        /// A latitude and longitude in map units: x east, y <em>down</em>, the way SVG
+        /// counts, so the client draws north up without flipping.
         /// </summary>
         public static (double X, double Y) ToMapUnits(double latitude, double longitude)
         {

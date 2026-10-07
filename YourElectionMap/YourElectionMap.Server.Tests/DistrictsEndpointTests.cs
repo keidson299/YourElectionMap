@@ -49,9 +49,8 @@ namespace YourElectionMap.Server.Tests
 
             var districts = lookup.GetProperty("districts");
 
-            // Broad to local, which is the order DistrictLookup promises and the rail and
-            // the map's neighbour rule both read. Three, because these are the levels this
-            // data covers; the client never assumes six.
+            // Broad to local, the order the rail and map read. Three: the levels this data
+            // covers.
             Assert.Equal(
                 new[] { "congressional", "state-upper", "state-lower" },
                 Each(districts, "level"));

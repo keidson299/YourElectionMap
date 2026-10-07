@@ -31,9 +31,7 @@ import './DistrictMap.css'
 // hatched, its two neighbours dashed and dotted, and the address pin. The view
 // is always centred on the address and refits to the selected boundary; the
 // parent keys this component on the selection, so zoom starts fresh with each.
-//
-// Nothing here is drawn from anywhere but the lookup, so there is no stand-in
-// river, roads or mesh: a selected boundary runs through a real place.
+// Only the lookup is drawn: no stand-in river, roads or mesh.
 
 type DistrictMapProps = {
   location: SurveyPoint

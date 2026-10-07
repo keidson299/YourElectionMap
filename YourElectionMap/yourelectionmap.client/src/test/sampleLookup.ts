@@ -1,18 +1,14 @@
 import type { District, DistrictLookup } from '../districts/types'
 import type { LookupTarget } from '../routing/routes'
 
-// A test fixture, so component tests can render a result without a fetch. It is
-// invented, and no longer what the server sends: the real lookup covers North
-// Carolina and has three levels, where this has all six.
+// An invented fixture, so component tests can render a result without a fetch.
+// Unlike the server's three levels, it has all six on purpose: it is the only
+// thing exercising a ward, a zone, an area, a population and the election
+// footer. DistrictsEndpointTests pins what the server really sends.
 //
-// Keeping six is the point. It is the only thing that exercises a ward and a
-// zone, an area and a population, and the election footer — the parts of the
-// page real data has nothing to fill yet. What the server does send is pinned by
-// DistrictsEndpointTests.
-//
-// Boundaries are in the stand-in drawing's own units. State House 44, the county
-// and the school zone are the spec's own shapes; the other three are made up to
-// the same rule: each contains the address and stays on the sheet.
+// Boundaries are in the stand-in drawing's units. State House 44, the county and
+// the school zone are the spec's shapes; the other three are made up, each
+// containing the address and staying on the sheet.
 
 const ADDRESS_POINT = [1127, 629] as const
 

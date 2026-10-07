@@ -12,9 +12,8 @@ namespace YourElectionMap.Server.Controllers
     /// <item>400 when the query itself is wrong, which only a bug can cause;</item>
     /// <item>503 when the geocoder did not answer, so the page can offer to try again.</item>
     /// </list>
-    /// The address arrives in the query string, as it already does in the page URL.
-    /// It is not logged, and the answer is sent no-store, so nothing between here and
-    /// the browser keeps the address this endpoint echoes back.
+    /// The address arrives in the query string, as it does in the page URL, and is not
+    /// logged.
     /// </summary>
     [ApiController]
     [Route("api/districts")]

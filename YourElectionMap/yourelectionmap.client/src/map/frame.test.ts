@@ -124,8 +124,6 @@ describe('scale bar', () => {
     expect(pickScaleBar(400)).toEqual({ miles: 0.25, width: 100 })
   })
 
-  // A congressional district is a hundred miles across, where a bar of five miles
-  // would be a stub a tenth of the way along the scale it is meant to explain.
   it('reaches the distances a congressional district is measured in', () => {
     const across = 100 * MAP_UNITS_PER_MILE
     const frame = fitFrame(ADDRESS, [[[0, 0], [across, across]]], desktop)
@@ -149,8 +147,6 @@ describe('groundOf', () => {
     })
   })
 
-  // It follows the frame rather than sitting at fixed coordinates, because a real
-  // address is anywhere in the state and the sheet has to be under it.
   it('follows the frame out to the far side of the state', () => {
     const ground = groundOf(fitFrame([31_000, -10_000], SMALL, desktop))
 

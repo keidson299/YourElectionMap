@@ -6,9 +6,8 @@ namespace YourElectionMap.Tools
 {
     /// <summary>
     /// Builds the district file the server serves, out of the North Carolina precinct
-    /// shapefiles. Run once, by hand, and check the result in; nothing about it changes
-    /// until the boundaries themselves do. See DATA-SOURCE.md for where the shapefiles
-    /// came from and what they can and cannot be trusted to say.
+    /// shapefiles. Run by hand, and again only when the boundaries change. The output is
+    /// git-ignored. See DATA-SOURCE.md.
     /// <para>
     /// <c>dotnet run --project YourElectionMap.Tools -- &lt;shapefile folder&gt; &lt;output file&gt;</c>
     /// </para>
@@ -16,17 +15,15 @@ namespace YourElectionMap.Tools
     public static class Program
     {
         /// <summary>
-        /// What the file keeps. Finer than anything the map draws, because the server
-        /// also answers "which district is this address in" from these same rings, and
-        /// that deserves better than a boundary thinned for a picture.
+        /// What the file keeps. Finer than the map draws, because the server also answers
+        /// "which district is this address in" from these same rings.
         /// </summary>
         private const double StoredToleranceFeet = 15;
 
         /// <summary>
-        /// Rings narrower than this are not stored. Where a precinct and its neighbour
-        /// disagree about a shared border by a few feet, the dissolve leaves a sliver
-        /// enclosing almost nothing; the smallest thing worth drawing on this map is a
-        /// city block, and the smallest real island is a great deal bigger.
+        /// Rings narrower than this are dropped: the slivers the dissolve leaves where
+        /// neighbouring precincts disagree about a border by a few feet. No real island
+        /// is anywhere near this small.
         /// </summary>
         private const double SmallestRingFeet = 200;
 
@@ -196,9 +193,8 @@ namespace YourElectionMap.Tools
 
         /// <summary>
         /// Which district this precinct voted in, or null when its votes do not point at
-        /// exactly one. Across all three of these files every precinct points at exactly
-        /// one, but a file that did not would be quietly wrong rather than loudly, so it
-        /// is counted and reported instead.
+        /// exactly one. The current files have none of those; any that appear are counted
+        /// and reported.
         /// </summary>
         private static string? DistrictOf(DbaseReader table, int feature, Layer layer)
         {
@@ -257,10 +253,8 @@ namespace YourElectionMap.Tools
         }
 
         /// <summary>
-        /// Writes the file by hand rather than through a serializer, for two reasons: one
-        /// district to a line keeps a three megabyte file diffable, and the numbers come
-        /// out at the precision chosen here — a hundredth of a unit, which is about a
-        /// foot — instead of all seventeen digits.
+        /// Written by hand rather than serialized: one district per line, and numbers to a
+        /// hundredth of a unit (about a foot) rather than seventeen digits.
         /// </summary>
         private static void Write(string output, List<Built> districts)
         {

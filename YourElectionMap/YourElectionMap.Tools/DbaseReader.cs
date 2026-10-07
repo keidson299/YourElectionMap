@@ -7,8 +7,7 @@ namespace YourElectionMap.Tools
     /// a header, a list of fixed-width field descriptors, and then one fixed-width
     /// record per feature in the same order as the shapes.
     /// <para>
-    /// The whole file is held in memory. The largest of these is 15MB, and the
-    /// alternative is seeking twice per field across two and a half thousand records.
+    /// The whole file is held in memory; the largest of these is 15MB.
     /// </para>
     /// </summary>
     public sealed class DbaseReader
@@ -49,9 +48,8 @@ namespace YourElectionMap.Tools
         public int Count { get; }
 
         /// <summary>
-        /// The names of the fields holding a number above zero in this record. The
-        /// precinct files carry no district column, so which contest a precinct voted
-        /// in is the only thing that says which district it belongs to.
+        /// The names of the fields starting with <paramref name="prefix"/> that hold a
+        /// number above zero in this record.
         /// </summary>
         public List<string> FieldsWithVotes(int record, string prefix)
         {

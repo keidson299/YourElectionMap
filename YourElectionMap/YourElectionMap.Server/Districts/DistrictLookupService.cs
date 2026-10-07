@@ -1,17 +1,12 @@
 namespace YourElectionMap.Server.Districts
 {
     /// <summary>
-    /// Turns an address or a point into the districts covering it.
+    /// Turns an address or a point into the districts covering it: an address is placed
+    /// by the Census geocoder, then the point is projected into map units and handed to
+    /// <see cref="DistrictData"/>.
     /// <para>
-    /// An address is placed by the Census geocoder; a point is used as given. Either way
-    /// the point is projected into the map's own coordinates and handed to
-    /// <see cref="DistrictData"/>, which knows which boundaries contain it.
-    /// </para>
-    /// <para>
-    /// The data covers North Carolina and nothing else, so an address in another state
-    /// is placed perfectly well and then found to be in no district — the same answer as
-    /// an address that could not be placed at all. Both read as "no districts here",
-    /// which is what the page says.
+    /// The data covers North Carolina only, so an address in another state is placed and
+    /// then found in no district — the same null as an address that could not be placed.
     /// </para>
     /// </summary>
     public class DistrictLookupService

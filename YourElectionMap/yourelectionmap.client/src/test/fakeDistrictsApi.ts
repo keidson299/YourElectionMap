@@ -2,22 +2,16 @@ import { vi } from 'vitest'
 import { sampleLookup } from './sampleLookup'
 import { resetLookups } from '../districts/lookups'
 
-// Stands in for GET /api/districts, answering with the invented fixture, and can
-// be told to fail instead. It is here so the page's flows — waiting, a match, a
-// miss, a failure, another go — can be driven from a test.
+// Stands in for GET /api/districts with the invented fixture, and can be told to
+// fail, so tests can drive the page's flows: waiting, a match, a miss, a failure.
 //
-// The statuses are the contract and are mirrored exactly: DistrictsController
-// decides the 400s (nothing to look up, an address too long, a point off the
-// globe), a 404 is a place with no districts, anything else is a failure.
+// Statuses mirror DistrictsController exactly: 400 for a query it cannot use, 404
+// for no districts, anything else a failure. What counts as a match does not: here
+// it is an address with a digit, or a point roughly in North America.
+// DistrictsEndpointTests pins what the server really answers.
 //
-// What decides a match is not: the server geocodes the address and then looks for
-// North Carolina districts around the point, where this asks only for a digit and
-// a point in the northern hemisphere's western half. Telling a match from a miss
-// is all these tests need; what the server really answers is pinned by
-// DistrictsEndpointTests.
-//
-// Responses are the few members the client reads, not real Response objects, so
-// nothing here depends on fetch existing in jsdom.
+// Responses carry only the members the client reads, so nothing depends on jsdom
+// having fetch.
 
 export type FakeDistrictsApi = {
   /** The stubbed global fetch, for counting requests. */
@@ -96,7 +90,7 @@ function answer(params: URLSearchParams): Response {
     return response(400, {})
   }
 
-  // A point on the globe, but only a rough half of it has districts here.
+  // Roughly North America.
   return lat >= 18 && lat <= 72 && lon >= -180 && lon <= -64
     ? response(200, sampleLookup({ coords: { lat, lon } }))
     : response(404, {})

@@ -14,7 +14,7 @@ namespace YourElectionMap.Server.Districts
     /// <param name="Election">The next election's summary, or null when there is none.</param>
     /// <param name="Source">
     /// What the boundaries were drawn from, for the page to name: "NC 2024 precincts".
-    /// Null only if a lookup ever comes from somewhere with nothing to credit.
+    /// Null when there is nothing to credit.
     /// </param>
     public sealed record DistrictLookup(
         string Label,

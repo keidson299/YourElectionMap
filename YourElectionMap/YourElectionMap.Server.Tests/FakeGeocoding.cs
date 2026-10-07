@@ -4,9 +4,8 @@ using System.Text;
 namespace YourElectionMap.Server.Tests
 {
     /// <summary>
-    /// Stands in for the Census geocoder, so that nothing here ever reaches the
-    /// internet. The real one is the only outward call this app makes, and a test suite
-    /// that depended on it would fail on a train.
+    /// Stands in for the Census geocoder, the app's only outward call, so that no test
+    /// reaches the internet.
     /// </summary>
     internal static class FakeGeocoding
     {

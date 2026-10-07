@@ -51,9 +51,8 @@ export function DistrictRail({
   const baseId = useId()
   const titleId = `${baseId}-title`
   const listId = `${baseId}-list`
-  // Where the boundaries came from, said plainly. They are added up from precinct
-  // shapes rather than published as districts, so it matters that the page says
-  // which data drew them rather than presenting them as the last word.
+  // Credit the data: these boundaries are added up from precincts, not published
+  // district lines, so the page should not present them as the last word.
   const sourceTag =
     source === null ? null : <span className="source-tag">{source}</span>
 

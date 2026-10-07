@@ -86,10 +86,9 @@ export function useLookup(target: LookupTarget) {
   return { state, retry }
 }
 
-// A no-match has two causes the server cannot tell apart for us, and does not
-// try to: an address it could not place at all, and one it placed perfectly well
-// somewhere the site has no districts for. The site covers North Carolina, so
-// the second is the likelier of the two and the wording names it.
+// A 404 is either an address the server could not place or one outside North
+// Carolina, and it cannot tell us which. The second is likelier, so the wording
+// names it.
 
 /** One sentence for under the address field. Every one says what to do next. */
 export function problemNotice(

@@ -6,11 +6,8 @@ import type { SurveyPoint, SurveyRing } from '../districts/types'
 
 /**
  * The map's scale. One unit is 96 feet, so 55 of them make a mile — which is
- * what makes the spec's 92px scale bar read one mile at the design frame, and
- * what the server's `StatePlane.FeetPerMapUnit` is chosen to agree with.
- *
- * (A foot here is the US survey foot the boundary data is projected in, which
- * misses a statute mile by two parts in a million.)
+ * what makes the spec's 92px scale bar read one mile at the design frame. Must
+ * agree with the server's `StatePlane.FeetPerMapUnit`.
  */
 export const MAP_UNITS_PER_MILE = 55
 
@@ -21,7 +18,7 @@ export type Frame = { center: SurveyPoint; width: number; height: number }
 
 /**
  * One of the spec's design frames: `span` is how much of the drawing it
- * shows, in survey units, and `map` is the map element's size in CSS pixels.
+ * shows, in map units, and `map` is the map element's size in CSS pixels.
  */
 export type Design = { span: Span; map: Span }
 
@@ -90,10 +87,8 @@ export function zoomFrame(frame: Frame, zoom: number): Frame {
 }
 
 /**
- * Paper to lay under a frame: three times its size, centred on it, so there is
- * still sheet showing after a zoom out or at any window shape. It follows the
- * frame rather than sitting at fixed coordinates, because a real address can be
- * anywhere in the state.
+ * Paper to lay under a frame: three times its size and centred on it, so the
+ * sheet still fills the view after a zoom out, wherever in the state it is.
  */
 export function groundOf(frame: Frame): {
   x: number
@@ -121,7 +116,7 @@ export function viewBoxOf(frame: Frame): string {
     .join(' ')
 }
 
-/** CSS pixels per survey unit when `span` is fitted into `map` ('meet'). */
+/** CSS pixels per map unit when `span` is fitted into `map` ('meet'). */
 export function pixelsPerUnit(span: Span, map: Span): number {
   return Math.min(map.width / span.width, map.height / span.height)
 }
