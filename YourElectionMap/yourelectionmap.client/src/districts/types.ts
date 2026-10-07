@@ -1,5 +1,5 @@
-// The shape the result page renders. Slice 2 fills it from an invented sample;
-// slice 3 fetches it from the districts API, and slice 4 makes it real.
+// The shape the result page renders, fetched from the districts API. The server's
+// twin of these types is Districts/DistrictLookup.cs; change the two together.
 
 /** Broad to local. The rail lists districts in this order and the map's neighbour rule reads it. */
 export const DISTRICT_LEVELS = [
@@ -14,8 +14,10 @@ export const DISTRICT_LEVELS = [
 export type DistrictLevel = (typeof DISTRICT_LEVELS)[number]
 
 /**
- * A point in the map's survey units: the stand-in drawing's coordinate space
- * until slice 5 projects real geometry into it.
+ * A point in map units, the coordinate space everything drawn on the result map
+ * shares. One unit is 96 feet, so 55 of them make a mile: see
+ * `MAP_UNITS_PER_MILE` and the server's `StatePlane.FeetPerMapUnit`. Y counts
+ * downward, the way SVG does, so north is up.
  */
 export type SurveyPoint = readonly [x: number, y: number]
 
@@ -31,9 +33,9 @@ export type District = {
   unit: 'District' | 'Ward' | 'Zone'
   /** '44' */
   number: string
-  /** The rail's second line: 'Federal', 'Greenlake County'. */
+  /** The rail's second line: 'Federal', 'State'. */
   detail: string
-  /** The place named on the map chip: 'Greenlake County'. */
+  /** The place named on the map chip, where it is known. */
   area: string | null
   population: number | null
   /** Rings rather than one polygon, so real islands and holes fit unchanged. */
@@ -50,12 +52,12 @@ export type ElectionSummary = {
 export type DistrictLookup = {
   /** The address as the page names it: '1420 Maple Street'. */
   label: string
-  /** The address in survey units. */
+  /** The address in map units. */
   location: SurveyPoint
   /** One or more districts. Never assume six. */
   districts: readonly District[]
   /** Null hides the rail footer, for addresses with no election info. */
   election: ElectionSummary | null
-  /** True while the districts are invented rather than looked up. */
-  sample: boolean
+  /** What the boundaries were drawn from, for the rail to credit. */
+  source: string | null
 }

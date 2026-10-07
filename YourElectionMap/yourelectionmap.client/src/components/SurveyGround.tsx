@@ -5,22 +5,28 @@ import {
 } from './surveyMapGeometry'
 import './SurveyGround.css'
 
-// The survey sheet both maps sit on: paper, a graticule, a river, a few roads
-// and the mesh of district boundaries. It renders inside an <svg> the caller
-// owns. Pattern ids are fixed, which is safe because Home and the result page
-// never draw a map at the same time.
+// The survey sheet both maps sit on: paper and a graticule, and for Home's
+// decorative board a river, a few roads and a mesh of district outlines. It
+// renders inside an <svg> the caller owns. Pattern ids are fixed, which is safe
+// because Home and the result page never draw a map at the same time.
 
 type Rect = { x: number; y: number; width: number; height: number }
 
 type SurveyGroundProps = {
-  /** How much paper to lay down, in survey units. */
+  /** How much paper to lay down, in map units. */
   ground: Rect
+  /**
+   * The drawn stand-in: the river, the roads and the mesh. Home's board is
+   * decoration and says so, so it asks for them. The result map draws real
+   * boundaries, where a hand-drawn river would be claiming a place has one.
+   */
+  standIn?: boolean
 }
 
 const GRID_FINE_ID = 'yem-grid-fine'
 const GRID_BOLD_ID = 'yem-grid-bold'
 
-export function SurveyGround({ ground }: SurveyGroundProps) {
+export function SurveyGround({ ground, standIn = false }: SurveyGroundProps) {
   return (
     <>
       <defs>
@@ -49,19 +55,23 @@ export function SurveyGround({ ground }: SurveyGroundProps) {
       <rect {...ground} fill={`url(#${GRID_FINE_ID})`} />
       <rect {...ground} fill={`url(#${GRID_BOLD_ID})`} />
 
-      <path className="survey-ground__water" d={RIVER_PATH} />
+      {standIn ? (
+        <>
+          <path className="survey-ground__water" d={RIVER_PATH} />
 
-      <g className="survey-ground__roads">
-        {ROAD_PATHS.map((road) => (
-          <path key={road} d={road} />
-        ))}
-      </g>
+          <g className="survey-ground__roads">
+            {ROAD_PATHS.map((road) => (
+              <path key={road} d={road} />
+            ))}
+          </g>
 
-      <g className="survey-ground__mesh">
-        {DISTRICT_POLYGONS.map((points) => (
-          <polygon key={points} points={points} />
-        ))}
-      </g>
+          <g className="survey-ground__mesh">
+            {DISTRICT_POLYGONS.map((points) => (
+              <polygon key={points} points={points} />
+            ))}
+          </g>
+        </>
+      ) : null}
     </>
   )
 }

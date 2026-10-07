@@ -2,8 +2,8 @@
 // design/canvas4/Main.dc.html. It is a drawing of what a district map looks
 // like, not data: no shape here corresponds to a real place.
 //
-// Slice 5 replaces this file with district boundaries projected from TIGERweb
-// GeoJSON. It is read only by SurveyGround, SurveyMap and DistrictMap.
+// It is only the decoration behind the home card now. The result map draws real
+// boundaries, and nothing from this file reaches it.
 
 export const DISTRICT_POLYGONS = [
   '0,0 320,-10 350,215 0,240',
@@ -89,23 +89,3 @@ export const OVERVIEW = {
   viewBox: '0 0 1600 1000',
   ground: { x: 0, y: 0, width: 1600, height: 1000 },
 }
-
-/**
- * The result map refits and zooms, so its ground runs well past the drawing on
- * every side: spare room at any window shape shows paper, never a gap.
- */
-export const DETAIL_GROUND = { x: -800, y: -800, width: 3200, height: 2600 }
-
-/** Names for the neighbouring cells of the mesh, as the result view labels them. */
-export const MESH_LABELS = [
-  { text: 'SH-43', x: 850, y: 704 },
-  { text: 'SH-45', x: 1372, y: 626 },
-  { text: 'SH-51', x: 1096, y: 878 },
-  { text: 'SH-38', x: 1092, y: 432 },
-]
-
-/**
- * The drawing's invented scale. At the design frame this makes the spec's
- * 92px scale bar read one mile.
- */
-export const SURVEY_UNITS_PER_MILE = 55

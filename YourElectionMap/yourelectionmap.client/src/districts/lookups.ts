@@ -86,6 +86,11 @@ export function useLookup(target: LookupTarget) {
   return { state, retry }
 }
 
+// A no-match has two causes the server cannot tell apart for us, and does not
+// try to: an address it could not place at all, and one it placed perfectly well
+// somewhere the site has no districts for. The site covers North Carolina, so
+// the second is the likelier of the two and the wording names it.
+
 /** One sentence for under the address field. Every one says what to do next. */
 export function problemNotice(
   problem: LookupProblem,
@@ -102,8 +107,8 @@ export function problemNotice(
 
   return {
     text: typed
-      ? 'We could not match that address. Try adding your city or ZIP code.'
-      : 'We could not find districts at your location. Enter an address instead.',
+      ? 'We could not find North Carolina districts for that address. Check it, or try adding your city or ZIP code.'
+      : 'We could not find districts at your location. The site covers North Carolina so far.',
     // A location that could not be placed says nothing about the empty field.
     field: typed,
   }
@@ -123,14 +128,14 @@ export function problemCard(
 
   if ('address' in target) {
     return {
-      heading: 'We could not match that address',
-      body: 'Try adding your city or ZIP code in the search above.',
+      heading: 'We could not place that address',
+      body: 'The site covers North Carolina so far. Check the address, or try adding your city or ZIP code, in the search above.',
     }
   }
 
   return {
     heading: 'We could not find districts here',
-    body: 'Enter your address in the search above.',
+    body: 'The site covers North Carolina so far. Enter an address in the search above.',
   }
 }
 

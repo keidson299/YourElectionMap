@@ -8,20 +8,17 @@ import {
   ZoomControls,
 } from './MapChrome'
 import { SurveyGround } from '../SurveyGround'
-import {
-  DETAIL_GROUND,
-  MESH_LABELS,
-  SURVEY_UNITS_PER_MILE,
-} from '../surveyMapGeometry'
 import { layerCount, type MapLayers } from '../../districts/selection'
 import type { SurveyPoint } from '../../districts/types'
 import { useElementSize } from '../../hooks/useElementSize'
 import {
   DESIGN,
+  MAP_UNITS_PER_MILE,
   MAX_ZOOM,
   MIN_ZOOM,
   clampZoom,
   fitFrame,
+  groundOf,
   lineScale,
   ringsToPath,
   scaleBarFor,
@@ -30,10 +27,13 @@ import {
 } from '../../map/frame'
 import './DistrictMap.css'
 
-// The result map: the survey sheet, the selected district drawn solid and
+// The result map: paper and a graticule, the selected district drawn solid and
 // hatched, its two neighbours dashed and dotted, and the address pin. The view
 // is always centred on the address and refits to the selected boundary; the
 // parent keys this component on the selection, so zoom starts fresh with each.
+//
+// Nothing here is drawn from anywhere but the lookup, so there is no stand-in
+// river, roads or mesh: a selected boundary runs through a real place.
 
 type DistrictMapProps = {
   location: SurveyPoint
@@ -116,15 +116,7 @@ export function DistrictMap({
           </pattern>
         </defs>
 
-        <SurveyGround ground={DETAIL_GROUND} />
-
-        <g className="district-map__labels">
-          {MESH_LABELS.map((meshLabel) => (
-            <text key={meshLabel.text} x={meshLabel.x} y={meshLabel.y}>
-              {meshLabel.text}
-            </text>
-          ))}
-        </g>
+        <SurveyGround ground={groundOf(frame)} />
 
         {layers.dashed === null ? null : (
           <path
@@ -142,10 +134,14 @@ export function DistrictMap({
         )}
 
         <path className="district-map__selected" d={selectedPath} />
+        {/* Even-odd, so a district with a hole in it is hatched like one. A
+            dissolved boundary does not wind consistently, so the default rule
+            would fill some holes and leave some islands blank. */}
         <path
           className="district-map__hatch"
           d={selectedPath}
           fill={`url(#${HATCH_ID})`}
+          fillRule="evenodd"
         />
 
         {/* Drawn about the origin and scaled with the view, so the pin keeps
@@ -181,7 +177,7 @@ export function DistrictMap({
       ) : (
         <>
           <MapLegend layers={layers} />
-          <ScaleBar scale={scaleBarFor(frame, map, SURVEY_UNITS_PER_MILE)} />
+          <ScaleBar scale={scaleBarFor(frame, map, MAP_UNITS_PER_MILE)} />
           <AddressMarker label={label} />
         </>
       )}

@@ -145,7 +145,9 @@ describe('openLookup', () => {
 
     expect(currentUrl()).toBe('/')
     expect(notice).toEqual({
-      text: 'We could not match that address. Try adding your city or ZIP code.',
+      text:
+        'We could not find North Carolina districts for that address. Check it,'
+        + ' or try adding your city or ZIP code.',
       field: true,
     })
   })

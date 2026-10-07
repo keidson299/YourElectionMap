@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import {
   DESIGN,
+  MAP_UNITS_PER_MILE,
   MAX_ZOOM,
   MIN_ZOOM,
   clampZoom,
   fitFrame,
+  groundOf,
   lineScale,
   pickScaleBar,
   ringsToPath,
@@ -120,6 +122,50 @@ describe('scale bar', () => {
     expect(pickScaleBar(92)).toEqual({ miles: 1, width: 92 })
     expect(pickScaleBar(40)).toEqual({ miles: 2, width: 80 })
     expect(pickScaleBar(400)).toEqual({ miles: 0.25, width: 100 })
+  })
+
+  // A congressional district is a hundred miles across, where a bar of five miles
+  // would be a stub a tenth of the way along the scale it is meant to explain.
+  it('reaches the distances a congressional district is measured in', () => {
+    const across = 100 * MAP_UNITS_PER_MILE
+    const frame = fitFrame(ADDRESS, [[[0, 0], [across, across]]], desktop)
+    const scale = scaleBarFor(frame, design.map, MAP_UNITS_PER_MILE)
+
+    expect(scale.miles).toBeGreaterThanOrEqual(10)
+    expect(scale.width).toBeGreaterThan(40)
+    expect(scale.width).toBeLessThan(150)
+  })
+})
+
+describe('groundOf', () => {
+  it('lays paper well past the frame, centred on it', () => {
+    const frame = fitFrame(ADDRESS, SMALL, desktop)
+
+    expect(groundOf(frame)).toEqual({
+      x: 1127 - 930,
+      y: 629 - 744,
+      width: 1860,
+      height: 1488,
+    })
+  })
+
+  // It follows the frame rather than sitting at fixed coordinates, because a real
+  // address is anywhere in the state and the sheet has to be under it.
+  it('follows the frame out to the far side of the state', () => {
+    const ground = groundOf(fitFrame([31_000, -10_000], SMALL, desktop))
+
+    expect(ground.x).toBeLessThan(31_000)
+    expect(ground.x + ground.width).toBeGreaterThan(31_000)
+    expect(ground.y).toBeLessThan(-10_000)
+    expect(ground.y + ground.height).toBeGreaterThan(-10_000)
+  })
+
+  it('still covers the view after a zoom out', () => {
+    const frame = zoomFrame(fitFrame(ADDRESS, SMALL, desktop), MIN_ZOOM)
+    const ground = groundOf(frame)
+
+    expect(ground.width).toBeGreaterThan(frame.width)
+    expect(ground.height).toBeGreaterThan(frame.height)
   })
 })
 

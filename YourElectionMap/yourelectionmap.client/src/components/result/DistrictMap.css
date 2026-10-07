@@ -19,24 +19,6 @@
   display: block;
 }
 
-.district-map .survey-ground__roads {
-  stroke-width: calc(2.6px * var(--k, 1));
-  opacity: 0.5;
-}
-
-.district-map .survey-ground__mesh {
-  stroke-width: calc(1.6px * var(--k, 1));
-}
-
-.district-map__labels {
-  font-family: var(--ui);
-  font-size: calc(13px * var(--k, 1));
-  font-weight: 600;
-  letter-spacing: calc(1.4px * var(--k, 1));
-  fill: var(--ink-soft);
-  opacity: 0.62;
-}
-
 .district-map__context {
   fill: none;
   stroke: var(--accent);
@@ -89,18 +71,6 @@
 }
 
 @media (max-width: 860px) {
-  .district-map .survey-ground__roads {
-    stroke-width: calc(3px * var(--k, 1));
-  }
-
-  .district-map .survey-ground__mesh {
-    stroke-width: calc(1.4px * var(--k, 1));
-  }
-
-  .district-map__labels {
-    display: none;
-  }
-
   .district-map__context {
     stroke-width: calc(2px * var(--k, 1));
     opacity: 0.65;

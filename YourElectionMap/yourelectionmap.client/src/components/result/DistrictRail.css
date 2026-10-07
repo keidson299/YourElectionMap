@@ -40,8 +40,8 @@
   color: var(--ink-soft);
 }
 
-/* Stays on screen for as long as the districts are invented. */
-.sample-tag {
+/* Credits the data the boundaries were drawn from: 'NC 2024 precincts'. */
+.source-tag {
   padding: 1px 7px;
   font-size: 9.5px;
   font-weight: 600;

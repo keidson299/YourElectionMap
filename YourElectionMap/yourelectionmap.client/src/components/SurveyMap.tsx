@@ -24,7 +24,7 @@ export function SurveyMap() {
       aria-hidden="true"
       focusable="false"
     >
-      <SurveyGround ground={OVERVIEW.ground} />
+      <SurveyGround ground={OVERVIEW.ground} standIn />
 
       <FocusGroup variant="wide" focus={WIDE_FOCUS} />
       <FocusGroup variant="narrow" focus={NARROW_FOCUS} />

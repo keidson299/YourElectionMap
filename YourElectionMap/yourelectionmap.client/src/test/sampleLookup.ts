@@ -1,13 +1,18 @@
 import type { District, DistrictLookup } from '../districts/types'
 import type { LookupTarget } from '../routing/routes'
 
-// A test fixture: the same invented sample the server's DistrictLookupService
-// returns, so component tests can render a result without a fetch. Keep the two
-// in step — the endpoint tests pin the server's copy.
+// A test fixture, so component tests can render a result without a fetch. It is
+// invented, and no longer what the server sends: the real lookup covers North
+// Carolina and has three levels, where this has all six.
 //
-// Boundaries are in the stand-in drawing's survey units. State House 44, the
-// county and the school zone are the spec's own shapes; the other three are
-// made up to the same rule: each contains the address and stays on the sheet.
+// Keeping six is the point. It is the only thing that exercises a ward and a
+// zone, an area and a population, and the election footer — the parts of the
+// page real data has nothing to fill yet. What the server does send is pinned by
+// DistrictsEndpointTests.
+//
+// Boundaries are in the stand-in drawing's own units. State House 44, the county
+// and the school zone are the spec's own shapes; the other three are made up to
+// the same rule: each contains the address and stays on the sheet.
 
 const ADDRESS_POINT = [1127, 629] as const
 
@@ -128,7 +133,7 @@ export function sampleLookup(target: LookupTarget): DistrictLookup {
     location: ADDRESS_POINT,
     districts: SAMPLE_DISTRICTS,
     election: { date: '2026-11-03', candidates: 14, measures: 2 },
-    sample: true,
+    source: 'Sample data',
   }
 }
 

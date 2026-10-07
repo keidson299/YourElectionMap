@@ -63,6 +63,37 @@ describe('DistrictMap', () => {
     expect(svg).toHaveAttribute('viewBox', '817 381 620 496')
   })
 
+  // The boundaries here are real places. A hand-drawn river, road or neighbouring
+  // district would be saying something about those places that is not true.
+  it('draws nothing but paper under the real boundaries', () => {
+    const { svg } = renderMap()
+
+    expect(svg.querySelector('.survey-ground__paper')).not.toBeNull()
+    expect(svg.querySelector('.survey-ground__water')).toBeNull()
+    expect(svg.querySelector('.survey-ground__roads')).toBeNull()
+    expect(svg.querySelector('.survey-ground__mesh')).toBeNull()
+  })
+
+  // The paper follows the view, because a real address is anywhere in the state.
+  it('lays the paper under wherever the address is', () => {
+    const { svg } = renderMap()
+    const paper = svg.querySelector('.survey-ground__paper')
+
+    expect(Number(paper?.getAttribute('x'))).toBeLessThan(817)
+    expect(Number(paper?.getAttribute('width'))).toBeGreaterThan(620)
+  })
+
+  // Hatching a district with a hole in it. A dissolved boundary does not wind
+  // consistently, so the default fill rule would fill holes and skip islands.
+  it('hatches the selection by the even-odd rule', () => {
+    const { svg } = renderMap()
+
+    expect(svg.querySelector('.district-map__hatch')).toHaveAttribute(
+      'fill-rule',
+      'evenodd',
+    )
+  })
+
   it('widens the view to take in a large district', () => {
     const { viewBoxWidth } = renderMap('congressional-7')
 

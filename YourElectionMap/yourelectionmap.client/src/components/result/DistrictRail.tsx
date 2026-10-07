@@ -29,7 +29,8 @@ type DistrictRailProps = {
   districts: readonly District[]
   layers: MapLayers
   election: ElectionSummary | null
-  sample: boolean
+  /** What the boundaries were drawn from, named in the corner. */
+  source: string | null
   /** The phone layout: a sheet with a handle, a hint, and a one-line footer. */
   compact: boolean
   sheetExpanded: boolean
@@ -41,7 +42,7 @@ export function DistrictRail({
   districts,
   layers,
   election,
-  sample,
+  source,
   compact,
   sheetExpanded,
   onToggleSheet,
@@ -50,7 +51,11 @@ export function DistrictRail({
   const baseId = useId()
   const titleId = `${baseId}-title`
   const listId = `${baseId}-list`
-  const sampleTag = sample ? <span className="sample-tag">Sample data</span> : null
+  // Where the boundaries came from, said plainly. They are added up from precinct
+  // shapes rather than published as districts, so it matters that the page says
+  // which data drew them rather than presenting them as the last word.
+  const sourceTag =
+    source === null ? null : <span className="source-tag">{source}</span>
 
   let footer = null
 
@@ -80,7 +85,7 @@ export function DistrictRail({
         {compact ? null : (
           <p className="district-rail__eyebrow">
             <span>Your maps</span>
-            {sampleTag}
+            {sourceTag}
           </p>
         )}
         <div className="district-rail__title-row">
@@ -89,7 +94,7 @@ export function DistrictRail({
           </h2>
           {compact ? (
             <p className="district-rail__hint">
-              {sampleTag}
+              {sourceTag}
               <span>Tap to draw</span>
             </p>
           ) : null}
@@ -226,3 +231,4 @@ function ElectionStrip({ election }: { election: ElectionSummary }) {
     </p>
   )
 }
+

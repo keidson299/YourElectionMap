@@ -1,9 +1,8 @@
 import { useState } from 'react'
 import { SpinnerIcon } from '../icons'
 import { SurveyGround } from '../SurveyGround'
-import { DETAIL_GROUND, OVERVIEW } from '../surveyMapGeometry'
 import { problemCard, type LookupProblem } from '../../districts/lookups'
-import { DESIGN, fitFrame, viewBoxOf } from '../../map/frame'
+import { DESIGN, fitFrame, groundOf, viewBoxOf } from '../../map/frame'
 import type { LookupTarget } from '../../routing/routes'
 import './LookupStatus.css'
 
@@ -18,15 +17,9 @@ type LookupStatusProps = {
   onRetry: () => void
 }
 
-// The middle of the sheet at the spec's design span, so the grid is drawn at the
-// weight it has on the result map.
-const SHEET_VIEW_BOX = viewBoxOf(
-  fitFrame(
-    [OVERVIEW.ground.width / 2, OVERVIEW.ground.height / 2],
-    [],
-    DESIGN.desktop.span,
-  ),
-)
+// A sheet at the spec's design span, so the grid is drawn at the weight it has
+// on the result map. Centred anywhere, since there is nothing on it to look at.
+const SHEET_FRAME = fitFrame([0, 0], [], DESIGN.desktop.span)
 
 export function LookupStatus({ state, target, onRetry }: LookupStatusProps) {
   // Set once Try again has been pressed, so the button can stay put while the
@@ -53,12 +46,12 @@ export function LookupStatus({ state, target, onRetry }: LookupStatusProps) {
     <main className={waiting ? 'lookup-status lookup-status--waiting' : 'lookup-status'}>
       <svg
         className="lookup-status__sheet"
-        viewBox={SHEET_VIEW_BOX}
+        viewBox={viewBoxOf(SHEET_FRAME)}
         preserveAspectRatio="xMidYMid meet"
         aria-hidden="true"
         focusable="false"
       >
-        <SurveyGround ground={DETAIL_GROUND} />
+        <SurveyGround ground={groundOf(SHEET_FRAME)} />
       </svg>
 
       <div className="lookup-status__card card">

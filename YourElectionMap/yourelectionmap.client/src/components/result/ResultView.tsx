@@ -66,7 +66,7 @@ export function ResultView({
         districts={districts}
         layers={layers}
         election={lookup.election}
-        sample={lookup.sample}
+        source={lookup.source}
         compact={compact}
         sheetExpanded={sheetExpanded}
         onToggleSheet={() => setSheetExpanded((expanded) => !expanded)}

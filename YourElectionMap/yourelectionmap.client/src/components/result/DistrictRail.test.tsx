@@ -9,7 +9,11 @@ import type { ElectionSummary } from '../../districts/types'
 const lookup = sampleLookup({ address: '1420 Maple Street, Springfield' })
 
 function renderRail(
-  options: { selectedId?: string; election?: ElectionSummary | null } = {},
+  options: {
+    selectedId?: string
+    election?: ElectionSummary | null
+    source?: string | null
+  } = {},
 ) {
   const onSelect = vi.fn()
   const selected = resolveSelection(lookup.districts, options.selectedId ?? null)
@@ -23,7 +27,7 @@ function renderRail(
       districts={lookup.districts}
       layers={mapLayers(lookup.districts, selected)}
       election={options.election === undefined ? lookup.election : options.election}
-      sample={lookup.sample}
+      source={options.source === undefined ? lookup.source : options.source}
       compact={false}
       sheetExpanded={false}
       onToggleSheet={() => {}}
@@ -98,9 +102,15 @@ describe('DistrictRail', () => {
     expect(screen.queryByText('Also for this address')).toBeNull()
   })
 
-  it('marks invented districts as a sample', () => {
-    renderRail()
+  it('credits the data the boundaries came from', () => {
+    renderRail({ source: 'NC 2024 precincts' })
 
-    expect(screen.getByText('Sample data')).toBeInTheDocument()
+    expect(screen.getByText('NC 2024 precincts')).toBeInTheDocument()
+  })
+
+  it('says nothing about the data when there is nothing to credit', () => {
+    renderRail({ source: null })
+
+    expect(document.querySelector('.source-tag')).toBeNull()
   })
 })

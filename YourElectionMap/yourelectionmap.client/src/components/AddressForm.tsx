@@ -228,7 +228,7 @@ export function AddressForm({
           </button>
           <span className="address-form__divider" aria-hidden="true" />
           <p className="address-form__note">
-            Address used only to look up your districts.
+            North Carolina addresses for now. Used only to look up your districts.
           </p>
         </div>
       )}

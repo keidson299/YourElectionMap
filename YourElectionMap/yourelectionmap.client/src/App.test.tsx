@@ -114,7 +114,8 @@ describe('App', () => {
     expect(currentUrl()).toBe('/')
     expect(
       screen.getByText(
-        'We could not match that address. Try adding your city or ZIP code.',
+        'We could not find North Carolina districts for that address. Check it,'
+        + ' or try adding your city or ZIP code.',
       ),
     ).toBeInTheDocument()
     expect(screen.getByLabelText('Home address')).toHaveValue('Main Street')
@@ -213,18 +214,18 @@ describe('App', () => {
     ).toHaveFocus()
   })
 
-  it('says a deep-linked address could not be matched', async () => {
+  it('says a deep-linked address could not be placed', async () => {
     goTo('/map?address=Main+Street')
     render(<App />)
 
     expect(
       await screen.findByRole('heading', {
         level: 1,
-        name: 'We could not match that address',
+        name: 'We could not place that address',
       }),
     ).toBeInTheDocument()
     expect(
-      screen.getByText('Try adding your city or ZIP code in the search above.'),
+      screen.getByText(/covers North Carolina so far/),
     ).toBeInTheDocument()
     expect(screen.queryByRole('radio')).toBeNull()
   })
@@ -247,14 +248,14 @@ describe('App', () => {
     expect(await districtList()).toBeInTheDocument()
   })
 
-  it('says an address the server will not take could not be matched', async () => {
+  it('says an address the server will not take could not be placed', async () => {
     goTo(`/map?address=1+${'x'.repeat(250)}+Road`)
     render(<App />)
 
     expect(
       await screen.findByRole('heading', {
         level: 1,
-        name: 'We could not match that address',
+        name: 'We could not place that address',
       }),
     ).toBeInTheDocument()
     // Not a failure, so there is nothing to keep trying.
@@ -380,9 +381,7 @@ describe('App', () => {
 
     expect(currentUrl()).toBe('/map?address=1420+Maple+Street')
     expect(
-      screen.getByText(
-        'We could not match that address. Try adding your city or ZIP code.',
-      ),
+      screen.getByText(/We could not find North Carolina districts/),
     ).toBeInTheDocument()
     expect(await districtList()).toBeInTheDocument()
   })

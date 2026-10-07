@@ -1,8 +1,18 @@
 import type { SurveyPoint, SurveyRing } from '../districts/types'
 
 // Where the result map looks, how far it zooms, and what its scale bar says.
-// Everything is in survey units, the drawing's coordinate space, except a
-// map element's size, which is in CSS pixels.
+// Everything is in map units, the coordinate space boundaries arrive in, except
+// a map element's size, which is in CSS pixels.
+
+/**
+ * The map's scale. One unit is 96 feet, so 55 of them make a mile — which is
+ * what makes the spec's 92px scale bar read one mile at the design frame, and
+ * what the server's `StatePlane.FeetPerMapUnit` is chosen to agree with.
+ *
+ * (A foot here is the US survey foot the boundary data is projected in, which
+ * misses a statute mile by two parts in a million.)
+ */
+export const MAP_UNITS_PER_MILE = 55
 
 export type Span = { width: number; height: number }
 
@@ -15,7 +25,11 @@ export type Frame = { center: SurveyPoint; width: number; height: number }
  */
 export type Design = { span: Span; map: Span }
 
-/** The 1040×832 desktop map beside the rail, and the 390×320 phone map. */
+/**
+ * The 1040×832 desktop map beside the rail, and the 390×320 phone map. The spans
+ * are the least the map ever shows: 620 units is 11.3 miles, about right for a
+ * State House district, and `fitFrame` widens past it for anything bigger.
+ */
 export const DESIGN = {
   desktop: {
     span: { width: 620, height: 496 },
@@ -75,6 +89,25 @@ export function zoomFrame(frame: Frame, zoom: number): Frame {
   }
 }
 
+/**
+ * Paper to lay under a frame: three times its size, centred on it, so there is
+ * still sheet showing after a zoom out or at any window shape. It follows the
+ * frame rather than sitting at fixed coordinates, because a real address can be
+ * anywhere in the state.
+ */
+export function groundOf(frame: Frame): {
+  x: number
+  y: number
+  width: number
+  height: number
+} {
+  const [cx, cy] = frame.center
+  const width = frame.width * 3
+  const height = frame.height * 3
+
+  return { x: cx - width / 2, y: cy - height / 2, width, height }
+}
+
 export function viewBoxOf(frame: Frame): string {
   const [cx, cy] = frame.center
 
@@ -105,7 +138,9 @@ export function lineScale(frame: Frame, map: Span, design: Design): number {
 
 export type ScaleBar = { miles: number; width: number }
 
-const SCALE_DISTANCES = [0.25, 0.5, 1, 2, 5]
+// Up to fifty miles, because a congressional district is a hundred miles across
+// and the bar would otherwise be a stub at the widest frames.
+const SCALE_DISTANCES = [0.25, 0.5, 1, 2, 5, 10, 25, 50]
 const SCALE_TARGET_WIDTH = 92
 
 /** The round distance whose bar comes closest to the spec's 92px. */
