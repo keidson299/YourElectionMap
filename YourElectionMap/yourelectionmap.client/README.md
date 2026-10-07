@@ -1,32 +1,39 @@
-# React + TypeScript + Vite
+# yourelectionmap.client
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+The YourElectionMap front end: React 19 and TypeScript, bundled by Vite. Its only runtime
+dependencies are React itself — no router, no UI library, no map library. The result map is
+hand-written SVG and the styling is plain CSS.
 
-Currently, two official plugins are available:
+It has two pages: Home (the address form over a decorative survey map) and the result page at
+`/map?address=…` or `/map?lat=…&lon=…`, which lists the districts covering that place and draws
+one of them. It gets them from the server's `GET /api/districts`, which Vite proxies to the
+ASP.NET Core API in development. See the [repository README](../../README.md) for running the two
+together.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Scripts
 
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```powershell
+npm run dev          # Vite on https://localhost:52462 (proxies /api to the API)
+npm test             # vitest run
+npm run test:watch   # vitest in watch mode
+npm run lint         # oxlint, configured in .oxlintrc.json
+npm run build        # tsc -b && vite build
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+Run these from a path with an uppercase drive letter (`D:\...`). From `d:\...`, Vitest loads its
+modules twice and every suite fails in `src/test/setup.ts` before a test runs.
+
+## Layout of `src/`
+
+| Folder | What is in it |
+| --- | --- |
+| `pages/` | `HomePage` and `MapPage` |
+| `components/` | The address form, header, theme toggle and Home's decorative map; `result/` holds the rail, the map and what sits over it |
+| `districts/` | `types.ts`, the lookup contract shared with the server's `DistrictLookup.cs`; `lookups.ts`, the whole data layer; selection and labels |
+| `map/` | `frame.ts`: map units (55 to the mile), fitting, zoom and the scale bar |
+| `routing/` | A small wrapper over the History API; the URL decides what is looked up and shown |
+| `hooks/`, `theme/` | Media query and element size hooks; the light/dark theme |
+| `test/` | Test setup, a fake districts API, and a six-level sample lookup |
+
+Sizes, colours and line weights come from the build spec,
+[design/canvas4/Main.dc.html](../../design/canvas4/Main.dc.html).

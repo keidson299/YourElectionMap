@@ -110,11 +110,26 @@ and let the owner decide whether to authorize a search or paste the information 
 ## What this is
 
 `YourElectionMap` is an ASP.NET Core 9 Web API (`YourElectionMap.Server`) serving a React 19 + Vite
-SPA (`yourelectionmap.client`), with an xUnit test project (`YourElectionMap.Server.Tests`). The
-client has a Home page (the address form over a decorative survey map) and a result page (a rail
-of districts beside the map; on a phone, the map above a bottom sheet). The client fetches its
-districts from the server's one real endpoint, `GET /api/districts`, which still answers with
-invented sample data.
+SPA (`yourelectionmap.client`), with an xUnit test project (`YourElectionMap.Server.Tests`) and a
+console project (`YourElectionMap.Tools`), run by hand, that builds the district data. The client
+has a Home page (the address form over a decorative survey map) and a result page (a rail of
+districts beside the map; on a phone, the map above a bottom sheet). The client fetches its
+districts from the server's one real endpoint, `GET /api/districts`. The current plan is
+[design/ElectionMapMainDesignPlanV4.md](design/ElectionMapMainDesignPlanV4.md); code comments refer
+to its numbered slices.
+
+**The data is real, and it is North Carolina only.** An address is placed by the US Census
+geocoder — the one call this app makes out to the internet — and the point is then looked up in
+`Districts/Data/nc-districts.json`, which holds the state's 14 US House, 50 NC Senate and 120 NC
+House districts. There is no County Commission, City Council or School Board data, and no election
+data, so the rail lists three districts and its election footer stays hidden. An address anywhere
+else is a 404, which the page says in as many words.
+
+**`nc-districts.json` is generated and git-ignored, not checked in.** A fresh clone has no
+`Districts/Data/` folder, and without it the server stops at startup (`Program.cs` loads
+`DistrictData` eagerly) and `DistrictDataTests` and `DistrictsEndpointTests` fail. It is built by
+`YourElectionMap.Tools` from shapefiles kept outside the repository; nothing in the `.csproj` names
+it, and the Web SDK's default `**/*.json` content glob is what copies it to `bin/`.
 
 ## Project priorities
 
@@ -132,6 +147,13 @@ dotnet test YourElectionMap.sln                       # all server tests
 dotnet test YourElectionMap.Server.Tests/YourElectionMap.Server.Tests.csproj `
   --filter "FullyQualifiedName~Get_WithAnAddress_ReturnsTheLookupTheClientReads"   # one test
 dotnet publish YourElectionMap.Server/YourElectionMap.Server.csproj         # also builds SPA into wwwroot
+
+# Builds Districts/Data/nc-districts.json from the precinct shapefiles. Needed once per clone
+# (the file is git-ignored) and again when the boundaries change; see
+# YourElectionMap.Tools/DATA-SOURCE.md.
+dotnet run --project YourElectionMap.Tools -- `
+  "D:\VisualStudio\GitProjects\YourElectionMap\Docs\MapShapeFiles\NC_2024_Precint_Bounds" `
+  YourElectionMap.Server\Districts\Data\nc-districts.json
 ```
 
 ```powershell
@@ -151,10 +173,10 @@ with "Vitest failed to find the current suite" before any test runs. VS Code ter
 with the lowercase form, so check this first if every suite fails at once.
 
 VS Code equivalents live in [YourElectionMap/.vscode/tasks.json](YourElectionMap/.vscode/tasks.json)
-(`build`, `clean`, `publish`, `watch server`, `client: install/build/lint`, `test: server`,
-`test: client`, `test: all`). Debug configurations are in
+(`build`, `clean`, `publish`, `watch server`, `client: install/dev server/build/lint`,
+`test: server`, `test: client`, `test: client (watch)`, `test: all`). Debug configurations are in
 [YourElectionMap/.vscode/launch.json](YourElectionMap/.vscode/launch.json) — **Full stack (Edge/Chrome)**
-is the normal entry point.
+is the normal entry point; **Client: debug tests (Vitest)** debugs the client suite.
 
 ## Architecture
 
@@ -191,13 +213,48 @@ controllers + OpenAPI (dev only, at `/openapi/v1.json`), static assets, then
 `Program` is declared `public partial` at the bottom of the file **solely** so
 `WebApplicationFactory<Program>` can host the app in memory; do not remove it.
 
-**Server tests host the whole app in memory.** `DistrictsEndpointTests` uses
-`IClassFixture<WebApplicationFactory<Program>>` and reads the raw JSON, so routing, model binding
-and the names and formats on the wire are all covered — that JSON is the contract the client reads,
-so new endpoints deserve the same kind of test. A controller can also be instantiated directly
-where only its own logic is in question. Client tests are
-Vitest + Testing Library in `jsdom`, matching `src/**/*.{test,spec}.{ts,tsx}`, with
-`src/test/setup.ts` as the setup file.
+**How a lookup is answered**, all in `YourElectionMap.Server/Districts/`. `CensusGeocoder` turns an
+address into a latitude and longitude; `StatePlane` projects that into map units with the parameters
+from the shapefiles' own `.prj`; `DistrictData` — a singleton holding the whole file — answers which
+boundaries contain the point, box-checked first and then by counting ray crossings in `Geometry`.
+`DistrictsController` answers 200 with a lookup, 404 when nothing can be placed or found, 503 when
+the geocoder did not answer (`GeocoderUnavailableException`), and 400 for an unusable query; the
+client reads 404 and 400 as no-match and anything else as an error, so an outage never reads as a
+bad address. Three things in there are worth knowing before changing them:
+
+- **Containment counts crossings rather than winding.** The boundaries come out of a dissolve, which
+  does not keep the clockwise-is-outer rule a shapefile follows, so an island and a hole are
+  indistinguishable until the crossings are counted. The map's hatch needs `fill-rule="evenodd"` for
+  the same reason.
+- **The file stores boundaries finer than it sends them.** It keeps roughly 15 feet of detail,
+  because the same rings answer "which district is this address in"; each response then thins its
+  boundaries to about a pixel at the frame that district is drawn in, which is what keeps a
+  congressional district to a thousand points instead of twenty-five thousand.
+- **The precincts are added up by edge parity, not by keeping edges seen exactly once.** A few
+  borders in this data are described three times, and dropping those tears the outline open. See the
+  comment on `Dissolve` in `YourElectionMap.Tools` — it is the one piece of real geometry in the
+  project and it explains why.
+
+**Server tests host the whole app in memory.** `DistrictsEndpointTests` uses its nested `OfflineApp`,
+a `WebApplicationFactory<Program>`, and reads the raw JSON, so routing, model binding and the names and
+formats on the wire are all covered — that JSON is the contract the client reads, so new endpoints
+deserve the same kind of test. A controller can also be instantiated directly where only its own
+logic is in question. Client tests are Vitest + Testing Library in `jsdom`, matching
+`src/**/*.{test,spec}.{ts,tsx}`, with `src/test/setup.ts` as the setup file.
+
+**No test reaches the internet.** `OfflineApp` replaces the geocoder's `HttpClient` handler in
+`ConfigureTestServices` with `FakeGeocoding`, which places any address containing one of a few
+known words ("Jones", "Tryon", …) and fakes an outage for "Outage". Everything else in
+those tests is real, including the whole district file. If you add a service that calls out, stub it
+the same way.
+
+**How the district data is checked.** The converter needs 130MB of shapefiles that are not in the
+repository, so `DissolveTests` works on hand-made polygons instead, and `DistrictDataTests` checks
+the generated file. The strongest of those is
+`Covering_HasTheThreeLevelsAgreeAcrossTheWholeState`: the three layers were dissolved independently
+from the same precincts and each covers the state exactly once, so a grid of points over the state
+has to find one district per level everywhere. A hole or an overlap left by the dissolve shows up
+there and nowhere else.
 
 **Client structure.**
 
@@ -205,10 +262,17 @@ Vitest + Testing Library in `jsdom`, matching `src/**/*.{test,spec}.{ts,tsx}`, w
   reads it through `useSyncExternalStore`. The URL decides what is looked up and which district is
   shown, so change it only through `navigate()`.
 - `DistrictLookup` in `src/districts/types.ts` is the contract the result page renders, and the
-  twin of the server's records in `Districts/DistrictLookup.cs` — change the two together. The
-  invented districts behind it live in the server's `DistrictLookupService`; the client's copy,
-  `src/test/sampleLookup.ts`, is a test fixture, and `src/components/surveyMapGeometry.ts` (the
-  drawn stand-in map) is the other placeholder a later slice replaces.
+  twin of the server's records in `Districts/DistrictLookup.cs` — change the two together.
+- **Everything drawn on the result map is in map units: one unit is 96 feet, so 55 make a mile.**
+  That number is why every size in the design spec still means what it did — it is
+  `MAP_UNITS_PER_MILE` in `src/map/frame.ts` and `StatePlane.FeetPerMapUnit` on the server, and the
+  two have to agree. Y counts downward, as SVG does, so a North Carolina address has a negative y.
+- `src/components/surveyMapGeometry.ts` is the hand-drawn stand-in, and it is now only the
+  decoration behind the home card. The result map draws real boundaries on bare paper: `SurveyGround`
+  leaves out the river, the roads and the mesh unless asked for them with `standIn`.
+- `src/test/sampleLookup.ts` is a test fixture, and deliberately not what the server sends — it has
+  all six levels, a ward, a zone, populations and an election, which is the only thing exercising
+  the parts of the page the real three-level data has nothing to fill.
 - `src/districts/lookups.ts` is the whole data layer: it fetches a lookup, keeps every answer of
   the visit keyed by the target's query, and holds the wording for the waiting, no-match and error
   states. Home and the header go through `openLookup`, which looks the target up *before* changing

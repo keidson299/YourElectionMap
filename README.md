@@ -1,7 +1,15 @@
 # YourElectionMap
 
+Type an address and see the election districts you vote in, drawn on a map.
+
 An ASP.NET Core 9 API (`YourElectionMap.Server`) serving a React 19 + Vite SPA
-(`yourelectionmap.client`), with an xUnit test project (`YourElectionMap.Server.Tests`).
+(`yourelectionmap.client`), with an xUnit test project (`YourElectionMap.Server.Tests`) and a
+console project (`YourElectionMap.Tools`) that builds the district data.
+
+The data is real and covers **North Carolina only**: its 14 US House, 50 State Senate and 120
+State House districts. Addresses are placed by the US Census geocoder, the one call the app makes
+out to the internet. There is no county, city, school board or election data yet. The plan is
+[design/ElectionMapMainDesignPlanV4.md](design/ElectionMapMainDesignPlanV4.md).
 
 ## Developing in VS Code
 
@@ -11,6 +19,18 @@ An ASP.NET Core 9 API (`YourElectionMap.Server`) serving a React 19 + Vite SPA
 dotnet dev-certs https --trust        # trust the local HTTPS certificate
 cd YourElectionMap/yourelectionmap.client
 npm install
+```
+
+**Generate the district file.** `YourElectionMap.Server/Districts/Data/nc-districts.json` is
+git-ignored, and the server will not start without it. It is built from the 2024 North Carolina
+precinct shapefiles, about 130MB, which are kept outside the repository; see
+[DATA-SOURCE.md](YourElectionMap/YourElectionMap.Tools/DATA-SOURCE.md) for where they come from.
+From `YourElectionMap/`:
+
+```powershell
+dotnet run --project YourElectionMap.Tools -- `
+  "<folder holding the NC 2024 precinct shapefiles>" `
+  YourElectionMap.Server\Districts\Data\nc-districts.json
 ```
 
 Open `YourElectionMap/YourElectionMap.code-workspace` (File > Open Workspace from File),
@@ -32,7 +52,8 @@ port 52462 and there is no CORS setup to maintain. New server routes need to be 
 
 Other launch configurations: **Server: ASP.NET Core** (API alone — useful with
 `YourElectionMap.Server.http` or the OpenAPI doc at `/openapi/v1.json`), **Client: Vite +
-Edge/Chrome** (SPA alone), and **Server: attach to process**.
+Edge/Chrome** (SPA alone), **Client: debug tests (Vitest)**, and **Server: attach to process**.
+The requests in `YourElectionMap.Server.http` go to the real Census geocoder.
 
 The Vite dev server runs as a VS Code background task, so it keeps running after the debug
 session stops. Stop it from the terminal panel, or with *Tasks: Terminate Task*.
@@ -51,12 +72,18 @@ npm run test:watch                                # vitest in watch mode
 ```
 
 `YourElectionMap.Server.Tests` uses `WebApplicationFactory<Program>` to host the real app in
-memory; `Program` is declared `public partial` at the bottom of `Program.cs` to allow that.
+memory; `Program` is declared `public partial` at the bottom of `Program.cs` to allow that. The
+geocoder is stubbed, so no test reaches the internet, but the tests read the real district file
+and need it generated first.
+
+Run the client tests from a path with an uppercase drive letter (`D:\...`). From `d:\...`, Vitest
+loads its modules twice and every suite fails in `src/test/setup.ts` before a test runs.
 
 ### Other tasks
 
 *Tasks: Run Task* also offers `build`, `clean`, `publish`, `watch server` (hot reload without
-the debugger), `client: install`, `client: build` and `client: lint`.
+the debugger), `client: install`, `client: dev server`, `client: build`, `client: lint`, and
+`test: client (watch)`.
 
 ## Visual Studio
 
