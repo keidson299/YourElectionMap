@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- For Geometry: the thinning this writes with has to be the same code the server
+         thins with per request, or the stored and sent boundaries drift apart. -->
+    <ProjectReference Include="..\YourElectionMap.Server\YourElectionMap.Server.csproj" />
+  </ItemGroup>
+
+</Project>
