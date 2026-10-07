@@ -8,8 +8,13 @@ builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
-// Holds no per-request state, so one instance serves every lookup.
-builder.Services.AddSingleton<DistrictLookupService>();
+// Four megabytes of boundaries, read from disk once and shared by every lookup.
+builder.Services.AddSingleton<DistrictData>();
+
+// Typed client, so its handler is pooled and rotated rather than held for the life of
+// the process. That makes it per-request, and the service that uses it too.
+builder.Services.AddHttpClient<CensusGeocoder>();
+builder.Services.AddScoped<DistrictLookupService>();
 
 var app = builder.Build();
 

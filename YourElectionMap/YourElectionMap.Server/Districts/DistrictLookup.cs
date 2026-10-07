@@ -12,13 +12,16 @@ namespace YourElectionMap.Server.Districts
     /// that finds none is a 404 instead.
     /// </param>
     /// <param name="Election">The next election's summary, or null when there is none.</param>
-    /// <param name="Sample">True while the districts are invented rather than looked up.</param>
+    /// <param name="Source">
+    /// What the boundaries were drawn from, for the page to name: "NC 2024 precincts".
+    /// Null only if a lookup ever comes from somewhere with nothing to credit.
+    /// </param>
     public sealed record DistrictLookup(
         string Label,
         double[] Location,
         IReadOnlyList<District> Districts,
         ElectionSummary? Election,
-        bool Sample);
+        string? Source);
 
     /// <param name="Id">URL-safe and stable, because the page URL carries it: "state-lower-44".</param>
     /// <param name="Level">One of the client's DISTRICT_LEVELS: "state-lower".</param>

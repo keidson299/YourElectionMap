@@ -58,3 +58,6 @@ design/**/yourelectionmap-*.html
 # OS
 .DS_Store
 Thumbs.db
+
+# Generated map files
+YourElectionMap/YourElectionMap.Server/Districts/Data

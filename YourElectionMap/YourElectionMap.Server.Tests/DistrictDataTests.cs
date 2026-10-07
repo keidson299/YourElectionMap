@@ -1,0 +1,172 @@
+using YourElectionMap.Server.Districts;
+
+namespace YourElectionMap.Server.Tests
+{
+    /// <summary>
+    /// The real district file, as the server loads it. These tests are the only check
+    /// that the converter's output is sane, since the converter itself needs 130MB of
+    /// shapefiles that are not in the repository.
+    /// </summary>
+    public class DistrictDataTests
+    {
+        // Loaded once: it is four megabytes, and nothing here changes it.
+        private static readonly DistrictData Data = new();
+
+        // The State Legislative Building, 16 W Jones Street, Raleigh.
+        private const double RaleighLatitude = 35.7822;
+        private const double RaleighLongitude = -78.6398;
+
+        [Fact]
+        public void Loads_EveryDistrictOfTheThreeLevelsNorthCarolinaHas()
+        {
+            Assert.Equal(184, Data.Count);
+            Assert.Equal("NC 2024 precincts", Data.Source);
+        }
+
+        [Fact]
+        public void Covering_FindsOneDistrictPerLevelOverARaleighAddress()
+        {
+            var found = Covering(RaleighLatitude, RaleighLongitude);
+
+            Assert.Equal(
+                new[] { "congressional", "state-upper", "state-lower" },
+                found.Select(district => district.Level).ToArray());
+        }
+
+        [Fact]
+        public void Covering_NamesTheOfficesTheRailLists()
+        {
+            var found = Covering(RaleighLatitude, RaleighLongitude);
+
+            Assert.Equal(
+                new[] { "U.S. House", "State Senate", "State House" },
+                found.Select(district => district.Office).ToArray());
+
+            // The one thing the rail says about a district it has not selected.
+            Assert.Equal(
+                new[] { "Federal", "State", "State" },
+                found.Select(district => district.Detail).ToArray());
+        }
+
+        [Fact]
+        public void Covering_GivesEachDistrictAnIdMadeOfItsLevelAndNumber()
+        {
+            foreach (var district in Covering(RaleighLatitude, RaleighLongitude))
+            {
+                Assert.Equal($"{district.Level}-{district.Number}", district.Id);
+                Assert.Equal("District", district.Unit);
+
+                // Neither is in this data.
+                Assert.Null(district.Area);
+                Assert.Null(district.Population);
+            }
+        }
+
+        [Fact]
+        public void Covering_SendsBoundariesThinnedToWhatAViewCanShow()
+        {
+            var found = Covering(RaleighLatitude, RaleighLongitude);
+
+            foreach (var district in found)
+            {
+                var points = district.Boundary.Sum(ring => ring.Length);
+
+                Assert.NotEmpty(district.Boundary);
+
+                // Comfortably more than a rectangle, comfortably less than the tens of
+                // thousands of vertices the precincts came with.
+                Assert.InRange(points, 20, 4000);
+
+                foreach (var ring in district.Boundary)
+                {
+                    Assert.Equal(2, ring[0].Length);
+                    Assert.Equal(ring[0], ring[^1]);
+                }
+            }
+        }
+
+        [Fact]
+        public void Covering_PutsTheBroaderDistrictAroundTheNarrowerOne()
+        {
+            var found = Covering(RaleighLatitude, RaleighLongitude);
+            var federal = Box(found[0]);
+            var house = Box(found[2]);
+
+            Assert.True(federal[2] - federal[0] > house[2] - house[0]);
+            Assert.True(federal[3] - federal[1] > house[3] - house[1]);
+        }
+
+        [Theory]
+        [InlineData(38.8977, -77.0365)] // the White House
+        [InlineData(32.7765, -79.9311)] // Charleston, South Carolina
+        [InlineData(36.8508, -76.2859)] // Norfolk, Virginia
+        [InlineData(33.5, -76.0)] // the Atlantic, east of the state
+        public void Covering_FindsNothingOutsideNorthCarolina(double latitude, double longitude)
+        {
+            Assert.Empty(Covering(latitude, longitude));
+        }
+
+        /// <summary>
+        /// The one check on the dissolve that needs no outside authority. The three layers
+        /// were dissolved independently out of the same precincts, and each one covers the
+        /// whole state exactly once, so anywhere one of them places you the other two have
+        /// to as well — and never twice. A hole or an overlap left by the dissolve would
+        /// have to show up here.
+        /// </summary>
+        [Fact]
+        public void Covering_HasTheThreeLevelsAgreeAcrossTheWholeState()
+        {
+            var inside = 0;
+            var disagreed = new List<string>();
+
+            // A grid over the state's own extent, in map units.
+            for (var x = 4_300.0; x < 32_000; x += 900)
+            {
+                for (var y = -10_800.0; y < 0; y += 450)
+                {
+                    var found = Data.Covering(x, y);
+
+                    if (found.Count == 0)
+                    {
+                        continue;
+                    }
+
+                    inside++;
+
+                    var levels = found.Select(district => district.Level).ToArray();
+
+                    if (!levels.SequenceEqual(["congressional", "state-upper", "state-lower"]))
+                    {
+                        disagreed.Add($"({x}, {y}): {string.Join(", ", levels)}");
+                    }
+                }
+            }
+
+            // Enough of the grid to have covered the state rather than clipped a corner.
+            Assert.InRange(inside, 200, 1000);
+            Assert.Empty(disagreed);
+        }
+
+        [Fact]
+        public void Covering_ReachesTheCornersOfTheState()
+        {
+            // Murphy in the west and Manteo in the east: if the projection were off, or a
+            // district were missing, one end of the state would come back empty.
+            Assert.NotEmpty(Covering(35.0873, -84.0346));
+            Assert.NotEmpty(Covering(35.9082, -75.6757));
+        }
+
+        private static List<District> Covering(double latitude, double longitude)
+        {
+            var (x, y) = StatePlane.ToMapUnits(latitude, longitude);
+
+            return Data.Covering(x, y);
+        }
+
+        private static double[] Box(District district) =>
+            Geometry.BoxOf(
+                district.Boundary
+                    .Select(ring => ring.SelectMany(point => point).ToArray())
+                    .ToArray());
+    }
+}

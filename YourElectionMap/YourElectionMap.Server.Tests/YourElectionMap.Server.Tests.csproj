@@ -17,6 +17,9 @@
 
   <ItemGroup>
     <ProjectReference Include="..\YourElectionMap.Server\YourElectionMap.Server.csproj" />
+    <!-- The converter that builds the district file. Its dissolve is tested here on
+         hand-made polygons, so the tests need none of the 130MB of shapefiles. -->
+    <ProjectReference Include="..\YourElectionMap.Tools\YourElectionMap.Tools.csproj" />
   </ItemGroup>
 
   <ItemGroup>

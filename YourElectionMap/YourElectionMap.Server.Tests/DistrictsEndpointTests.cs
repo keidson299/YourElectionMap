@@ -1,91 +1,116 @@
 using System.Net;
 using System.Text.Json;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
+using Microsoft.Extensions.DependencyInjection;
+using YourElectionMap.Server.Districts;
 
 namespace YourElectionMap.Server.Tests
 {
     /// <summary>
-    /// Hosts the real app in memory, so routing, model binding and the JSON on the
-    /// wire are covered. The client reads these exact names and formats, so this is
-    /// where the contract is pinned down.
+    /// Hosts the real app in memory, so routing, model binding and the JSON on the wire
+    /// are covered. The client reads these exact names and formats, so this is where the
+    /// contract is pinned down.
+    /// <para>
+    /// The geocoder's handler is replaced, so no test reaches the internet. Everything
+    /// else is real, including the four megabytes of North Carolina boundaries.
+    /// </para>
     /// </summary>
-    public class DistrictsEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+    public class DistrictsEndpointTests : IClassFixture<DistrictsEndpointTests.OfflineApp>
     {
-        private readonly WebApplicationFactory<Program> _factory;
+        /// <summary>16 W Jones Street, Raleigh: an address the stubbed geocoder places.</summary>
+        private const string RaleighAddress = "16 W Jones St, Raleigh NC";
 
-        public DistrictsEndpointTests(WebApplicationFactory<Program> factory)
+        private readonly OfflineApp _app;
+
+        public DistrictsEndpointTests(OfflineApp app)
         {
-            _factory = factory;
+            _app = app;
         }
 
         [Fact]
         public async Task Get_WithAnAddress_ReturnsTheLookupTheClientReads()
         {
-            var lookup = await LookupAsync(AddressQuery("1420 Maple Street, Springfield"));
+            var lookup = await LookupAsync(AddressQuery(RaleighAddress));
 
-            Assert.Equal("1420 Maple Street", lookup.GetProperty("label").GetString());
-            Assert.Equal(new double[] { 1127, 629 }, Numbers(lookup.GetProperty("location")));
-            Assert.True(lookup.GetProperty("sample").GetBoolean());
+            Assert.Equal("16 W Jones St", lookup.GetProperty("label").GetString());
+            Assert.Equal("NC 2024 precincts", lookup.GetProperty("source").GetString());
 
-            var election = lookup.GetProperty("election");
+            // No election data yet, which is what hides the rail's footer.
+            Assert.Equal(JsonValueKind.Null, lookup.GetProperty("election").ValueKind);
 
-            Assert.Equal("2026-11-03", election.GetProperty("date").GetString());
-            Assert.Equal(14, election.GetProperty("candidates").GetInt32());
-            Assert.Equal(2, election.GetProperty("measures").GetInt32());
+            // The address, in map units: inside the state, and north of the projection's
+            // origin, so y is negative.
+            var location = Numbers(lookup.GetProperty("location"));
+
+            Assert.InRange(location[0], 4_200, 32_000);
+            Assert.InRange(location[1], -10_900, 0);
 
             var districts = lookup.GetProperty("districts");
 
-            // Broad to local, which is the order DistrictLookup promises and the rail
-            // and the map's neighbour rule both read.
+            // Broad to local, which is the order DistrictLookup promises and the rail and
+            // the map's neighbour rule both read. Three, because these are the levels this
+            // data covers; the client never assumes six.
             Assert.Equal(
-                new[]
-                {
-                    "congressional-7",
-                    "state-upper-22",
-                    "state-lower-44",
-                    "county-3",
-                    "city-2",
-                    "school-5",
-                },
-                districts
-                    .EnumerateArray()
-                    .Select(district => district.GetProperty("id").GetString())
-                    .ToArray());
+                new[] { "congressional", "state-upper", "state-lower" },
+                Each(districts, "level"));
+            Assert.Equal(
+                new[] { "U.S. House", "State Senate", "State House" },
+                Each(districts, "office"));
+            Assert.Equal(new[] { "Federal", "State", "State" }, Each(districts, "detail"));
+        }
 
-            var house = districts
-                .EnumerateArray()
-                .Single(district => district.GetProperty("id").GetString() == "state-lower-44");
+        [Fact]
+        public async Task Get_PlacesARaleighAddressInTheDistrictsThatCoverIt()
+        {
+            // Pinned, so that a change to the projection, the dissolve or the data file
+            // cannot quietly start answering with the wrong districts.
+            var lookup = await LookupAsync(AddressQuery(RaleighAddress));
 
-            Assert.Equal("state-lower", house.GetProperty("level").GetString());
-            Assert.Equal("State House", house.GetProperty("office").GetString());
-            Assert.Equal("District", house.GetProperty("unit").GetString());
-            Assert.Equal("44", house.GetProperty("number").GetString());
-            Assert.Equal("State", house.GetProperty("detail").GetString());
-            Assert.Equal("Greenlake County", house.GetProperty("area").GetString());
-            Assert.Equal(71400, house.GetProperty("population").GetInt32());
+            Assert.Equal(
+                new[] { "congressional-2", "state-upper-14", "state-lower-38" },
+                Each(lookup.GetProperty("districts"), "id"));
+        }
 
-            var ring = house.GetProperty("boundary")[0];
+        [Fact]
+        public async Task Get_DrawsEachDistrictAsRingsOfPoints()
+        {
+            var lookup = await LookupAsync(AddressQuery(RaleighAddress));
 
-            Assert.Equal(4, ring.GetArrayLength());
-            Assert.Equal(new double[] { 930, 495 }, Numbers(ring[0]));
+            foreach (var district in lookup.GetProperty("districts").EnumerateArray())
+            {
+                var boundary = district.GetProperty("boundary");
+
+                Assert.True(boundary.GetArrayLength() > 0);
+
+                var ring = boundary[0];
+
+                // Enough points to be a real boundary, few enough to send.
+                Assert.InRange(ring.GetArrayLength(), 20, 4000);
+                Assert.Equal(2, ring[0].GetArrayLength());
+
+                // Closed: the last point repeats the first, so the path needs no fixing up.
+                Assert.Equal(Numbers(ring[0]), Numbers(ring[ring.GetArrayLength() - 1]));
+            }
         }
 
         [Fact]
         public async Task Get_SendsNullRatherThanOmittingWhatIsNotKnown()
         {
-            var lookup = await LookupAsync(AddressQuery("1420 Maple Street"));
+            var lookup = await LookupAsync(AddressQuery(RaleighAddress));
+            var first = lookup.GetProperty("districts")[0];
 
-            var federal = lookup
-                .GetProperty("districts")
-                .EnumerateArray()
-                .Single(district => district.GetProperty("id").GetString() == "congressional-7");
-
-            Assert.Equal(JsonValueKind.Null, federal.GetProperty("area").ValueKind);
+            // Neither the area nor the population is in this data, and the rail and chip
+            // leave out what they are not given.
+            Assert.Equal(JsonValueKind.Null, first.GetProperty("area").ValueKind);
+            Assert.Equal(JsonValueKind.Null, first.GetProperty("population").ValueKind);
+            Assert.Equal("District", first.GetProperty("unit").GetString());
         }
 
         [Theory]
-        [InlineData("1420 Maple Street, Springfield", "1420 Maple Street")]
-        [InlineData("88 Harbor Road", "88 Harbor Road")]
+        [InlineData("16 W Jones St, Raleigh NC", "16 W Jones St")]
+        [InlineData("101 S Tryon St", "101 S Tryon St")]
         public async Task Get_NamesAnAddressByItsStreetLine(string address, string label)
         {
             var lookup = await LookupAsync(AddressQuery(address));
@@ -96,22 +121,25 @@ namespace YourElectionMap.Server.Tests
         [Fact]
         public async Task Get_NamesALocatedLookupPlainly()
         {
-            var lookup = await LookupAsync("lat=39.8&lon=-89.65");
+            var lookup = await LookupAsync("lat=35.7822&lon=-78.6398");
 
             Assert.Equal("Your location", lookup.GetProperty("label").GetString());
+            Assert.Equal(3, lookup.GetProperty("districts").GetArrayLength());
         }
 
         [Fact]
         public async Task Get_PrefersTheAddressWhenBothAreGiven()
         {
             var lookup = await LookupAsync(
-                $"{AddressQuery("1420 Maple Street")}&lat=39.8&lon=-89.65");
+                $"{AddressQuery(RaleighAddress)}&lat=35.2271&lon=-80.8431");
 
-            Assert.Equal("1420 Maple Street", lookup.GetProperty("label").GetString());
+            Assert.Equal("16 W Jones St", lookup.GetProperty("label").GetString());
         }
 
         [Theory]
-        [InlineData("address=Main%20Street")] // no house number for the stub to place
+        [InlineData("address=nowhere%20at%20all")] // the geocoder cannot place it
+        [InlineData("address=1600%20Pennsylvania%20Ave%2C%20Washington%20DC")] // placed, but not here
+        [InlineData("lat=38.8977&lon=-77.0365")] // Washington DC
         [InlineData("lat=30&lon=-30")] // the middle of the Atlantic
         public async Task Get_Returns404WhenThereIsNothingToShow(string query)
         {
@@ -150,13 +178,13 @@ namespace YourElectionMap.Server.Tests
         [Fact]
         public async Task Get_TellsNothingToKeepTheAddressItEchoes()
         {
-            var response = await GetAsync(AddressQuery("1420 Maple Street"));
+            var response = await GetAsync(AddressQuery(RaleighAddress));
 
             Assert.True(response.Headers.CacheControl?.NoStore);
         }
 
         private Task<HttpResponseMessage> GetAsync(string query) =>
-            _factory.CreateClient().GetAsync($"/api/districts?{query}");
+            _app.CreateClient().GetAsync($"/api/districts?{query}");
 
         private async Task<JsonElement> LookupAsync(string query)
         {
@@ -173,7 +201,25 @@ namespace YourElectionMap.Server.Tests
         private static string AddressQuery(string address) =>
             $"address={Uri.EscapeDataString(address)}";
 
+        private static string?[] Each(JsonElement districts, string property) =>
+            districts
+                .EnumerateArray()
+                .Select(district => district.GetProperty(property).GetString())
+                .ToArray();
+
         private static double[] Numbers(JsonElement array) =>
             array.EnumerateArray().Select(number => number.GetDouble()).ToArray();
+
+        /// <summary>The app with its one outward call stubbed out.</summary>
+        public sealed class OfflineApp : WebApplicationFactory<Program>
+        {
+            protected override void ConfigureWebHost(IWebHostBuilder builder)
+            {
+                builder.ConfigureTestServices(services =>
+                    services
+                        .AddHttpClient<CensusGeocoder>()
+                        .ConfigurePrimaryHttpMessageHandler(FakeGeocoding.Handler));
+            }
+        }
     }
 }

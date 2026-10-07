@@ -1,15 +1,19 @@
 @YourElectionMap.Server_HostAddress = http://localhost:5026
 
-### A match: the sample districts for a typed address
-GET {{YourElectionMap.Server_HostAddress}}/api/districts?address=1420%20Maple%20Street,%20Springfield
+### A match: the three districts over an address in Raleigh
+GET {{YourElectionMap.Server_HostAddress}}/api/districts?address=16%20W%20Jones%20St,%20Raleigh%20NC
 Accept: application/json
 
-### The same, from a point
-GET {{YourElectionMap.Server_HostAddress}}/api/districts?lat=39.8&lon=-89.65
+### The same place, from a point
+GET {{YourElectionMap.Server_HostAddress}}/api/districts?lat=35.7822&lon=-78.6398
 Accept: application/json
 
-### No match: 404, because the stub wants a house number
-GET {{YourElectionMap.Server_HostAddress}}/api/districts?address=Main%20Street
+### No match: 404, because the geocoder cannot place this
+GET {{YourElectionMap.Server_HostAddress}}/api/districts?address=nowhere%20at%20all
+Accept: application/json
+
+### No match again: placed perfectly well, and not in North Carolina
+GET {{YourElectionMap.Server_HostAddress}}/api/districts?address=1600%20Pennsylvania%20Ave,%20Washington%20DC
 Accept: application/json
 
 ###
