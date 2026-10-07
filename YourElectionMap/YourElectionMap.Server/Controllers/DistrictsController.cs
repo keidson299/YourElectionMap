@@ -9,7 +9,8 @@ namespace YourElectionMap.Server.Controllers
     /// <list type="bullet">
     /// <item>200 with a <see cref="DistrictLookup"/>, holding at least one district;</item>
     /// <item>404 when the place could not be found or has no districts;</item>
-    /// <item>400 when the query itself is wrong, which only a bug can cause.</item>
+    /// <item>400 when the query itself is wrong, which only a bug can cause;</item>
+    /// <item>503 when the geocoder did not answer, so the page can offer to try again.</item>
     /// </list>
     /// The address arrives in the query string, as it already does in the page URL.
     /// It is not logged, and the answer is sent no-store, so nothing between here and
@@ -35,6 +36,7 @@ namespace YourElectionMap.Server.Controllers
         [ProducesResponseType(typeof(DistrictLookup), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
         public async Task<ActionResult<DistrictLookup>> Get(
             [FromQuery] string? address,
             [FromQuery] double? lat,
@@ -56,7 +58,17 @@ namespace YourElectionMap.Server.Controllers
                     return ValidationProblem(ModelState);
                 }
 
-                lookup = await _lookups.LookupAddressAsync(typed, cancellationToken);
+                try
+                {
+                    lookup = await _lookups.LookupAddressAsync(typed, cancellationToken);
+                }
+                catch (GeocoderUnavailableException)
+                {
+                    return Problem(
+                        statusCode: StatusCodes.Status503ServiceUnavailable,
+                        title: "Address lookup unavailable",
+                        detail: "The address service did not answer. Try again in a moment.");
+                }
             }
             else if (lat is not null && lon is not null)
             {

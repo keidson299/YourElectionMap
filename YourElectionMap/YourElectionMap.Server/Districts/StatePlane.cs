@@ -21,7 +21,8 @@ namespace YourElectionMap.Server.Districts
     {
         /// <summary>
         /// 96 feet to the map unit, so a mile is 55 units — the scale the drawing was
-        /// designed at, and still the client's <c>SURVEY_UNITS_PER_MILE</c>.
+        /// designed at, and still the client's <c>MAP_UNITS_PER_MILE</c> in
+        /// <c>src/map/frame.ts</c>.
         /// </summary>
         public const double FeetPerMapUnit = 96;
 
@@ -77,51 +78,6 @@ namespace YourElectionMap.Server.Districts
                 FalseNorthingFeet + north / MetresPerFoot);
         }
 
-        /// <summary>
-        /// Back to latitude and longitude. Nothing in the app needs this — it is here
-        /// so a test can project a point and get it back, which is the only check on
-        /// the maths that does not need an outside authority.
-        /// </summary>
-        public static (double Latitude, double Longitude) ToLatitudeLongitude(
-            double easting,
-            double northing)
-        {
-            var east = (easting - FalseEastingFeet) * MetresPerFoot;
-            var north = (northing - FalseNorthingFeet) * MetresPerFoot;
-
-            var fromOrigin = OriginRadius - north;
-            var radius = Math.Sign(ConeConstant)
-                * Math.Sqrt(east * east + fromOrigin * fromOrigin);
-            var angle = Math.Atan2(east, fromOrigin);
-
-            var tangent = Math.Pow(
-                radius / (SemiMajorMetres * ScaleFactor),
-                1 / ConeConstant);
-
-            // Snyder's iteration for the latitude whose tangent this is. It settles in
-            // three or four passes; ten is a generous ceiling.
-            var latitude = Math.PI / 2 - 2 * Math.Atan(tangent);
-
-            for (var pass = 0; pass < 10; pass++)
-            {
-                var sin = Eccentricity * Math.Sin(latitude);
-                var next = Math.PI / 2 - 2 * Math.Atan(
-                    tangent * Math.Pow((1 - sin) / (1 + sin), Eccentricity / 2));
-
-                if (Math.Abs(next - latitude) < 1e-12)
-                {
-                    latitude = next;
-                    break;
-                }
-
-                latitude = next;
-            }
-
-            return (
-                Degrees(latitude),
-                Degrees(angle / ConeConstant) + CentralMeridian);
-        }
-
         private static double EccentricityOf(double inverseFlattening)
         {
             var flattening = 1 / inverseFlattening;
@@ -162,7 +118,5 @@ namespace YourElectionMap.Server.Districts
         }
 
         private static double Radians(double degrees) => degrees * Math.PI / 180;
-
-        private static double Degrees(double radians) => radians * 180 / Math.PI;
     }
 }

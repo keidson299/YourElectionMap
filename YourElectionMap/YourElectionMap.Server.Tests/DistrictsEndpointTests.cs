@@ -151,6 +151,33 @@ namespace YourElectionMap.Server.Tests
                 response.Content.Headers.ContentType?.MediaType);
         }
 
+        [Fact]
+        public async Task Get_UsesTheFirstMatchInNorthCarolina()
+        {
+            // The stub answers Greenville SC first and Greenville NC second, as the real
+            // geocoder can for an address with no state.
+            var lookup = await LookupAsync(AddressQuery("100 Main St, Greenville"));
+
+            var (x, y) = StatePlane.ToMapUnits(35.6127, -77.3664);
+            var location = Numbers(lookup.GetProperty("location"));
+
+            Assert.Equal(x, location[0], 0.001);
+            Assert.Equal(y, location[1], 0.001);
+            Assert.Equal(3, lookup.GetProperty("districts").GetArrayLength());
+        }
+
+        [Fact]
+        public async Task Get_Returns503WhenTheGeocoderIsUnavailable()
+        {
+            // Not a 404: the address may be fine, and the page offers to try again.
+            var response = await GetAsync(AddressQuery($"16 W Jones St {FakeGeocoding.Outage}"));
+
+            Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
+            Assert.Equal(
+                "application/problem+json",
+                response.Content.Headers.ContentType?.MediaType);
+        }
+
         [Theory]
         [InlineData("")] // nothing to look up
         [InlineData("address=%20%20")] // only spaces

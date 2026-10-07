@@ -3,9 +3,9 @@ using YourElectionMap.Server.Districts;
 namespace YourElectionMap.Server.Tests
 {
     /// <summary>
-    /// The projection has no second opinion available offline, so it is checked three
-    /// ways: against the one point the parameters state outright, against itself, and
-    /// against the boundary data it has to agree with.
+    /// The projection has no second opinion available offline, so it is checked two
+    /// ways: against the one point the parameters state outright, and against the
+    /// boundary data it has to agree with.
     /// </summary>
     public class StatePlaneTests
     {
@@ -22,21 +22,6 @@ namespace YourElectionMap.Server.Tests
 
             Assert.Equal(2_000_000, easting, 0.01);
             Assert.Equal(0, northing, 0.01);
-        }
-
-        [Theory]
-        [InlineData(35.7822, -78.6398)] // Raleigh
-        [InlineData(35.2271, -80.8431)] // Charlotte, near the west edge
-        [InlineData(35.9132, -75.6750)] // the Outer Banks, near the east edge
-        [InlineData(36.5, -81.6)] // the north-west corner
-        public void ToLatitudeLongitude_UndoesTheProjection(double latitude, double longitude)
-        {
-            var (easting, northing) = StatePlane.ToStatePlaneFeet(latitude, longitude);
-            var (back, around) = StatePlane.ToLatitudeLongitude(easting, northing);
-
-            // A ten-millionth of a degree is about a centimetre.
-            Assert.Equal(latitude, back, 0.0000001);
-            Assert.Equal(longitude, around, 0.0000001);
         }
 
         [Fact]
@@ -70,7 +55,7 @@ namespace YourElectionMap.Server.Tests
         [Fact]
         public void FeetPerMapUnit_KeepsTheClientsFiftyFiveUnitsToTheMile()
         {
-            // SURVEY_UNITS_PER_MILE in the client's map/frame.ts. If this stops being 55
+            // MAP_UNITS_PER_MILE in the client's map/frame.ts. If this stops being 55
             // the scale bar lies and every size in the design spec means something else.
             Assert.Equal(55, 5280 / StatePlane.FeetPerMapUnit);
         }

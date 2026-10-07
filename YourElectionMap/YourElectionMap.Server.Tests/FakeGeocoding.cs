@@ -15,15 +15,20 @@ namespace YourElectionMap.Server.Tests
         /// match for anything else. Coordinates are the real ones, so the real boundary
         /// data answers for them.
         /// </summary>
-        public static readonly (string Word, double Latitude, double Longitude)[] Places =
+        public static readonly (string Word, (double Latitude, double Longitude)[] Points)[] Places =
         [
             // The State Legislative Building, Raleigh.
-            ("Jones", 35.7822, -78.6398),
+            ("Jones", [(35.7822, -78.6398)]),
             // Downtown Charlotte.
-            ("Tryon", 35.2271, -80.8431),
+            ("Tryon", [(35.2271, -80.8431)]),
             // The White House, which is in no North Carolina district.
-            ("Pennsylvania", 38.8977, -77.0365),
+            ("Pennsylvania", [(38.8977, -77.0365)]),
+            // A town name with no state: Greenville SC first, then Greenville NC.
+            ("Greenville", [(34.8526, -82.3940), (35.6127, -77.3664)]),
         ];
+
+        /// <summary>Any address holding this word finds the geocoder down.</summary>
+        public const string Outage = "Outage";
 
         /// <summary>The handler the endpoint tests put in place of the real one.</summary>
         public static HttpMessageHandler Handler() =>
@@ -31,32 +36,40 @@ namespace YourElectionMap.Server.Tests
             {
                 var asked = request.RequestUri?.Query ?? "";
 
-                foreach (var (word, latitude, longitude) in Places)
+                if (asked.Contains(Outage, StringComparison.OrdinalIgnoreCase))
+                {
+                    return Task.FromResult(Reply("{}", HttpStatusCode.ServiceUnavailable));
+                }
+
+                foreach (var (word, points) in Places)
                 {
                     if (asked.Contains(word, StringComparison.OrdinalIgnoreCase))
                     {
-                        return Task.FromResult(Reply(Match(latitude, longitude)));
+                        return Task.FromResult(Reply(Match(points)));
                     }
                 }
 
                 return Task.FromResult(Reply(NoMatch));
             });
 
-        /// <summary>A reply shaped the way the geocoder's documentation describes.</summary>
-        public static string Match(double latitude, double longitude) =>
-            $$"""
-            {
-              "result": {
-                "input": { "address": { "address": "whatever was asked" } },
-                "addressMatches": [
-                  {
-                    "matchedAddress": "16 W JONES ST, RALEIGH, NC, 27601",
-                    "coordinates": { "x": {{longitude}}, "y": {{latitude}} }
+        /// <summary>
+        /// A reply shaped the way the geocoder's documentation describes, with one match
+        /// for each point.
+        /// </summary>
+        public static string Match(params (double Latitude, double Longitude)[] points)
+        {
+            var matches = points.Select(point =>
+                $$"""{ "matchedAddress": "16 W JONES ST, RALEIGH, NC, 27601", "coordinates": { "x": {{point.Longitude}}, "y": {{point.Latitude}} } }""");
+
+            return $$"""
+                {
+                  "result": {
+                    "input": { "address": { "address": "whatever was asked" } },
+                    "addressMatches": [ {{string.Join(", ", matches)}} ]
                   }
-                ]
-              }
-            }
-            """;
+                }
+                """;
+        }
 
         /// <summary>An address the geocoder could not place: a match list with nothing in it.</summary>
         public const string NoMatch = """

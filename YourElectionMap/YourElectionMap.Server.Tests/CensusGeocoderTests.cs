@@ -5,24 +5,26 @@ namespace YourElectionMap.Server.Tests
 {
     /// <summary>
     /// The one call this app makes out to the internet, against a stubbed handler. What
-    /// matters is that every way of failing comes back as "could not place it" rather
-    /// than as an exception reaching the page.
+    /// matters is that an address it does not know comes back as no matches, and that
+    /// every way of getting no answer at all comes back as unavailable — never as "no
+    /// such address", which would tell someone their address is wrong.
     /// </summary>
     public class CensusGeocoderTests
     {
         [Fact]
-        public async Task FindAsync_ReadsTheCoordinatesOfTheFirstMatch()
+        public async Task FindAsync_ReadsEveryMatchInOrder()
         {
-            var geocoder = Geocoder(
-                (_, _) => Task.FromResult(FakeGeocoding.Reply(FakeGeocoding.Match(35.7822, -78.6398))));
+            var geocoder = Geocoder((_, _) => Task.FromResult(FakeGeocoding.Reply(
+                FakeGeocoding.Match((34.8526, -82.3940), (35.7822, -78.6398)))));
 
-            var found = await geocoder.FindAsync("16 W Jones St, Raleigh NC", default);
+            var found = await geocoder.FindAsync("16 W Jones St", default);
 
-            Assert.NotNull(found);
-            Assert.Equal(35.7822, found.Value.Latitude);
+            Assert.Equal(2, found.Count);
+            Assert.Equal(34.8526, found[0].Latitude);
+            Assert.Equal(35.7822, found[1].Latitude);
 
             // x is the longitude, which is the way round it is easy to get wrong.
-            Assert.Equal(-78.6398, found.Value.Longitude);
+            Assert.Equal(-78.6398, found[1].Longitude);
         }
 
         [Fact]
@@ -45,42 +47,53 @@ namespace YourElectionMap.Server.Tests
             var geocoder = Geocoder(
                 (_, _) => Task.FromResult(FakeGeocoding.Reply(FakeGeocoding.NoMatch)));
 
-            Assert.Null(await geocoder.FindAsync("nowhere at all", default));
+            Assert.Empty(await geocoder.FindAsync("nowhere at all", default));
+        }
+
+        [Theory]
+        [InlineData("{ \"result\": {} }")]
+        [InlineData("{ \"result\": { \"addressMatches\": \"none\" } }")]
+        [InlineData("{ \"result\": { \"addressMatches\": [ {} ] } }")]
+        public async Task FindAsync_ReturnsNothingWhenTheAnswerHoldsNoMatch(string body)
+        {
+            var geocoder = Geocoder((_, _) => Task.FromResult(FakeGeocoding.Reply(body)));
+
+            Assert.Empty(await geocoder.FindAsync("16 W Jones St", default));
         }
 
         [Theory]
         [InlineData(HttpStatusCode.InternalServerError, "{}")]
         [InlineData(HttpStatusCode.TooManyRequests, "{}")]
         [InlineData(HttpStatusCode.OK, "<html>down for maintenance</html>")]
-        [InlineData(HttpStatusCode.OK, "{ \"result\": {} }")]
-        [InlineData(HttpStatusCode.OK, "{ \"result\": { \"addressMatches\": \"none\" } }")]
-        [InlineData(HttpStatusCode.OK, "{ \"result\": { \"addressMatches\": [ {} ] } }")]
-        public async Task FindAsync_ReturnsNothingWhenTheAnswerIsNotOne(
+        public async Task FindAsync_IsUnavailableWhenTheAnswerIsNotOne(
             HttpStatusCode status,
             string body)
         {
             var geocoder = Geocoder((_, _) => Task.FromResult(FakeGeocoding.Reply(body, status)));
 
-            Assert.Null(await geocoder.FindAsync("16 W Jones St", default));
+            await Assert.ThrowsAsync<GeocoderUnavailableException>(
+                () => geocoder.FindAsync("16 W Jones St", default));
         }
 
         [Fact]
-        public async Task FindAsync_ReturnsNothingWhenTheCallItselfFails()
+        public async Task FindAsync_IsUnavailableWhenTheCallItselfFails()
         {
-            // What a timeout or a DNS failure looks like from here.
+            // What a DNS failure looks like from here.
             var geocoder = Geocoder(
                 (_, _) => throw new HttpRequestException("no such host"));
 
-            Assert.Null(await geocoder.FindAsync("16 W Jones St", default));
+            await Assert.ThrowsAsync<GeocoderUnavailableException>(
+                () => geocoder.FindAsync("16 W Jones St", default));
         }
 
         [Fact]
-        public async Task FindAsync_ReturnsNothingWhenItRunsOutOfTime()
+        public async Task FindAsync_IsUnavailableWhenItRunsOutOfTime()
         {
             var geocoder = Geocoder(
                 (_, _) => throw new TaskCanceledException("the client gave up waiting"));
 
-            Assert.Null(await geocoder.FindAsync("16 W Jones St", default));
+            await Assert.ThrowsAsync<GeocoderUnavailableException>(
+                () => geocoder.FindAsync("16 W Jones St", default));
         }
 
         [Fact]

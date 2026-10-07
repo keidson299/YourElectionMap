@@ -9,8 +9,10 @@ namespace YourElectionMap.Server.Districts
     /// <para>
     /// This is the only call this app makes out to the internet, and the address is what
     /// it sends. Nothing is logged here, and nothing is kept: see the privacy section of
-    /// the design plan. A miss, a timeout, a refusal and a reply this does not recognise
-    /// are all the same answer — null — because none of them leave an address to place.
+    /// the design plan. An address the geocoder does not know comes back as no matches.
+    /// A timeout, a refusal or a reply that is not JSON is a
+    /// <see cref="GeocoderUnavailableException"/> instead, because it says nothing about
+    /// the address and the page should offer to try again rather than doubt it.
     /// </para>
     /// </summary>
     public sealed class CensusGeocoder
@@ -35,10 +37,12 @@ namespace YourElectionMap.Server.Districts
         }
 
         /// <summary>
-        /// Where the address is, or null when it cannot be placed. Latitude and longitude
-        /// come back as WGS84, which is what <see cref="StatePlane"/> expects.
+        /// Every place the address could be, in the geocoder's order, or none when it
+        /// cannot be placed. An address with no state can match in several. Latitude and
+        /// longitude come back as WGS84, which is what <see cref="StatePlane"/> expects.
         /// </summary>
-        public async Task<(double Latitude, double Longitude)?> FindAsync(
+        /// <exception cref="GeocoderUnavailableException">No answer could be had.</exception>
+        public async Task<IReadOnlyList<(double Latitude, double Longitude)>> FindAsync(
             string address,
             CancellationToken cancellationToken)
         {
@@ -50,39 +54,43 @@ namespace YourElectionMap.Server.Districts
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    return null;
+                    throw new GeocoderUnavailableException(
+                        $"The geocoder answered {(int)response.StatusCode}.");
                 }
 
                 await using var body = await response.Content.ReadAsStreamAsync(cancellationToken);
                 using var json = await JsonDocument.ParseAsync(body, default, cancellationToken);
 
-                return FirstMatch(json.RootElement);
+                return Matches(json.RootElement);
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
                 // The browser gave up and went away; that is not a failure to report.
                 throw;
             }
-            catch (Exception)
+            catch (Exception failure) when (
+                failure is HttpRequestException or TaskCanceledException or JsonException)
             {
-                // A timeout, a DNS failure, a reply that was not JSON. None of them say
-                // anything about the address, and the page says so.
-                return null;
+                // A DNS failure, a timeout, a reply that was not JSON. None of them say
+                // anything about the address.
+                throw new GeocoderUnavailableException("The geocoder could not be reached.", failure);
             }
         }
 
         /// <summary>
-        /// Reads the first match out of
+        /// Reads every match out of
         /// <c>result.addressMatches[].coordinates.{x, y}</c>, where x is the longitude.
         /// Anything missing or of the wrong kind reads as no match rather than throwing.
         /// </summary>
-        private static (double Latitude, double Longitude)? FirstMatch(JsonElement root)
+        private static List<(double Latitude, double Longitude)> Matches(JsonElement root)
         {
+            var found = new List<(double Latitude, double Longitude)>();
+
             if (!root.TryGetProperty("result", out var result)
                 || !result.TryGetProperty("addressMatches", out var matches)
                 || matches.ValueKind != JsonValueKind.Array)
             {
-                return null;
+                return found;
             }
 
             foreach (var match in matches.EnumerateArray())
@@ -96,10 +104,16 @@ namespace YourElectionMap.Server.Districts
                     continue;
                 }
 
-                return (latitude, longitude);
+                found.Add((latitude, longitude));
             }
 
-            return null;
+            return found;
         }
     }
+
+    /// <summary>
+    /// The geocoder could not be asked, or did not answer: the address may be fine.
+    /// </summary>
+    public sealed class GeocoderUnavailableException(string message, Exception? inner = null)
+        : Exception(message, inner);
 }

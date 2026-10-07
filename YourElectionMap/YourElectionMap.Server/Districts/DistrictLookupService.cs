@@ -27,22 +27,29 @@ namespace YourElectionMap.Server.Districts
 
         /// <summary>
         /// The districts covering a typed address, or null when it cannot be placed in
-        /// any of them.
+        /// any of them. An address with no state can match in several; the first match
+        /// inside North Carolina wins.
         /// </summary>
+        /// <exception cref="GeocoderUnavailableException">The geocoder did not answer.</exception>
         public async Task<DistrictLookup?> LookupAddressAsync(
             string address,
             CancellationToken cancellationToken)
         {
-            var found = await _geocoder.FindAsync(address, cancellationToken);
+            var matches = await _geocoder.FindAsync(address, cancellationToken);
 
-            if (found is null)
+            foreach (var (latitude, longitude) in matches)
             {
-                return null;
+                // The page names the address the way it was typed. The geocoder's own
+                // spelling of it comes back in capitals, and is no more correct.
+                var lookup = At(latitude, longitude, StreetLine(address));
+
+                if (lookup is not null)
+                {
+                    return lookup;
+                }
             }
 
-            // The page names the address the way it was typed. The geocoder's own
-            // spelling of it comes back in capitals, and is no more correct.
-            return At(found.Value.Latitude, found.Value.Longitude, StreetLine(address));
+            return null;
         }
 
         /// <summary>

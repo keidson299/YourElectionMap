@@ -18,6 +18,10 @@ builder.Services.AddScoped<DistrictLookupService>();
 
 var app = builder.Build();
 
+// Read the boundaries now, so a missing or broken data file stops the app at start
+// rather than failing every lookup, and the first visitor does not wait on the parse.
+app.Services.GetRequiredService<DistrictData>();
+
 app.UseDefaultFiles();
 app.MapStaticAssets();
 

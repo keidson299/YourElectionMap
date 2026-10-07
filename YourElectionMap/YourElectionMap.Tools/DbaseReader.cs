@@ -48,24 +48,6 @@ namespace YourElectionMap.Tools
         /// <summary>How many records the header declares.</summary>
         public int Count { get; }
 
-        /// <summary>Every field name, in the order the records store them.</summary>
-        public IReadOnlyList<string> FieldNames =>
-            Array.ConvertAll(_fields, field => field.Name);
-
-        /// <summary>One field of one record, trimmed. Unknown names throw.</summary>
-        public string Text(int record, string fieldName)
-        {
-            foreach (var field in _fields)
-            {
-                if (field.Name == fieldName)
-                {
-                    return Text(record, field);
-                }
-            }
-
-            throw new ArgumentException($"No field named '{fieldName}'.", nameof(fieldName));
-        }
-
         /// <summary>
         /// The names of the fields holding a number above zero in this record. The
         /// precinct files carry no district column, so which contest a precinct voted
