@@ -26,13 +26,13 @@ The work is split into numbered slices, and comments in the code refer to them b
 | 4. Real North Carolina    | Real districts and real boundaries for a real address: geocoding, and the state's US House, State Senate and State House districts     | Done    |
 | 5. Street map             | The result map becomes a real, draggable street map with the districts drawn over it                                                    | Done    |
 | 6. Enacted district maps  | The three levels built from the General Assembly's own plans, including the 2025 congressional map, with each district's population    | Done    |
-| 7. Election information   | The next election's date, candidates, ballot measures and voting places, which brings the rail's footer back                           | Next    |
-| 8. The other three levels | County Commission, City Council and School Board, and the county's name on the map chip                                                 | Planned |
-| Later                     | More states; the election detail view                                                                                                    | Planned |
+| 7. Election information   | The next election's date and the number of candidates and ballot measures, from Google's voter lookup, which brings the rail's footer back | Done    |
+| 8. The other three levels | County Commission, City Council and School Board, and the county's name on the map chip                                                 | Next    |
+| Later                     | More states; the election detail view, with voting places                                                                                | Planned |
 
-**Deployment is the last step, not a slice.** It comes once the slices that should be live are done. With the general election on 3 November 2026 and the current maps in place, it can come now, ahead of slice 7.
+**Deployment is the last step, not a slice.** It comes once the slices that should be live are done. With the general election on 3 November 2026 and the current maps and election information in place, it can come now, ahead of slice 8.
 
-Two changes from V4's order. Slice 5 is new: the street map had been left out of every plan so far, and the site does not do its job without it. And election information now comes before the other three levels, because its data can come ready-made from an outside service (see **Outside data**), while local district boundaries have no statewide source.
+Two changes from V4's order. Slice 5 is new: the street map had been left out of every plan so far, and the site does not do its job without it. And election information came before the other three levels, because its data can come ready-made from an outside service (see **Outside data**), while local district boundaries have no statewide source.
 
 ## How it works
 
@@ -54,7 +54,7 @@ A card sits on the left of the page, over a map that fills the background. The m
 
 The card holds the site name and tagline, the address field with a **Find My Maps** button, and a **Use my current location** button that asks the browser for its position. Under them, the card says that North Carolina addresses are the ones it can answer for now — better said before someone types than after.
 
-The tagline ("plus the candidates and dates that come with them") and the card's last line, "Also included: candidates · ballot measures · election dates", still promise the election information that arrives in slice 7.
+The tagline ("plus the candidates and dates that come with them") and the card's last line, "Also included: candidates · ballot measures · election dates", promise the election information the rail's footer gives, where Google has it for the address.
 
 ### Validating the address
 
@@ -82,7 +82,9 @@ The selected row is the boundary drawn solid and hatched on the map. Its neighbo
 
 With three nested levels rather than six, those context boundaries are often much larger than the selection and run off the edge of the view. That is left as it is: a line leaving the frame is a true thing to draw, and the legend names what each one is.
 
-At the foot of the rail, under "Also for this address", sit the next election's date, the number of candidates on the ballot, and the number of ballot measures. This footer is left out when the address has no election information, **which is every address today**, until slice 7.
+At the foot of the rail, under "Also for this address", sit the next election's date, the number of candidates on the ballot, and the number of ballot measures. They come from Google's voter lookup (see **Outside data**). The footer is left out when there is no election to show: Google has none for the address, did not answer, or the lookup was by location, which gives Google no address to ask about. Google's answer can name the election without the ballot — it leaves the contests out when two elections share a day — and then the footer gives the date alone rather than claim "0 candidates".
+
+Voting places, which slice 7 first set out to include, wait for the election detail view, where there is room to say which place is for which day.
 
 In the corner of the rail, the rail names the data the boundaries were drawn from: "NCGA enacted maps", the General Assembly's own plans. Districts are redrawn, and North Carolina's congressional districts were redrawn in 2025, so the page says which maps it is showing.
 
@@ -119,7 +121,7 @@ The theme follows the device's light or dark setting until the user picks one wi
 
 ### Election details (later slice)
 
-V1 planned for full information about the elections at an address: candidate names, political affiliation, candidate websites, propositions, the dates of the previous and upcoming elections, and published results once an election has passed. That is still the plan, as a detail view reached from the rail's footer. The footer itself comes back in slice 7, and the detail view after it. Neither has been designed yet.
+V1 planned for full information about the elections at an address: candidate names, political affiliation, candidate websites, propositions, the dates of the previous and upcoming elections, and published results once an election has passed. That is still the plan, as a detail view reached from the rail's footer. The footer came back in slice 7; the detail view, with the polling place and early-voting sites, has not been designed yet.
 
 ### Accessibility
 
@@ -149,7 +151,7 @@ The result page renders one shape, whatever produced it. The server sends it as 
 | label     | The address as the page names it: the street line as typed, such as "16 W Jones St", or "Your location"                                                                                                                         |
 | location  | The address as longitude and latitude                                                                                                                                                                                            |
 | districts | Each district covering the address: a stable id; its level; its office ("State House"); its unit and number ("District 44", "Ward 2"); a short detail line; the area it covers and its population, where known; and its boundary |
-| election  | The next election's date and its candidate and measure counts, or nothing when there is no election information                                                                                                                  |
+| election  | The next election's date and its candidate and measure counts, or nothing when there is no election information. Either count can be missing on its own, when the election data names the election but not the ballot           |
 | source    | What the boundaries were drawn from, for the rail to name                                                                                                                                                                        |
 
 The page relies on two rules. It never assumes six districts, and handles any number, including none. And a boundary is the coordinates of a GeoJSON MultiPolygon — polygons, each an outer ring and then its holes — so districts with islands or holes are drawn as one, and the map can be handed them as they are.
@@ -160,14 +162,15 @@ The back end is built with C# on ASP.NET Core 9. As with the client, both have g
 
 **Today** the server has one endpoint of its own, the districts lookup below, alongside OpenAPI in development and a fallback that serves the front end for any other path.
 
-Its tests host the whole app in memory and call it over HTTP, reading the raw JSON, so routing and the field names and formats on the wire are covered too — that JSON is what the client reads, so it is where the contract is pinned down. The geocoder is stubbed in those tests, so nothing in the suite reaches the internet; everything else about them is real, including the whole district file.
+Its tests host the whole app in memory and call it over HTTP, reading the raw JSON, so routing and the field names and formats on the wire are covered too — that JSON is what the client reads, so it is where the contract is pinned down. The geocoder and Google's voter lookup are stubbed in those tests, so nothing in the suite reaches the internet; everything else about them is real, including the whole district file.
 
 **The districts endpoint** is `GET /api/districts`, under the prefix the development proxy already forwards. It takes either an `address` (free text, as typed) or `lat` and `lon`: the same inputs the result page's URL carries, and the address wins if both are given. The address travels in the query string, as it already does in the page URL, and is not logged. For each request it:
 
 1. Resolves the input to a point. An address is geocoded; coordinates are used as given. An address with no state can match in several places, so each match is tried in the geocoder's order and the first one inside North Carolina wins.
 2. Projects that point into the boundaries' own coordinates, North Carolina State Plane.
 3. Finds every district whose boundary contains it, broad to local.
-4. Returns the lookup, with each boundary converted back to longitude and latitude, no election summary, and the source of the boundaries named. A browser that accepts compressed responses gets one: boundaries at full detail are tens of kilobytes of coordinates, and more for the largest districts.
+4. For a typed address, asks Google's voter lookup for the next election there, sending the geocoder's spelling of the match it used, which names the state.
+5. Returns the lookup, with each boundary converted back to longitude and latitude, the election summary if there is one, and the source of the boundaries named. A browser that accepts compressed responses gets one: boundaries at full detail are tens of kilobytes of coordinates, and more for the largest districts.
 
 It answers in one of four ways:
 
@@ -186,7 +189,9 @@ Because districts are found from the point itself, an address in an unincorporat
 - **It is generated once, not computed per request.** Nothing about those boundaries changes between redistrictings, so converting them at startup or per lookup would be work repeated for no reason.
 - **Which district an address is in is answered from the same boundaries the page draws**, at the same detail. That keeps one source of truth, and means the only thing standing between an address and an answer is a point-in-polygon test. The test runs in the projected coordinates the file holds; only what goes to the page is converted to degrees.
 
-An address is placed by the **US Census geocoder** (`geocoding.geo.census.gov`, free and keyless). It is the one call the server makes out to the internet. A geocoder that answers with no match is "could not place it", the same 404 as an address that does not exist. A geocoder that is down, gives up after eight seconds, or answers with something that is not JSON is a different matter: that says nothing about the address, so it is a 503 and the page offers to try again.
+An address is placed by the **US Census geocoder** (`geocoding.geo.census.gov`, free and keyless). It is one of the two calls the server makes out to the internet. A geocoder that answers with no match is "could not place it", the same 404 as an address that does not exist. A geocoder that is down, gives up after eight seconds, or answers with something that is not JSON is a different matter: that says nothing about the address, so it is a 503 and the page offers to try again.
+
+The other call is **Google's voter lookup** (`www.googleapis.com/civicinfo/v2/voterinfo`), for the election. It needs an API key, which the server reads from its configuration (`GoogleCivic:ApiKey`: user secrets in development, an environment variable when deployed) and sends in a request header rather than the URL. The election is extra to the districts, so this call can never fail a lookup: no key, no election, a refusal, a timeout after four seconds or an answer that cannot be read all mean the lookup goes out without an election and the footer is left out. A fresh copy of the repository has no key and runs that way. An election whose day has passed in North Carolina is not shown.
 
 **Hosting.** The server and the built front end ship together as one Linux container; the project already has a Dockerfile. The host is still to be chosen, on cost. Because the district file is not in the repository, the image carries it only when it has been generated into the build context first; an image built from a fresh clone has no districts and the server will not start.
 
@@ -195,7 +200,7 @@ An address is placed by the **US Census geocoder** (`geocoding.geo.census.gov`, 
 Building every data source locally widens the project too far, so outside services are now an accepted way to fill a gap. Each one is weighed on cost, on whether it needs an account or key, and on what it sees of a visit. These were checked on 2026-10-07:
 
 - **Street map tiles: OpenFreeMap.** Free, with no key, no account, no cookies and no limit on use, and a credit required. It offers no service guarantee, so the provider is one setting to change; Stadia Maps' free plan is the fallback.
-- **Election information (slice 7): the Google Civic Information API's voter information lookup.** Free with an API key. For an address in a supported election, it returns early voting and drop-off locations and the contests and candidates on that ballot. The data comes through the Voting Information Project from state and local election officials. The State Board of Elections' own candidate lists and polling-place files are the fallback and the cross-check. Google's separate representatives lookup was shut down in April 2025, so who holds each seat would come from elsewhere, such as Open States.
+- **Election information (slice 7, in use): the Google Civic Information API's voter information lookup.** Free with an API key, up to 25,000 lookups a day. For an address in a supported election, it returns early voting and drop-off locations and the contests and candidates on that ballot. The data comes through the Voting Information Project from state and local election officials. The State Board of Elections' own candidate lists and polling-place files are the fallback and the cross-check. Google's separate representatives lookup was shut down in April 2025, so who holds each seat would come from elsewhere, such as Open States.
 - **Local jurisdictions (slice 8).** The Census geocoder already called can also name an address's county, city and school district, and Census TIGERweb can return their outlines. County commission, city council and school board electoral districts have no statewide source: counties publish their own (Wake and Mecklenburg among them), so they would come county by county, or from a paid national service such as Cicero or BallotReady.
 
 ## Privacy
@@ -206,6 +211,5 @@ What leaves the site, and to whom:
 
 - **The address goes to the US Census geocoder** to be placed, from the server.
 - **The street map's tiles come from OpenFreeMap**, fetched by the visitor's own browser. OpenFreeMap therefore sees the visitor's IP address and which part of the map they look at, which is roughly where the address is. It does not see the address itself.
+- **The address goes to Google's voter lookup** for its election, from the server, spelled as the Census geocoder matched it. Google sees the address and the server, not the visitor or their IP address. A lookup by location sends Google nothing.
 - **Fonts come from Google Fonts**, which sees the visitor's IP address.
-
-Slice 7 adds Google's election lookup, which will see the address as well; this section changes with it.

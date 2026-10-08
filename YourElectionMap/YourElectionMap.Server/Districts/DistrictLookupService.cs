@@ -3,7 +3,8 @@ namespace YourElectionMap.Server.Districts
     /// <summary>
     /// Turns an address or a point into the districts covering it: an address is placed
     /// by the Census geocoder, then the point is projected into map units and handed to
-    /// <see cref="DistrictData"/>.
+    /// <see cref="DistrictData"/>. An address that lands in North Carolina is then sent
+    /// to Google for its next election.
     /// <para>
     /// The data covers North Carolina only, so an address in another state is placed and
     /// then found in no district — the same null as an address that could not be placed.
@@ -13,11 +14,16 @@ namespace YourElectionMap.Server.Districts
     {
         private readonly DistrictData _districts;
         private readonly CensusGeocoder _geocoder;
+        private readonly GoogleVoterInfo _voterInfo;
 
-        public DistrictLookupService(DistrictData districts, CensusGeocoder geocoder)
+        public DistrictLookupService(
+            DistrictData districts,
+            CensusGeocoder geocoder,
+            GoogleVoterInfo voterInfo)
         {
             _districts = districts;
             _geocoder = geocoder;
+            _voterInfo = voterInfo;
         }
 
         /// <summary>
@@ -32,7 +38,7 @@ namespace YourElectionMap.Server.Districts
         {
             var matches = await _geocoder.FindAsync(address, cancellationToken);
 
-            foreach (var (latitude, longitude) in matches)
+            foreach (var (latitude, longitude, matched) in matches)
             {
                 // The page names the address the way it was typed. The geocoder's own
                 // spelling of it comes back in capitals, and is no more correct.
@@ -40,7 +46,12 @@ namespace YourElectionMap.Server.Districts
 
                 if (lookup is not null)
                 {
-                    return lookup;
+                    // Google is asked about the geocoder's spelling, which names the state,
+                    // so it cannot place a "100 Main St, Greenville" somewhere else.
+                    return lookup with
+                    {
+                        Election = await _voterInfo.GetAsync(matched, cancellationToken),
+                    };
                 }
             }
 
@@ -48,7 +59,9 @@ namespace YourElectionMap.Server.Districts
         }
 
         /// <summary>
-        /// The districts covering a point, or null when it is not in any of them.
+        /// The districts covering a point, or null when it is not in any of them. There
+        /// is no election for it: Google's voter lookup takes an address, and a point has
+        /// none to give it.
         /// </summary>
         public Task<DistrictLookup?> LookupLocationAsync(
             double latitude,
@@ -72,7 +85,6 @@ namespace YourElectionMap.Server.Districts
                 label,
                 [longitude, latitude],
                 covering,
-                // No election data yet, which hides the rail's footer.
                 Election: null,
                 _districts.Source);
         }

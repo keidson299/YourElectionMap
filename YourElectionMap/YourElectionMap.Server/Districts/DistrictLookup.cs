@@ -11,7 +11,10 @@ namespace YourElectionMap.Server.Districts
     /// Every district covering the address, broad to local. Never empty: a lookup
     /// that finds none is a 404 instead.
     /// </param>
-    /// <param name="Election">The next election's summary, or null when there is none.</param>
+    /// <param name="Election">
+    /// The next election's summary, from Google's voter lookup, or null when there is
+    /// none to show: no election, no answer, or a lookup by location.
+    /// </param>
     /// <param name="Source">
     /// What the boundaries were drawn from, for the page to name: "NCGA enacted maps".
     /// Null when there is nothing to credit.
@@ -47,5 +50,12 @@ namespace YourElectionMap.Server.Districts
         int? Population,
         double[][][][] Boundary);
 
-    public sealed record ElectionSummary(DateOnly Date, int Candidates, int Measures);
+    /// <param name="Date">Election Day: "2026-11-03".</param>
+    /// <param name="Candidates">
+    /// Candidates across every contest on the ballot, or null when Google's answer
+    /// holds no contests, so the page never says "0 candidates" about a ballot it has
+    /// not seen.
+    /// </param>
+    /// <param name="Measures">Referenda on the ballot, or null on the same terms.</param>
+    public sealed record ElectionSummary(DateOnly Date, int? Candidates, int? Measures);
 }

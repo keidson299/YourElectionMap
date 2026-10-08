@@ -6,9 +6,9 @@ namespace YourElectionMap.Server.Districts
     /// Turns a typed address into a point, using the US Census Bureau's geocoder, which
     /// is free and needs no key.
     /// <para>
-    /// This is the only call the server makes out to the internet, and the address is
-    /// what it sends. (The browser makes one more of its own: the street map's tiles
-    /// come from OpenFreeMap.) Nothing is logged here, and nothing is kept: see the
+    /// The address is what it sends. The server makes one other call out, to Google's
+    /// voter lookup (<see cref="GoogleVoterInfo"/>), and the browser makes its own for
+    /// the street map's tiles. Nothing is logged here, and nothing is kept: see the
     /// privacy section of the design plan.
     /// </para>
     /// </summary>
@@ -36,13 +36,15 @@ namespace YourElectionMap.Server.Districts
         /// <summary>
         /// Every place the address could be, in the geocoder's order, or none when it
         /// cannot be placed. An address with no state can match in several. Latitude and
-        /// longitude come back as WGS84, which is what <see cref="StatePlane"/> expects.
+        /// longitude come back as WGS84, which is what <see cref="StatePlane"/> expects,
+        /// and each match carries the geocoder's own full spelling of the address, state
+        /// included: "16 W JONES ST, RALEIGH, NC, 27601".
         /// </summary>
         /// <exception cref="GeocoderUnavailableException">
         /// No usable answer: a timeout, a refusal or a reply that is not JSON. This says
         /// nothing about the address, so the page offers to try again rather than doubt it.
         /// </exception>
-        public async Task<IReadOnlyList<(double Latitude, double Longitude)>> FindAsync(
+        public async Task<IReadOnlyList<(double Latitude, double Longitude, string Address)>> FindAsync(
             string address,
             CancellationToken cancellationToken)
         {
@@ -61,7 +63,7 @@ namespace YourElectionMap.Server.Districts
                 await using var body = await response.Content.ReadAsStreamAsync(cancellationToken);
                 using var json = await JsonDocument.ParseAsync(body, default, cancellationToken);
 
-                return Matches(json.RootElement);
+                return Matches(json.RootElement, address);
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
@@ -79,12 +81,15 @@ namespace YourElectionMap.Server.Districts
 
         /// <summary>
         /// Reads every match out of
-        /// <c>result.addressMatches[].coordinates.{x, y}</c>, where x is the longitude.
-        /// Anything missing or of the wrong kind reads as no match rather than throwing.
+        /// <c>result.addressMatches[].coordinates.{x, y}</c>, where x is the longitude,
+        /// with its <c>matchedAddress</c>. Missing or misshapen coordinates read as no
+        /// match rather than throwing; a missing address falls back to the one typed.
         /// </summary>
-        private static List<(double Latitude, double Longitude)> Matches(JsonElement root)
+        private static List<(double Latitude, double Longitude, string Address)> Matches(
+            JsonElement root,
+            string typed)
         {
-            var found = new List<(double Latitude, double Longitude)>();
+            var found = new List<(double Latitude, double Longitude, string Address)>();
 
             if (!root.TryGetProperty("result", out var result)
                 || !result.TryGetProperty("addressMatches", out var matches)
@@ -104,7 +109,15 @@ namespace YourElectionMap.Server.Districts
                     continue;
                 }
 
-                found.Add((latitude, longitude));
+                var matched = match.TryGetProperty("matchedAddress", out var spelled)
+                    && spelled.ValueKind == JsonValueKind.String
+                    ? spelled.GetString()
+                    : null;
+
+                found.Add((
+                    latitude,
+                    longitude,
+                    string.IsNullOrWhiteSpace(matched) ? typed : matched));
             }
 
             return found;

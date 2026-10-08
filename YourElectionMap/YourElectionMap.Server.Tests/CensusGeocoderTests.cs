@@ -4,7 +4,7 @@ using YourElectionMap.Server.Districts;
 namespace YourElectionMap.Server.Tests
 {
     /// <summary>
-    /// The one call this app makes out to the internet, against a stubbed handler. What
+    /// The geocoder, which every address lookup starts with, against a stubbed handler. What
     /// matters is that an address it does not know comes back as no matches, and that
     /// every way of getting no answer at all comes back as unavailable — never as "no
     /// such address", which would tell someone their address is wrong.
@@ -15,7 +15,9 @@ namespace YourElectionMap.Server.Tests
         public async Task FindAsync_ReadsEveryMatchInOrder()
         {
             var geocoder = Geocoder((_, _) => Task.FromResult(FakeGeocoding.Reply(
-                FakeGeocoding.Match((34.8526, -82.3940), (35.7822, -78.6398)))));
+                FakeGeocoding.Match(
+                    new(34.8526, -82.3940, "100 MAIN ST, GREENVILLE, SC, 29601"),
+                    new(35.7822, -78.6398, "16 W JONES ST, RALEIGH, NC, 27601")))));
 
             var found = await geocoder.FindAsync("16 W Jones St", default);
 
@@ -25,6 +27,29 @@ namespace YourElectionMap.Server.Tests
 
             // x is the longitude, which is the way round it is easy to get wrong.
             Assert.Equal(-78.6398, found[1].Longitude);
+        }
+
+        [Fact]
+        public async Task FindAsync_GivesEachMatchTheGeocodersSpellingOfIt()
+        {
+            var geocoder = Geocoder((_, _) => Task.FromResult(FakeGeocoding.Reply(
+                FakeGeocoding.Match(new FakeGeocoding.Place(35.7822, -78.6398, "16 W JONES ST, RALEIGH, NC, 27601")))));
+
+            var found = await geocoder.FindAsync("16 w jones", default);
+
+            Assert.Equal("16 W JONES ST, RALEIGH, NC, 27601", Assert.Single(found).Address);
+        }
+
+        [Fact]
+        public async Task FindAsync_FallsBackToTheTypedAddressWhenAMatchIsNotSpelledOut()
+        {
+            var geocoder = Geocoder((_, _) => Task.FromResult(FakeGeocoding.Reply("""
+                { "result": { "addressMatches": [ { "coordinates": { "x": -78.6398, "y": 35.7822 } } ] } }
+                """)));
+
+            var found = await geocoder.FindAsync("16 W Jones St, Raleigh NC", default);
+
+            Assert.Equal("16 W Jones St, Raleigh NC", Assert.Single(found).Address);
         }
 
         [Fact]

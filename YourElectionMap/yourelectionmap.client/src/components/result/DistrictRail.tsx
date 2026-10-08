@@ -202,21 +202,25 @@ function ElectionFooter({ election }: { election: ElectionSummary }) {
             Next election · <strong>{formatElectionDate(election.date)}</strong>
           </span>
         </li>
-        <li className="district-rail__fact">
-          <PeopleIcon />
-          <span>
+        {election.candidates === null ? null : (
+          <li className="district-rail__fact">
+            <PeopleIcon />
+            <span>
+              <strong>
+                {countOf(election.candidates, 'candidate', 'candidates')}
+              </strong>{' '}
+              on your ballot
+            </span>
+          </li>
+        )}
+        {election.measures === null ? null : (
+          <li className="district-rail__fact">
+            <BallotIcon />
             <strong>
-              {countOf(election.candidates, 'candidate', 'candidates')}
-            </strong>{' '}
-            on your ballot
-          </span>
-        </li>
-        <li className="district-rail__fact">
-          <BallotIcon />
-          <strong>
-            {countOf(election.measures, 'ballot measure', 'ballot measures')}
-          </strong>
-        </li>
+              {countOf(election.measures, 'ballot measure', 'ballot measures')}
+            </strong>
+          </li>
+        )}
       </ul>
     </div>
   )
@@ -227,8 +231,10 @@ function ElectionStrip({ election }: { election: ElectionSummary }) {
     <p className="district-rail__strip">
       <CalendarIcon />
       <span>
-        Next election <strong>{formatElectionDate(election.date)}</strong> ·{' '}
-        {countOf(election.candidates, 'candidate', 'candidates')}
+        Next election <strong>{formatElectionDate(election.date)}</strong>
+        {election.candidates === null
+          ? null
+          : ` · ${countOf(election.candidates, 'candidate', 'candidates')}`}
       </span>
     </p>
   )

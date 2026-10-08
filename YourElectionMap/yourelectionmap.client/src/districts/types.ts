@@ -50,8 +50,13 @@ export type District = {
 export type ElectionSummary = {
   /** YYYY-MM-DD */
   date: string
-  candidates: number
-  measures: number
+  /**
+   * Candidates across the ballot, or null when the election data holds no
+   * contests: a ballot nobody has seen is not an empty one.
+   */
+  candidates: number | null
+  /** Referenda on the ballot, or null on the same terms. */
+  measures: number | null
 }
 
 export type DistrictLookup = {
@@ -61,7 +66,7 @@ export type DistrictLookup = {
   location: LngLat
   /** One or more districts. Never assume six. */
   districts: readonly District[]
-  /** Null hides the rail footer, for addresses with no election info. */
+  /** Null hides the rail footer: no election, or none the server could find. */
   election: ElectionSummary | null
   /** What the boundaries were drawn from, for the rail to credit. */
   source: string | null

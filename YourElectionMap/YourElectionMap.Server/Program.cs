@@ -14,6 +14,7 @@ builder.Services.AddSingleton<DistrictData>();
 // A typed client gets a pooled, rotated handler but is itself transient, so the
 // lookup service that holds one is scoped rather than a singleton.
 builder.Services.AddHttpClient<CensusGeocoder>();
+builder.Services.AddHttpClient<GoogleVoterInfo>();
 builder.Services.AddScoped<DistrictLookupService>();
 
 // Boundaries go out at full detail, tens of kilobytes of coordinates for a lookup and

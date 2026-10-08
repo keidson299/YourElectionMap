@@ -13,8 +13,8 @@ namespace YourElectionMap.Server.Tests
     /// are covered. The client reads these exact names and formats, so this is where the
     /// contract is pinned down.
     /// <para>
-    /// The geocoder's handler is replaced, so no test reaches the internet. Everything
-    /// else is real, including the four megabytes of North Carolina boundaries.
+    /// The geocoder's and Google's handlers are replaced, so no test reaches the internet.
+    /// Everything else is real, including the four megabytes of North Carolina boundaries.
     /// </para>
     /// </summary>
     public class DistrictsEndpointTests : IClassFixture<DistrictsEndpointTests.OfflineApp>
@@ -37,8 +37,13 @@ namespace YourElectionMap.Server.Tests
             Assert.Equal("16 W Jones St", lookup.GetProperty("label").GetString());
             Assert.Equal("NCGA enacted maps", lookup.GetProperty("source").GetString());
 
-            // No election data yet, which is what hides the rail's footer.
-            Assert.Equal(JsonValueKind.Null, lookup.GetProperty("election").ValueKind);
+            // The stub's election: a date the client reads as "2026-11-03", and the counts
+            // the rail's footer states.
+            var election = lookup.GetProperty("election");
+
+            Assert.Equal(FakeVoterInfo.DaysFromToday(30), election.GetProperty("date").GetString());
+            Assert.Equal(5, election.GetProperty("candidates").GetInt32());
+            Assert.Equal(1, election.GetProperty("measures").GetInt32());
 
             // The address as [longitude, latitude], the order GeoJSON and the map use.
             var location = Numbers(lookup.GetProperty("location"));
@@ -159,6 +164,9 @@ namespace YourElectionMap.Server.Tests
 
             Assert.Equal("Your location", lookup.GetProperty("label").GetString());
             Assert.Equal(3, lookup.GetProperty("districts").GetArrayLength());
+
+            // Google's voter lookup takes an address, and a point has none.
+            Assert.Equal(JsonValueKind.Null, lookup.GetProperty("election").ValueKind);
         }
 
         [Fact]
@@ -197,6 +205,39 @@ namespace YourElectionMap.Server.Tests
             Assert.Equal(-77.3664, location[0], 0.0001);
             Assert.Equal(35.6127, location[1], 0.0001);
             Assert.Equal(3, lookup.GetProperty("districts").GetArrayLength());
+        }
+
+        [Fact]
+        public async Task Get_AsksGoogleAboutTheAddressTheGeocoderMatchedInNorthCarolina()
+        {
+            // Typed with no state, and matched in South Carolina first: Google must be
+            // asked about the match the districts came from, spelled with its state.
+            await LookupAsync(AddressQuery("100 Main St, Greenville"));
+
+            Assert.Contains(
+                FakeVoterInfo.Asked,
+                asked => asked.Contains("100 MAIN ST, GREENVILLE, NC, 27858"));
+            Assert.DoesNotContain(FakeVoterInfo.Asked, asked => asked.Contains(", SC,"));
+        }
+
+        [Fact]
+        public async Task Get_DoesNotAskGoogleAboutAnAddressOutsideNorthCarolina()
+        {
+            await GetAsync(AddressQuery("1600 Pennsylvania Ave, Washington DC"));
+
+            Assert.DoesNotContain(FakeVoterInfo.Asked, asked => asked.Contains("PENNSYLVANIA"));
+        }
+
+        [Theory]
+        [InlineData("101 S Tryon St")] // Google has no election for it
+        [InlineData("101 N Mangum St")] // Google is down
+        public async Task Get_StillAnswersWhenGoogleHasNoElectionToGive(string address)
+        {
+            // The districts do not depend on the election, so they come back without it.
+            var lookup = await LookupAsync(AddressQuery(address));
+
+            Assert.Equal(3, lookup.GetProperty("districts").GetArrayLength());
+            Assert.Equal(JsonValueKind.Null, lookup.GetProperty("election").ValueKind);
         }
 
         [Fact]
@@ -270,15 +311,23 @@ namespace YourElectionMap.Server.Tests
         private static double[] Numbers(JsonElement array) =>
             array.EnumerateArray().Select(number => number.GetDouble()).ToArray();
 
-        /// <summary>The app with its one outward call stubbed out.</summary>
+        /// <summary>The app with both its outward calls stubbed out.</summary>
         public sealed class OfflineApp : WebApplicationFactory<Program>
         {
             protected override void ConfigureWebHost(IWebHostBuilder builder)
             {
+                // Any key will do for the stub; without one, Google is never asked.
+                builder.UseSetting("GoogleCivic:ApiKey", "test-key");
+
                 builder.ConfigureTestServices(services =>
+                {
                     services
                         .AddHttpClient<CensusGeocoder>()
-                        .ConfigurePrimaryHttpMessageHandler(FakeGeocoding.Handler));
+                        .ConfigurePrimaryHttpMessageHandler(FakeGeocoding.Handler);
+                    services
+                        .AddHttpClient<GoogleVoterInfo>()
+                        .ConfigurePrimaryHttpMessageHandler(FakeVoterInfo.Handler);
+                });
             }
         }
     }

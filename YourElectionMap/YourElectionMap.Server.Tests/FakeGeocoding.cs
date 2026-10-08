@@ -4,27 +4,36 @@ using System.Text;
 namespace YourElectionMap.Server.Tests
 {
     /// <summary>
-    /// Stands in for the Census geocoder, the app's only outward call, so that no test
-    /// reaches the internet.
+    /// Stands in for the Census geocoder, so that no test reaches the internet. Google's
+    /// voter lookup has its own stand-in, <see cref="FakeVoterInfo"/>.
     /// </summary>
     internal static class FakeGeocoding
     {
         /// <summary>
         /// A handler that places any address holding one of these words, and finds no
         /// match for anything else. Coordinates are the real ones, so the real boundary
-        /// data answers for them.
+        /// data answers for them, and each match has the geocoder's spelling of it.
         /// </summary>
-        public static readonly (string Word, (double Latitude, double Longitude)[] Points)[] Places =
+        public static readonly (string Word, Place[] Points)[] Places =
         [
             // The State Legislative Building, Raleigh.
-            ("Jones", [(35.7822, -78.6398)]),
+            ("Jones", [new(35.7822, -78.6398, "16 W JONES ST, RALEIGH, NC, 27601")]),
             // Downtown Charlotte.
-            ("Tryon", [(35.2271, -80.8431)]),
+            ("Tryon", [new(35.2271, -80.8431, "101 S TRYON ST, CHARLOTTE, NC, 28202")]),
+            // Downtown Durham.
+            ("Mangum", [new(35.9960, -78.9017, "101 N MANGUM ST, DURHAM, NC, 27701")]),
             // The White House, which is in no North Carolina district.
-            ("Pennsylvania", [(38.8977, -77.0365)]),
+            ("Pennsylvania", [new(38.8977, -77.0365, "1600 PENNSYLVANIA AVE NW, WASHINGTON, DC, 20500")]),
             // A town name with no state: Greenville SC first, then Greenville NC.
-            ("Greenville", [(34.8526, -82.3940), (35.6127, -77.3664)]),
+            ("Greenville",
+            [
+                new(34.8526, -82.3940, "100 MAIN ST, GREENVILLE, SC, 29601"),
+                new(35.6127, -77.3664, "100 MAIN ST, GREENVILLE, NC, 27858"),
+            ]),
         ];
+
+        /// <summary>One match: where it is, and how the geocoder spells it.</summary>
+        public sealed record Place(double Latitude, double Longitude, string Address);
 
         /// <summary>Any address holding this word finds the geocoder down.</summary>
         public const string Outage = "Outage";
@@ -55,10 +64,10 @@ namespace YourElectionMap.Server.Tests
         /// A reply shaped the way the geocoder's documentation describes, with one match
         /// for each point.
         /// </summary>
-        public static string Match(params (double Latitude, double Longitude)[] points)
+        public static string Match(params Place[] points)
         {
             var matches = points.Select(point =>
-                $$"""{ "matchedAddress": "16 W JONES ST, RALEIGH, NC, 27601", "coordinates": { "x": {{point.Longitude}}, "y": {{point.Latitude}} } }""");
+                $$"""{ "matchedAddress": "{{point.Address}}", "coordinates": { "x": {{point.Longitude}}, "y": {{point.Latitude}} } }""");
 
             return $$"""
                 {
@@ -91,11 +100,15 @@ namespace YourElectionMap.Server.Tests
             /// <summary>The query of the last request, for asserting what was sent.</summary>
             public string? LastQuery { get; private set; }
 
+            /// <summary>The last request itself, for its headers.</summary>
+            public HttpRequestMessage? LastRequest { get; private set; }
+
             protected override Task<HttpResponseMessage> SendAsync(
                 HttpRequestMessage request,
                 CancellationToken cancellationToken)
             {
                 LastQuery = request.RequestUri?.Query;
+                LastRequest = request;
 
                 return reply(request, cancellationToken);
             }

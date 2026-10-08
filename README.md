@@ -8,9 +8,11 @@ console project (`YourElectionMap.Tools`) that builds the district data.
 
 The data is real and covers **North Carolina only**: its 14 US House, 50 State Senate and 120
 State House districts, drawn with [MapLibre GL](https://maplibre.org/) over a street map from
-[OpenFreeMap](https://openfreemap.org/). Two things reach out to the internet: the server places
-addresses with the US Census geocoder, and the visitor's browser fetches the street map's tiles
-from OpenFreeMap. There is no county, city, school board or election data yet. The plan is
+[OpenFreeMap](https://openfreemap.org/), with the next election at the address — its date and how
+many candidates and ballot measures are on the ballot — from Google's voter lookup. Three things
+reach out to the internet: the server places addresses with the US Census geocoder and asks the
+Google Civic Information API for the election, and the visitor's browser fetches the street map's
+tiles from OpenFreeMap. There is no county, city or school board data yet. The plan is
 [design/ElectionMapMainDesignPlanV5.md](design/ElectionMapMainDesignPlanV5.md).
 
 ## Developing in VS Code
@@ -35,6 +37,18 @@ dotnet run --project YourElectionMap.Tools -- `
   "<MapShapeFiles folder holding the three plan folders>" `
   YourElectionMap.Server\Districts\Data\nc-districts.json
 ```
+
+**Add a Google Civic Information API key (optional).** Without one the site works, but the
+election footer under the district list stays hidden. In the Google Cloud console, create a
+project, enable the *Google Civic Information API*, and create an API key restricted to that API
+(the free quota is 25,000 lookups a day). Then, from `YourElectionMap/`:
+
+```powershell
+dotnet user-secrets set "GoogleCivic:ApiKey" "<your key>" --project YourElectionMap.Server
+```
+
+When deployed, set the environment variable `GoogleCivic__ApiKey` instead. Never put the key in
+`appsettings*.json`.
 
 Open `YourElectionMap/YourElectionMap.code-workspace` (File > Open Workspace from File),
 and install the recommended extensions when prompted — C# Dev Kit provides the debugger and
@@ -76,7 +90,7 @@ npm run test:watch                                # vitest in watch mode
 
 `YourElectionMap.Server.Tests` uses `WebApplicationFactory<Program>` to host the real app in
 memory; `Program` is declared `public partial` at the bottom of `Program.cs` to allow that. The
-geocoder is stubbed, so no test reaches the internet, but the tests read the real district file
+geocoder and Google's voter lookup are stubbed, so no test reaches the internet, but the tests read the real district file
 and need it generated first. The client tests replace MapLibre with a fake
 (`src/test/fakeMaplibre.ts`), since jsdom has no WebGL, so they fetch no tiles either.
 

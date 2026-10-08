@@ -13,6 +13,7 @@ function renderRail(
     selectedId?: string
     election?: ElectionSummary | null
     source?: string | null
+    compact?: boolean
   } = {},
 ) {
   const onSelect = vi.fn()
@@ -28,7 +29,7 @@ function renderRail(
       layers={mapLayers(lookup.districts, selected)}
       election={options.election === undefined ? lookup.election : options.election}
       source={options.source === undefined ? lookup.source : options.source}
-      compact={false}
+      compact={options.compact ?? false}
       sheetExpanded={false}
       onToggleSheet={() => {}}
       onSelect={onSelect}
@@ -94,6 +95,30 @@ describe('DistrictRail', () => {
     expect(screen.getByText('Tue, Nov 3')).toBeInTheDocument()
     expect(screen.getByText('14 candidates')).toBeInTheDocument()
     expect(screen.getByText('2 ballot measures')).toBeInTheDocument()
+  })
+
+  it('states only the date when the ballot itself is not known', () => {
+    const dateOnly = { date: '2026-11-03', candidates: null, measures: null }
+
+    renderRail({ election: dateOnly })
+
+    expect(screen.getByText('Tue, Nov 3')).toBeInTheDocument()
+    expect(screen.queryByText(/candidate/)).toBeNull()
+    expect(screen.queryByText(/ballot measure/)).toBeNull()
+  })
+
+  it('gives the phone strip the date and the candidates, or the date alone', () => {
+    renderRail({ compact: true })
+
+    expect(screen.getByText(/· 14 candidates/)).toBeInTheDocument()
+
+    renderRail({
+      compact: true,
+      election: { date: '2026-11-03', candidates: null, measures: null },
+    })
+
+    expect(screen.getAllByText('Tue, Nov 3')).toHaveLength(2)
+    expect(screen.getAllByText(/candidates/)).toHaveLength(1)
   })
 
   it('leaves the election details out when there are none', () => {

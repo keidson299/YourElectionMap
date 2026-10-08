@@ -119,14 +119,22 @@ is [design/ElectionMapMainDesignPlanV5.md](design/ElectionMapMainDesignPlanV5.md
 refer to its numbered slices.
 
 **The data is real, and it is North Carolina only.** An address is placed by the US Census
-geocoder — the one call the server makes out to the internet — and the point is then looked up in
-`Districts/Data/nc-districts.json`, which holds the state's 14 US House, 50 NC Senate and 120 NC
-House districts as the General Assembly enacted them — the 2025 congressional plan and the 2023
-legislative plans — with each district's 2020 population. The visitor's browser makes the other
-outbound requests: the result map's street tiles and fonts come from OpenFreeMap (`TILE_SOURCE` in
-`src/map/style.ts`). There is no County Commission, City Council or School Board data, and no
-election data, so the rail lists three districts and its election footer stays hidden. An address
+geocoder, and the point is then looked up in `Districts/Data/nc-districts.json`, which holds the
+state's 14 US House, 50 NC Senate and 120 NC House districts as the General Assembly enacted them —
+the 2025 congressional plan and the 2023 legislative plans — with each district's 2020 population.
+The next election at the address — its date and how many candidates and ballot measures — comes
+from Google's voter lookup and fills the rail's footer. Those are the server's two calls out to
+the internet. The visitor's browser makes the other outbound requests: the result map's street
+tiles and fonts come from OpenFreeMap (`TILE_SOURCE` in `src/map/style.ts`). There is no County
+Commission, City Council or School Board data, so the rail lists three districts. An address
 anywhere else is a 404, which the page says in as many words.
+
+**Google needs an API key, and nothing breaks without one.** The server reads
+`GoogleCivic:ApiKey` from configuration — user secrets in development (the server `.csproj`
+already has a `UserSecretsId`), an environment variable `GoogleCivic__ApiKey` when deployed, never
+`appsettings*.json` — and sends it as the `X-Goog-Api-Key` header, never in the URL. With no key,
+Google is not asked and every lookup goes out with `election: null`, which hides the footer. The
+key is a secret under Part 1: do not read, set or print it.
 
 **The site must credit the Redistricting Data Hub for the map data**, with a link to
 https://redistrictingdatahub.org/. `src/components/DataCredit.tsx` does it, on Home and under the
@@ -225,10 +233,13 @@ controllers + OpenAPI (dev only, at `/openapi/v1.json`), static assets, then
 address into a latitude and longitude; `StatePlane` projects that into map units with the parameters
 from the shapefiles' own `.prj`; `DistrictData` — a singleton holding the whole file — answers which
 boundaries contain the point, box-checked first and then by counting ray crossings in `Geometry`.
-`DistrictsController` answers 200 with a lookup, 404 when nothing can be placed or found, 503 when
-the geocoder did not answer (`GeocoderUnavailableException`), and 400 for an unusable query; the
-client reads 404 and 400 as no-match and anything else as an error, so an outage never reads as a
-bad address. Three things in there are worth knowing before changing them:
+For a typed address, `GoogleVoterInfo` then asks Google for the next election, sending the
+geocoder's own spelling of the match (`CensusGeocoder` returns it with each point), which names the
+state; a location lookup has no address to send, so it gets no election. `DistrictsController`
+answers 200 with a lookup, 404 when nothing can be placed or found, 503 when the geocoder did not
+answer (`GeocoderUnavailableException`), and 400 for an unusable query; the client reads 404 and 400
+as no-match and anything else as an error, so an outage never reads as a bad address. Four things
+in there are worth knowing before changing them:
 
 - **Containment is in map units; everything sent is in degrees.** The point is projected into the
   file's State Plane map units to be tested, and each boundary goes back out through
@@ -246,6 +257,11 @@ bad address. Three things in there are worth knowing before changing them:
   street, and MapLibre simplifies for wider views itself. Each district's converted boundary is
   worked out once and kept, and responses are gzip-compressed (`AddResponseCompression`): a Raleigh
   lookup is about 55KB of coordinates, and the largest districts several times that.
+- **Google can never fail a lookup.** The election is extra to the districts, so `GoogleVoterInfo`
+  returns null — never throws — for no key, no election (which Google answers as an error status),
+  a refusal, its four-second timeout or an unreadable answer. Only the browser cancelling
+  propagates. When Google names the election but leaves out the contests, the candidate and measure
+  counts are null rather than 0, and the footer leaves those lines out.
 
 **Server tests host the whole app in memory.** `DistrictsEndpointTests` uses its nested `OfflineApp`,
 a `WebApplicationFactory<Program>`, and reads the raw JSON, so routing, model binding and the names and
@@ -256,7 +272,10 @@ logic is in question. Client tests are Vitest + Testing Library in `jsdom`, matc
 
 **No test reaches the internet.** `OfflineApp` replaces the geocoder's `HttpClient` handler in
 `ConfigureTestServices` with `FakeGeocoding`, which places any address containing one of a few
-known words ("Jones", "Tryon", …) and fakes an outage for "Outage". Everything else in
+known words ("Jones", "Tryon", …) and fakes an outage for "Outage", and Google's with
+`FakeVoterInfo`, which has an election for Raleigh, is down for Durham and has none elsewhere; it
+sets a dummy `GoogleCivic:ApiKey` so Google is asked at all. The fake election's date is relative
+to today, so the suite does not start failing after a real election day. Everything else in
 those tests is real, including the whole district file. If you add a service that calls out, stub it
 the same way. On the client, `src/test/setup.ts` replaces `maplibre-gl` everywhere with
 `src/test/fakeMaplibre.ts` — jsdom has no WebGL, so the real map cannot even be constructed — and
