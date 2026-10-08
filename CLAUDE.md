@@ -125,6 +125,11 @@ House districts. There is no County Commission, City Council or School Board dat
 data, so the rail lists three districts and its election footer stays hidden. An address anywhere
 else is a 404, which the page says in as many words.
 
+**The site must credit the Redistricting Data Hub for the map data**, with a link to
+https://redistrictingdatahub.org/. `src/components/DataCredit.tsx` does it, on Home and under the
+result page's district list, and tests check both. Do not remove it, and any new page that offers
+or draws the map needs it too.
+
 **`nc-districts.json` is generated and git-ignored, not checked in.** A fresh clone has no
 `Districts/Data/` folder, and without it the server stops at startup (`Program.cs` loads
 `DistrictData` eagerly) and `DistrictDataTests` and `DistrictsEndpointTests` fail. It is built by

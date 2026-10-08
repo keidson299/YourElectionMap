@@ -108,7 +108,15 @@ describe('DistrictRail', () => {
     expect(screen.getByText('NC 2024 precincts')).toBeInTheDocument()
   })
 
-  it('says nothing about the data when there is nothing to credit', () => {
+  it('names the Redistricting Data Hub under the districts, with a link', () => {
+    renderRail()
+
+    expect(
+      screen.getByRole('link', { name: 'Redistricting Data Hub' }),
+    ).toHaveAttribute('href', 'https://redistrictingdatahub.org/')
+  })
+
+  it('leaves the source tag out when there is no source to name', () => {
     renderRail({ source: null })
 
     expect(document.querySelector('.source-tag')).toBeNull()

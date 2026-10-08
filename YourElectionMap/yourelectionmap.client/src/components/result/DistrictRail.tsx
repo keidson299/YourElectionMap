@@ -1,4 +1,5 @@
 import { useId } from 'react'
+import { DataCredit } from '../DataCredit'
 import { LineSwatch } from './LineSwatch'
 import {
   BallotIcon,
@@ -123,6 +124,8 @@ export function DistrictRail({
           />
         ))}
       </div>
+
+      <DataCredit className="district-rail__credit" />
 
       {footer}
     </section>

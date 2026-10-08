@@ -1,4 +1,5 @@
 import { AddressForm } from '../components/AddressForm'
+import { DataCredit } from '../components/DataCredit'
 import { LayersIcon } from '../components/icons'
 import { SurveyMap } from '../components/SurveyMap'
 import { ThemeToggle } from '../components/ThemeToggle'
@@ -54,9 +55,12 @@ export function HomePage() {
         </section>
 
         <div className="home__meta">
-          <p className="home__footnote">
-            Nonpartisan · Not affiliated with any election authority
-          </p>
+          <div className="home__notes">
+            <p className="home__footnote">
+              Nonpartisan · Not affiliated with any election authority
+            </p>
+            <DataCredit className="home__footnote" />
+          </div>
           <ThemeToggle />
         </div>
       </div>

@@ -105,6 +105,12 @@
   gap: 16px;
 }
 
+.home__notes {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
 .home__footnote {
   font-size: 12px;
   letter-spacing: 0.05em;
@@ -177,6 +183,10 @@
     gap: 4px;
     padding: 0;
     margin-top: 10px;
+  }
+
+  .home__notes {
+    gap: 2px;
   }
 
   .home__footnote {

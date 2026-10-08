@@ -31,6 +31,12 @@ particularly in large, uninhabited areas". An address near a district line in op
 therefore be placed on the wrong side of it. This is why the page carries a source note naming the
 data rather than presenting the boundaries as authoritative.
 
+## Credit
+
+The site must say that its map data comes from the Redistricting Data Hub, with a link to
+https://redistrictingdatahub.org/. `DataCredit` in `yourelectionmap.client/src/components/` does
+that, on Home and under the district list on the result page.
+
 ## Running it
 
 From `YourElectionMap/`:

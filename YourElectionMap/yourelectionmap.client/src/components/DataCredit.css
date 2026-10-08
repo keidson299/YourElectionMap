@@ -1,0 +1,17 @@
+.data-credit {
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+.data-credit a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: var(--rule-strong);
+  text-underline-offset: 2px;
+  border-radius: 2px;
+}
+
+.data-credit a:hover {
+  color: var(--accent);
+  text-decoration-color: currentColor;
+}

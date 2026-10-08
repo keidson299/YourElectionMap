@@ -51,6 +51,14 @@ describe('App', () => {
     ).toBeInTheDocument()
   })
 
+  it('names where the map data comes from before anything is looked up', () => {
+    render(<App />)
+
+    expect(
+      screen.getByRole('link', { name: 'Redistricting Data Hub' }),
+    ).toHaveAttribute('href', 'https://redistrictingdatahub.org/')
+  })
+
   it('sends a submitted address to the result page', async () => {
     render(<App />)
 
