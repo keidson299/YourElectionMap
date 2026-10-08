@@ -66,9 +66,11 @@ namespace YourElectionMap.Server.Districts
                 return null;
             }
 
+            // Containment is answered in map units, but the page's map draws in degrees,
+            // so the point goes back out as it came in.
             return new DistrictLookup(
                 label,
-                [x, y],
+                [longitude, latitude],
                 covering,
                 // No election data yet, which hides the rail's footer.
                 Election: null,

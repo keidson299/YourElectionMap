@@ -6,7 +6,7 @@ namespace YourElectionMap.Server.Districts
     // DateOnly as "2026-11-03", which is what the client reads.
 
     /// <param name="Label">The address as the page names it: "1420 Maple Street".</param>
-    /// <param name="Location">The address as a point on the map: [x, y] in map units.</param>
+    /// <param name="Location">The address as [longitude, latitude].</param>
     /// <param name="Districts">
     /// Every district covering the address, broad to local. Never empty: a lookup
     /// that finds none is a 404 instead.
@@ -32,8 +32,9 @@ namespace YourElectionMap.Server.Districts
     /// <param name="Area">The place named on the map chip, or null.</param>
     /// <param name="Population">Residents, or null where that is not known.</param>
     /// <param name="Boundary">
-    /// Rings of [x, y] points in map units, rather than one polygon, so districts
-    /// with islands or holes fit unchanged.
+    /// The coordinates of a GeoJSON MultiPolygon: polygons, each an outer ring and
+    /// then its holes, each ring closed [longitude, latitude] points. The page's map
+    /// fills by that structure, so islands and holes come out right.
     /// </param>
     public sealed record District(
         string Id,
@@ -44,7 +45,7 @@ namespace YourElectionMap.Server.Districts
         string Detail,
         string? Area,
         int? Population,
-        double[][][] Boundary);
+        double[][][][] Boundary);
 
     public sealed record ElectionSummary(DateOnly Date, int Candidates, int Measures);
 }

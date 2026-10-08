@@ -1,4 +1,8 @@
-import { useId, useState, type CSSProperties } from 'react'
+import { useEffect, useId, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
+import { Map as MapLibreMap, Marker, setWorkerUrl } from 'maplibre-gl'
+import 'maplibre-gl/dist/maplibre-gl.css'
+import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url'
 import {
   AddressMarker,
   BoundaryPill,
@@ -7,47 +11,53 @@ import {
   ShowingChip,
   ZoomControls,
 } from './MapChrome'
-import { SurveyGround } from '../SurveyGround'
 import { layerCount, type MapLayers } from '../../districts/selection'
-import type { SurveyPoint } from '../../districts/types'
-import { useElementSize } from '../../hooks/useElementSize'
+import type { LngLat } from '../../districts/types'
 import {
-  DESIGN,
-  MAP_UNITS_PER_MILE,
+  MAX_BOUNDS,
   MAX_ZOOM,
   MIN_ZOOM,
-  clampZoom,
-  fitFrame,
-  groundOf,
-  lineScale,
-  ringsToPath,
-  scaleBarFor,
-  viewBoxOf,
-  zoomFrame,
-} from '../../map/frame'
+  ZOOM_STEP,
+  minimumSpan,
+  openingBounds,
+  scaleBarAt,
+} from '../../map/camera'
+import { DESIGN } from '../../map/frame'
+import { drawHatch } from '../../map/hatch'
+import {
+  buildStyle,
+  readHatchId,
+  readMapColors,
+  type MapColors,
+  type StyleSpecification,
+} from '../../map/style'
 import './DistrictMap.css'
 
-// The result map: paper and a graticule, the selected district drawn solid and
-// hatched, its two neighbours dashed and dotted, and the address pin. The view
-// is always centred on the address and refits to the selected boundary; the
-// parent keys this component on the selection, so zoom starts fresh with each.
-// Only the lookup is drawn: no stand-in river, roads or mesh.
+// The result map: real streets, the selected district solid and hatched over
+// them, its two neighbours dashed and dotted, and the address pin. It opens
+// centred on the address, fitted to the selected boundary, and refits whenever
+// the selection changes; in between, the visitor can drag and zoom freely.
+//
+// One MapLibre map lives for as long as the result page does. Everything it
+// draws comes from buildStyle, so a new selection or theme is one setStyle,
+// which MapLibre diffs rather than reloads.
+
+// MapLibre parses tiles and GeoJSON in a web worker, which it finds by building
+// the worker's URL beside its own file at runtime. Bundled, its own file is our
+// chunk and the worker was never emitted, so nothing but the background would
+// ever draw. Importing the worker with ?url makes Vite emit it and hand over
+// where it ended up.
+setWorkerUrl(workerUrl)
 
 type DistrictMapProps = {
-  location: SurveyPoint
+  location: LngLat
   label: string
   layers: MapLayers
   /** The phone layout: a tighter frame, a short chip, a pill for the legend. */
   compact: boolean
 }
 
-// Dash lengths are set here rather than in the stylesheet because they scale
-// with the view, and calc() inside stroke-dasharray is not dependable across
-// browsers the way it is for stroke-width.
-const DASHES = {
-  desktop: { dashed: [9, 6], dotted: [1.5, 6] },
-  phone: { dashed: [8, 5], dotted: [1.5, 5] },
-}
+type View = { zoom: number; latitude: number }
 
 /** The pin, its ring and its crosshair arms, in survey units at the design frame. */
 const PIN = {
@@ -55,11 +65,8 @@ const PIN = {
   phone: { dot: 6, ring: 16, arm: 32 },
 }
 
-// The spec hatches the selection with hand-placed lines; a pattern at the same
-// angle and roughly the same spacing fits whatever boundary is selected.
-const HATCH_ID = 'yem-hatch'
-const HATCH_SPACING = 34
-const HATCH_ANGLE = -32.5
+/** How long a refit takes when the selection changes. */
+const REFIT_MS = 450
 
 export function DistrictMap({
   location,
@@ -68,94 +75,152 @@ export function DistrictMap({
   compact,
 }: DistrictMapProps) {
   const titleId = useId()
-  const [zoom, setZoom] = useState(0)
-  const [mapRef, measured] = useElementSize<HTMLElement>()
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [map, setMap] = useState<MapLibreMap | null>(null)
+  const [failed, setFailed] = useState(false)
+  const [view, setView] = useState<View | null>(null)
+  const colors = useMapColors()
+
+  // The pin is drawn by React into an element MapLibre positions.
+  const [pinElement] = useState(() => document.createElement('div'))
+
+  const style = useMemo(
+    () => buildStyle({ layers, colors, compact }),
+    [layers, colors, compact],
+  )
+  const bounds = openingBounds(
+    location,
+    layers.selected.boundary,
+    minimumSpan(compact),
+  )
+
+  // What the map was last given, so a re-render that changes nothing it shows
+  // does not touch it, and the first render's values are not applied twice.
+  const applied = useRef<{ style: StyleSpecification; fit: string } | null>(
+    null,
+  )
+  const fitKey = `${layers.selected.id}|${location.join(',')}|${compact}`
+
+  // Read through a ref by the effect that creates the map, which runs once.
+  const initial = useRef({ style, bounds, fitKey })
+
+  useEffect(() => {
+    const container = containerRef.current
+
+    if (container === null) {
+      return
+    }
+
+    let created: MapLibreMap
+
+    try {
+      created = new MapLibreMap({
+        container,
+        style: initial.current.style,
+        bounds: initial.current.bounds,
+        minZoom: MIN_ZOOM,
+        maxZoom: MAX_ZOOM,
+        maxBounds: MAX_BOUNDS,
+        dragRotate: false,
+        pitchWithRotate: false,
+        touchPitch: false,
+        attributionControl: { compact: true },
+      })
+    } catch {
+      // No WebGL: MapLibre cannot draw at all. The rail still lists everything.
+      // Only the attempt can tell, and the attempt needs the mounted container.
+      // oxlint-disable-next-line react/set-state-in-effect
+      setFailed(true)
+      return
+    }
+
+    created.touchZoomRotate.disableRotation()
+    created.keyboard.disableRotation()
+
+    // The hatch is drawn on demand, the first time the style asks for it in a
+    // given colour and spacing.
+    created.on('styleimagemissing', (event: { id: string }) => {
+      const hatch = readHatchId(event.id)
+      const drawn = hatch && drawHatch(hatch.spacing, hatch.color)
+
+      if (drawn && !created.hasImage(event.id)) {
+        created.addImage(event.id, drawn.image, {
+          pixelRatio: drawn.pixelRatio,
+        })
+      }
+    })
+
+    const track = () =>
+      setView({ zoom: created.getZoom(), latitude: created.getCenter().lat })
+
+    created.on('move', track)
+    track()
+
+    applied.current = {
+      style: initial.current.style,
+      fit: initial.current.fitKey,
+    }
+    setMap(created)
+
+    return () => {
+      created.remove()
+      applied.current = null
+      setMap(null)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (map === null || applied.current === null) {
+      return
+    }
+
+    if (applied.current.style !== style) {
+      applied.current.style = style
+      map.setStyle(style)
+    }
+
+    if (applied.current.fit !== fitKey) {
+      applied.current.fit = fitKey
+      map.fitBounds(bounds, { duration: REFIT_MS })
+    }
+  }, [map, style, fitKey, bounds])
+
+  useEffect(() => {
+    if (map === null) {
+      return
+    }
+
+    const marker = new Marker({ element: pinElement, anchor: 'center' })
+      .setLngLat([location[0], location[1]])
+      .addTo(map)
+
+    return () => {
+      marker.remove()
+    }
+  }, [map, pinElement, location])
 
   const size = compact ? 'phone' : 'desktop'
-  const design = DESIGN[size]
-  // Until the element is measured (never, in jsdom) it is taken to be at the
-  // spec's size, which makes the first paint match the design frame.
-  const map = measured ?? design.map
-  const frame = zoomFrame(
-    fitFrame(location, layers.selected.boundary, design.span),
-    zoom,
-  )
-  const k = lineScale(frame, map, design)
-  const [x, y] = location
-  const pin = PIN[size]
-  const hatch = HATCH_SPACING * k
-  const selectedPath = ringsToPath(layers.selected.boundary)
-
-  const dash = (pattern: readonly number[]) =>
-    pattern.map((length) => (length * k).toFixed(2)).join(' ')
 
   return (
-    <section ref={mapRef} className="district-map" aria-labelledby={titleId}>
-      <svg
-        className="district-map__svg"
-        viewBox={viewBoxOf(frame)}
-        preserveAspectRatio="xMidYMid meet"
-        style={{ '--k': k.toFixed(4) } as CSSProperties}
-        aria-hidden="true"
-        focusable="false"
-      >
-        <defs>
-          <pattern
-            id={HATCH_ID}
-            width={hatch}
-            height={hatch}
-            patternUnits="userSpaceOnUse"
-            patternTransform={`rotate(${HATCH_ANGLE})`}
-          >
-            <path
-              className="district-map__hatch-line"
-              d={`M0,${hatch / 2} H${hatch}`}
-            />
-          </pattern>
-        </defs>
+    <section className="district-map" aria-labelledby={titleId}>
+      {/* The drawing says nothing a screen reader needs: the chip, the legend
+          and the rail say it in text. */}
+      <div ref={containerRef} className="district-map__canvas" aria-hidden="true" />
 
-        <SurveyGround ground={groundOf(frame)} />
+      {failed ? (
+        <p className="district-map__fallback">
+          The map can’t be drawn in this browser. Your districts are still
+          listed.
+        </p>
+      ) : null}
 
-        {layers.dashed === null ? null : (
-          <path
-            className="district-map__context"
-            d={ringsToPath(layers.dashed.boundary)}
-            strokeDasharray={dash(DASHES[size].dashed)}
-          />
-        )}
-        {layers.dotted === null ? null : (
-          <path
-            className="district-map__context district-map__context--dotted"
-            d={ringsToPath(layers.dotted.boundary)}
-            strokeDasharray={dash(DASHES[size].dotted)}
-          />
-        )}
-
-        <path className="district-map__selected" d={selectedPath} />
-        {/* Even-odd, so a district with a hole in it is hatched like one. A
-            dissolved boundary does not wind consistently, so the default rule
-            would fill some holes and leave some islands blank. */}
-        <path
-          className="district-map__hatch"
-          d={selectedPath}
-          fill={`url(#${HATCH_ID})`}
-          fillRule="evenodd"
-        />
-
-        {/* Drawn about the origin and scaled with the view, so the pin keeps
-            its size on screen at any zoom. */}
-        <g
-          className="district-map__pin"
-          transform={`translate(${x} ${y}) scale(${k.toFixed(4)})`}
-        >
-          <path
-            className="district-map__crosshair"
-            d={`M0,${-pin.arm} V${pin.arm} M${-pin.arm},0 H${pin.arm}`}
-          />
-          <circle className="district-map__ring" r={pin.ring} />
-          <circle className="district-map__dot" r={pin.dot} />
-        </g>
-      </svg>
+      {createPortal(
+        <>
+          <Pin size={size} />
+          {compact ? null : <AddressMarker label={label} />}
+        </>,
+        pinElement,
+      )}
 
       <ShowingChip
         district={layers.selected}
@@ -163,22 +228,86 @@ export function DistrictMap({
         titleId={titleId}
       />
 
-      <ZoomControls
-        canZoomIn={zoom < MAX_ZOOM}
-        canZoomOut={zoom > MIN_ZOOM}
-        onZoomIn={() => setZoom((current) => clampZoom(current + 1))}
-        onZoomOut={() => setZoom((current) => clampZoom(current - 1))}
-      />
+      {map === null || view === null ? null : (
+        <ZoomControls
+          canZoomIn={view.zoom < MAX_ZOOM - 0.001}
+          canZoomOut={view.zoom > MIN_ZOOM + 0.001}
+          onZoomIn={() =>
+            map.zoomTo(Math.min(MAX_ZOOM, map.getZoom() + ZOOM_STEP))
+          }
+          onZoomOut={() =>
+            map.zoomTo(Math.max(MIN_ZOOM, map.getZoom() - ZOOM_STEP))
+          }
+        />
+      )}
 
       {compact ? (
         <BoundaryPill count={layerCount(layers)} />
       ) : (
         <>
           <MapLegend layers={layers} />
-          <ScaleBar scale={scaleBarFor(frame, map, MAP_UNITS_PER_MILE)} />
-          <AddressMarker label={label} />
+          {view === null ? null : (
+            <ScaleBar scale={scaleBarAt(view.zoom, view.latitude)} />
+          )}
         </>
       )}
     </section>
   )
+}
+
+/**
+ * The pin as the spec draws it: a dot, a dashed ring and a crosshair, at the
+ * size they have at the design frame, whatever the zoom.
+ */
+function Pin({ size }: { size: 'desktop' | 'phone' }) {
+  const { dot, ring, arm } = PIN[size]
+  const design = DESIGN[size]
+  const pixels = (2 * arm * design.map.width) / design.span.width
+
+  return (
+    <svg
+      className="district-map__pin"
+      width={pixels}
+      height={pixels}
+      viewBox={`${-arm} ${-arm} ${2 * arm} ${2 * arm}`}
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path
+        className="district-map__crosshair"
+        d={`M0,${-arm} V${arm} M${-arm},0 H${arm}`}
+      />
+      <circle className="district-map__ring" r={ring} />
+      <circle className="district-map__dot" r={dot} />
+    </svg>
+  )
+}
+
+/**
+ * The theme's map colours, read again whenever the theme changes: by the
+ * toggle, which sets data-theme on <html>, or by the system, when the page
+ * follows it.
+ */
+function useMapColors(): MapColors {
+  const [colors, setColors] = useState(readMapColors)
+
+  useEffect(() => {
+    const reread = () => setColors(readMapColors())
+
+    const observer = new MutationObserver(reread)
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['data-theme'],
+    })
+
+    const scheme = window.matchMedia?.('(prefers-color-scheme: dark)')
+    scheme?.addEventListener('change', reread)
+
+    return () => {
+      observer.disconnect()
+      scheme?.removeEventListener('change', reread)
+    }
+  }, [])
+
+  return colors
 }

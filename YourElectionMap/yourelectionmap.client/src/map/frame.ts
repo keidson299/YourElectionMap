@@ -1,20 +1,23 @@
-import type { SurveyPoint, SurveyRing } from '../districts/types'
-
-// Where the result map looks, how far it zooms, and what its scale bar says.
-// Everything is in map units, the coordinate space boundaries arrive in, except
-// a map element's size, which is in CSS pixels.
+// The spec's design frames, and the SVG survey sheet the waiting and no-match
+// pages draw: where it looks and how much paper it lays down. Everything here is
+// in sheet units, except a map element's size, which is in CSS pixels. The result
+// map itself is a street map in degrees (see camera.ts); it borrows the design
+// spans from here as the least it ever shows.
 
 /**
- * The map's scale. One unit is 96 feet, so 55 of them make a mile — which is
- * what makes the spec's 92px scale bar read one mile at the design frame. Must
- * agree with the server's `StatePlane.FeetPerMapUnit`.
+ * The sheet's scale. One unit stands for 96 feet, so 55 of them make a mile —
+ * which is what makes the spec's 92px scale bar read one mile at the design
+ * frame.
  */
 export const MAP_UNITS_PER_MILE = 55
 
+/** A point on the sheet, in sheet units, y counting down as SVG does. */
+export type SheetPoint = readonly [x: number, y: number]
+
 export type Span = { width: number; height: number }
 
-/** A view onto the drawing: always centred on the address. */
-export type Frame = { center: SurveyPoint; width: number; height: number }
+/** A view onto the sheet: always centred on a point. */
+export type Frame = { center: SheetPoint; width: number; height: number }
 
 /**
  * One of the spec's design frames: `span` is how much of the drawing it
@@ -25,7 +28,7 @@ export type Design = { span: Span; map: Span }
 /**
  * The 1040×832 desktop map beside the rail, and the 390×320 phone map. The spans
  * are the least the map ever shows: 620 units is 11.3 miles, about right for a
- * State House district, and `fitFrame` widens past it for anything bigger.
+ * State House district, and the result map widens past it for anything bigger.
  */
 export const DESIGN = {
   desktop: {
@@ -40,17 +43,13 @@ export const DESIGN = {
 
 const FIT_PADDING = 0.08
 
-export const MIN_ZOOM = -1
-export const MAX_ZOOM = 2
-const ZOOM_STEP = 1.5
-
 /**
- * Centre on the address and widen past the design span only as far as the
- * selected boundary needs, so every edge of it is in view.
+ * Centre on a point and widen past the design span only as far as the given
+ * rings need, so every edge of them is in view.
  */
 export function fitFrame(
-  center: SurveyPoint,
-  rings: readonly SurveyRing[],
+  center: SheetPoint,
+  rings: readonly (readonly SheetPoint[])[],
   minimum: Span,
 ): Frame {
   const [cx, cy] = center
@@ -71,24 +70,9 @@ export function fitFrame(
   }
 }
 
-export function clampZoom(zoom: number): number {
-  return Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, zoom))
-}
-
-/** Positive zoom looks closer; each step is ×1.5. */
-export function zoomFrame(frame: Frame, zoom: number): Frame {
-  const factor = ZOOM_STEP ** clampZoom(zoom)
-
-  return {
-    center: frame.center,
-    width: frame.width / factor,
-    height: frame.height / factor,
-  }
-}
-
 /**
  * Paper to lay under a frame: three times its size and centred on it, so the
- * sheet still fills the view after a zoom out, wherever in the state it is.
+ * sheet still fills the view whatever shape the window is.
  */
 export function groundOf(frame: Frame): {
   x: number
@@ -116,26 +100,11 @@ export function viewBoxOf(frame: Frame): string {
     .join(' ')
 }
 
-/** CSS pixels per map unit when `span` is fitted into `map` ('meet'). */
-export function pixelsPerUnit(span: Span, map: Span): number {
-  return Math.min(map.width / span.width, map.height / span.height)
-}
-
-/**
- * How many times smaller the drawing appears on screen than at the design
- * frame. Line weights and the pin are multiplied by this, so they stay the
- * size the spec draws them whatever the zoom, the fitted boundary or the size
- * of the window.
- */
-export function lineScale(frame: Frame, map: Span, design: Design): number {
-  return pixelsPerUnit(design.span, design.map) / pixelsPerUnit(frame, map)
-}
-
 export type ScaleBar = { miles: number; width: number }
 
-// Up to fifty miles, because a congressional district is a hundred miles across
-// and the bar would otherwise be a stub at the widest frames.
-const SCALE_DISTANCES = [0.25, 0.5, 1, 2, 5, 10, 25, 50]
+// From a city block, at the street map's closest, up to fifty miles, because a
+// congressional district is a hundred miles across.
+const SCALE_DISTANCES = [0.1, 0.25, 0.5, 1, 2, 5, 10, 25, 50]
 const SCALE_TARGET_WIDTH = 92
 
 /** The round distance whose bar comes closest to the spec's 92px. */
@@ -152,21 +121,6 @@ export function pickScaleBar(pixelsPerMile: number): ScaleBar {
   }
 
   return { miles: best, width: round(best * pixelsPerMile) }
-}
-
-export function scaleBarFor(
-  frame: Frame,
-  map: Span,
-  unitsPerMile: number,
-): ScaleBar {
-  return pickScaleBar(pixelsPerUnit(frame, map) * unitsPerMile)
-}
-
-/** A boundary as SVG path data, one closed subpath per ring. */
-export function ringsToPath(rings: readonly SurveyRing[]): string {
-  return rings
-    .map((ring) => `M${ring.map(([x, y]) => `${x},${y}`).join(' L')} Z`)
-    .join(' ')
 }
 
 function round(value: number): number {

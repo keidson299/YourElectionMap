@@ -2,6 +2,7 @@ import { act, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
+import { Map as FakeMap } from './test/fakeMaplibre'
 import { sampleLookup } from './test/sampleLookup'
 import {
   startFakeDistrictsApi,
@@ -396,21 +397,25 @@ describe('App', () => {
 
   it('opens a new lookup on its fitted view, not the last zoom', async () => {
     goTo('/map?address=1420+Maple+Street')
-    const { container } = render(<App />)
+    render(<App />)
     await districtList()
 
-    const viewBox = () =>
-      container.querySelector('svg.district-map__svg')?.getAttribute('viewBox')
-
-    await userEvent.click(screen.getByRole('button', { name: 'Zoom in' }))
-    expect(viewBox()).not.toBe('817 381 620 496')
+    await userEvent.click(await screen.findByRole('button', { name: 'Zoom in' }))
+    const first = FakeMap.instances.at(-1)
+    expect(first?.getZoom()).toBeGreaterThan(12)
 
     const field = screen.getByLabelText('Home address')
     await userEvent.clear(field)
     await userEvent.type(field, '88 Harbor Road')
     await userEvent.click(screen.getByRole('button', { name: 'Update' }))
+    await screen.findByRole('button', { name: 'Zoom in' })
 
-    expect(viewBox()).toBe('817 381 620 496')
+    // A fresh map, opened on its own fitted view; the zoomed one is gone.
+    const latest = FakeMap.instances.at(-1)
+    expect(latest).not.toBe(first)
+    expect(first?.removed).toBe(true)
+    expect(latest?.getZoom()).toBe(12)
+    expect(latest?.options.bounds).toBeDefined()
   })
 
   it('falls back to the home screen for an unknown path', () => {

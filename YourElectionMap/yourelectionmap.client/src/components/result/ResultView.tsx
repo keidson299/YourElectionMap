@@ -1,5 +1,4 @@
-import { useState } from 'react'
-import { DistrictMap } from './DistrictMap'
+import { Suspense, lazy, useMemo, useState } from 'react'
 import { DistrictRail } from './DistrictRail'
 import {
   mapLayers,
@@ -13,6 +12,12 @@ import './ResultView.css'
 // The result screen under the header: the rail of districts beside the map on
 // desktop, the map over a sheet on a phone. It renders whatever DistrictLookup
 // it is given, so where that lookup comes from can change underneath it.
+
+// The street map library is most of the page's weight, so it loads with the
+// first result rather than with Home.
+const DistrictMap = lazy(() =>
+  import('./DistrictMap').then((module) => ({ default: module.DistrictMap })),
+)
 
 type ResultViewProps = {
   lookup: DistrictLookup
@@ -29,8 +34,17 @@ export function ResultView({
   const compact = useMediaQuery(PHONE_QUERY)
   const [sheetExpanded, setSheetExpanded] = useState(false)
 
-  const districts = orderDistricts(lookup.districts)
+  // Kept stable between renders: the map rebuilds its drawing only when what
+  // these say changes, not whenever the sheet opens or closes.
+  const districts = useMemo(
+    () => orderDistricts(lookup.districts),
+    [lookup.districts],
+  )
   const selected = resolveSelection(districts, requestedDistrict)
+  const layers = useMemo(
+    () => (selected === undefined ? null : mapLayers(districts, selected)),
+    [districts, selected],
+  )
   const heading = (
     <h1 className="visually-hidden" tabIndex={-1}>
       Districts for {lookup.label}
@@ -39,7 +53,7 @@ export function ResultView({
 
   // A guard only: the data layer turns a lookup with no districts into the
   // no-match state, which the map page shows instead of this view.
-  if (selected === undefined) {
+  if (layers === null) {
     return (
       <main className="result result--empty">
         {heading}
@@ -49,8 +63,6 @@ export function ResultView({
       </main>
     )
   }
-
-  const layers = mapLayers(districts, selected)
 
   function handleSelect(districtId: string) {
     // Put the drawing back in view after a pick from the expanded sheet.
@@ -73,13 +85,16 @@ export function ResultView({
         onSelect={handleSelect}
       />
 
-      <DistrictMap
-        key={selected.id}
-        location={lookup.location}
-        label={lookup.label}
-        layers={layers}
-        compact={compact}
-      />
+      {/* One map for the life of the page: a new selection redraws and refits
+          it rather than making another. */}
+      <Suspense fallback={<section className="district-map" aria-hidden="true" />}>
+        <DistrictMap
+          location={lookup.location}
+          label={lookup.label}
+          layers={layers}
+          compact={compact}
+        />
+      </Suspense>
     </main>
   )
 }

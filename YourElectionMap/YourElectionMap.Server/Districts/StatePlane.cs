@@ -15,9 +15,9 @@ namespace YourElectionMap.Server.Districts
     public static class StatePlane
     {
         /// <summary>
-        /// 96 feet to the map unit, so a mile is 55 units — the scale the drawing was
-        /// designed at, and still the client's <c>MAP_UNITS_PER_MILE</c> in
-        /// <c>src/map/frame.ts</c>.
+        /// 96 feet to the map unit, so a mile is 55 units — the scale the design spec was
+        /// drawn at, and the client's <c>MAP_UNITS_PER_MILE</c> in <c>src/map/frame.ts</c>.
+        /// The district file is stored in these units; the page itself is sent degrees.
         /// </summary>
         public const double FeetPerMapUnit = 96;
 
@@ -71,6 +71,52 @@ namespace YourElectionMap.Server.Districts
                 FalseNorthingFeet + north / MetresPerFoot);
         }
 
+        /// <summary>
+        /// The way back: a point in map units as a latitude and longitude. Containment is
+        /// answered in map units, but the page's map draws in latitude and longitude, so
+        /// every boundary goes out through here.
+        /// </summary>
+        public static (double Latitude, double Longitude) ToLatLon(double x, double y)
+        {
+            var east = (x * FeetPerMapUnit - FalseEastingFeet) * MetresPerFoot;
+            var north = (-y * FeetPerMapUnit - FalseNorthingFeet) * MetresPerFoot;
+
+            // The cone constant is positive in the northern hemisphere, so the radius is
+            // too, and the angle is measured from the line down the central meridian.
+            var fromApex = OriginRadius - north;
+            var radius = Math.Sqrt(east * east + fromApex * fromApex);
+            var angle = Math.Atan2(east, fromApex);
+
+            var t = Math.Pow(radius / (SemiMajorMetres * ScaleFactor), 1 / ConeConstant);
+
+            return (LatitudeOf(t), CentralMeridian + Degrees(angle / ConeConstant));
+        }
+
+        /// <summary>
+        /// Snyder's t back to a latitude. There is no closed form on the ellipsoid, so it
+        /// is iterated from the sphere's answer; it settles within a few rounds.
+        /// </summary>
+        private static double LatitudeOf(double t)
+        {
+            var latitude = Math.PI / 2 - 2 * Math.Atan(t);
+
+            for (var round = 0; round < 15; round++)
+            {
+                var sin = Eccentricity * Math.Sin(latitude);
+                var next = Math.PI / 2
+                    - 2 * Math.Atan(t * Math.Pow((1 - sin) / (1 + sin), Eccentricity / 2));
+
+                if (Math.Abs(next - latitude) < 1e-12)
+                {
+                    return Degrees(next);
+                }
+
+                latitude = next;
+            }
+
+            return Degrees(latitude);
+        }
+
         private static double EccentricityOf(double inverseFlattening)
         {
             var flattening = 1 / inverseFlattening;
@@ -111,5 +157,7 @@ namespace YourElectionMap.Server.Districts
         }
 
         private static double Radians(double degrees) => degrees * Math.PI / 180;
+
+        private static double Degrees(double radians) => radians * 180 / Math.PI;
     }
 }

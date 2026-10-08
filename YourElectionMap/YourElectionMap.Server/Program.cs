@@ -16,7 +16,14 @@ builder.Services.AddSingleton<DistrictData>();
 builder.Services.AddHttpClient<CensusGeocoder>();
 builder.Services.AddScoped<DistrictLookupService>();
 
+// Boundaries go out at full detail, tens of kilobytes of coordinates for a lookup and
+// a few hundred for the largest, which compress to about a third. Safe over HTTPS here: what makes that risky
+// is a secret in the same response as text an attacker chose, and these hold no secrets.
+builder.Services.AddResponseCompression(options => options.EnableForHttps = true);
+
 var app = builder.Build();
+
+app.UseResponseCompression();
 
 // Read the boundaries now, so a missing or broken data file stops the app at start
 // rather than failing every lookup, and the first visitor does not wait on the parse.

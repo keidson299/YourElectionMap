@@ -6,9 +6,10 @@ namespace YourElectionMap.Server.Districts
     /// Turns a typed address into a point, using the US Census Bureau's geocoder, which
     /// is free and needs no key.
     /// <para>
-    /// This is the only call this app makes out to the internet, and the address is what
-    /// it sends. Nothing is logged here, and nothing is kept: see the privacy section of
-    /// the design plan.
+    /// This is the only call the server makes out to the internet, and the address is
+    /// what it sends. (The browser makes one more of its own: the street map's tiles
+    /// come from OpenFreeMap.) Nothing is logged here, and nothing is kept: see the
+    /// privacy section of the design plan.
     /// </para>
     /// </summary>
     public sealed class CensusGeocoder

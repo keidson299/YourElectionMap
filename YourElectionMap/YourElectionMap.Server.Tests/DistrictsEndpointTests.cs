@@ -40,12 +40,11 @@ namespace YourElectionMap.Server.Tests
             // No election data yet, which is what hides the rail's footer.
             Assert.Equal(JsonValueKind.Null, lookup.GetProperty("election").ValueKind);
 
-            // The address, in map units: inside the state, and north of the projection's
-            // origin, so y is negative.
+            // The address as [longitude, latitude], the order GeoJSON and the map use.
             var location = Numbers(lookup.GetProperty("location"));
 
-            Assert.InRange(location[0], 4_200, 32_000);
-            Assert.InRange(location[1], -10_900, 0);
+            Assert.InRange(location[0], -84.4, -75.4);
+            Assert.InRange(location[1], 33.8, 36.6);
 
             var districts = lookup.GetProperty("districts");
 
@@ -73,25 +72,52 @@ namespace YourElectionMap.Server.Tests
         }
 
         [Fact]
-        public async Task Get_DrawsEachDistrictAsRingsOfPoints()
+        public async Task Get_DrawsEachDistrictAsMultiPolygonCoordinates()
         {
             var lookup = await LookupAsync(AddressQuery(RaleighAddress));
 
             foreach (var district in lookup.GetProperty("districts").EnumerateArray())
             {
+                // Polygons, each of rings, each of [longitude, latitude] points: what a
+                // GeoJSON MultiPolygon holds, so the client hands it to the map as it is.
                 var boundary = district.GetProperty("boundary");
 
                 Assert.True(boundary.GetArrayLength() > 0);
 
-                var ring = boundary[0];
+                foreach (var polygon in boundary.EnumerateArray())
+                {
+                    Assert.True(polygon.GetArrayLength() > 0);
 
-                // Enough points to be a real boundary, few enough to send.
-                Assert.InRange(ring.GetArrayLength(), 20, 4000);
-                Assert.Equal(2, ring[0].GetArrayLength());
+                    foreach (var ring in polygon.EnumerateArray())
+                    {
+                        var first = Numbers(ring[0]);
 
-                // Closed: the last point repeats the first, so the path needs no fixing up.
-                Assert.Equal(Numbers(ring[0]), Numbers(ring[ring.GetArrayLength() - 1]));
+                        Assert.True(ring.GetArrayLength() >= 4);
+                        Assert.Equal(2, first.Length);
+                        Assert.InRange(first[0], -84.4, -75.4);
+                        Assert.InRange(first[1], 33.8, 36.6);
+
+                        // Closed: the last point repeats the first, as GeoJSON requires.
+                        Assert.Equal(first, Numbers(ring[ring.GetArrayLength() - 1]));
+                    }
+                }
             }
+        }
+
+        [Fact]
+        public async Task Get_CompressesTheLookupForABrowserThatAsks()
+        {
+            // Full-detail boundaries are tens of kilobytes of coordinates, or more.
+            var client = _app.CreateClient();
+            using var request = new HttpRequestMessage(
+                HttpMethod.Get,
+                $"/api/districts?{AddressQuery(RaleighAddress)}");
+            request.Headers.AcceptEncoding.ParseAdd("gzip");
+
+            var response = await client.SendAsync(request);
+
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            Assert.Contains("gzip", response.Content.Headers.ContentEncoding);
         }
 
         [Fact]
@@ -157,11 +183,10 @@ namespace YourElectionMap.Server.Tests
             // geocoder can for an address with no state.
             var lookup = await LookupAsync(AddressQuery("100 Main St, Greenville"));
 
-            var (x, y) = StatePlane.ToMapUnits(35.6127, -77.3664);
             var location = Numbers(lookup.GetProperty("location"));
 
-            Assert.Equal(x, location[0], 0.001);
-            Assert.Equal(y, location[1], 0.001);
+            Assert.Equal(-77.3664, location[0], 0.0001);
+            Assert.Equal(35.6127, location[1], 0.0001);
             Assert.Equal(3, lookup.GetProperty("districts").GetArrayLength());
         }
 

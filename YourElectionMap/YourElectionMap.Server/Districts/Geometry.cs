@@ -2,12 +2,12 @@ namespace YourElectionMap.Server.Districts
 {
     /// <summary>
     /// The little geometry this project needs: whether a point falls inside a set of
-    /// rings, the box around them, and thinning a ring down to the detail a view can
-    /// show.
+    /// rings, the box around them, sorting rings into polygons for the page's map, and
+    /// thinning a ring, which the converter does before it stores one.
     /// <para>
     /// A ring is a flat <c>[x, y, x, y, …]</c> array, closed, which is how the
-    /// district file stores one and what the client's SVG path wants. Keeping that
-    /// one shape everywhere saves reshaping it at every step.
+    /// district file stores one. Keeping that one shape everywhere saves reshaping it
+    /// at every step.
     /// </para>
     /// </summary>
     public static class Geometry
@@ -64,6 +64,62 @@ namespace YourElectionMap.Server.Districts
         /// </summary>
         public static bool BoxCovers(double[] box, double x, double y) =>
             x >= box[0] && x <= box[2] && y >= box[1] && y <= box[3];
+
+        /// <summary>
+        /// Sorts loose rings into polygons: each an outer ring followed by its holes,
+        /// outers wound counter-clockwise and holes clockwise (with y pointing up, as
+        /// latitude does). That is the shape GeoJSON asks for, and the page's map fills
+        /// by it.
+        /// <para>
+        /// The rings say nothing about which is which — they come out of a dissolve —
+        /// so it is worked out the way <see cref="Covers"/> would: a ring inside an even
+        /// number of others is an outer one, an island in a lake counting as outer again,
+        /// and a ring inside an odd number is a hole in the innermost of them.
+        /// </para>
+        /// </summary>
+        public static List<List<double[]>> ToPolygons(IReadOnlyList<double[]> rings)
+        {
+            var boxes = rings.Select(ring => BoxOf([ring])).ToArray();
+            var containers = new List<int>[rings.Count];
+
+            for (var i = 0; i < rings.Count; i++)
+            {
+                containers[i] = [];
+
+                for (var j = 0; j < rings.Count; j++)
+                {
+                    if (i != j && Contains(rings[j], boxes[j], rings[i], boxes[i]))
+                    {
+                        containers[i].Add(j);
+                    }
+                }
+            }
+
+            var polygons = new List<List<double[]>>();
+            var polygonOf = new Dictionary<int, List<double[]>>();
+
+            for (var i = 0; i < rings.Count; i++)
+            {
+                if (containers[i].Count % 2 == 0)
+                {
+                    var polygon = new List<double[]> { Wound(rings[i], counterClockwise: true) };
+                    polygons.Add(polygon);
+                    polygonOf[i] = polygon;
+                }
+            }
+
+            for (var i = 0; i < rings.Count; i++)
+            {
+                if (containers[i].Count % 2 == 1)
+                {
+                    // The innermost container is the one inside the most others.
+                    var parent = containers[i].MaxBy(j => containers[j].Count);
+                    polygonOf[parent].Add(Wound(rings[i], counterClockwise: false));
+                }
+            }
+
+            return polygons;
+        }
 
         /// <summary>
         /// Douglas-Peucker: drop every vertex that sits within <paramref name="tolerance"/>
@@ -205,6 +261,71 @@ namespace YourElectionMap.Server.Districts
             }
 
             return worstAt;
+        }
+
+        /// <summary>
+        /// Whether one ring lies inside another. Rings of a dissolve never cross, so one
+        /// vertex settles it — any vertex but one the two rings share, which would sit on
+        /// the outer ring's edge and answer either way.
+        /// </summary>
+        private static bool Contains(double[] outer, double[] outerBox, double[] inner, double[] innerBox)
+        {
+            if (innerBox[0] < outerBox[0] || innerBox[1] < outerBox[1]
+                || innerBox[2] > outerBox[2] || innerBox[3] > outerBox[3])
+            {
+                return false;
+            }
+
+            var shared = new HashSet<(double, double)>();
+
+            for (var i = 0; i < outer.Length; i += 2)
+            {
+                shared.Add((outer[i], outer[i + 1]));
+            }
+
+            for (var i = 0; i < inner.Length; i += 2)
+            {
+                if (!shared.Contains((inner[i], inner[i + 1])))
+                {
+                    return CrossesOddTimes(outer, inner[i], inner[i + 1]);
+                }
+            }
+
+            // Every vertex shared: the same ring twice, which contains nothing.
+            return false;
+        }
+
+        /// <summary>The ring as given, or reversed, so that it turns the asked way.</summary>
+        private static double[] Wound(double[] ring, bool counterClockwise)
+        {
+            if (SignedArea(ring) > 0 == counterClockwise)
+            {
+                return ring;
+            }
+
+            var reversed = new double[ring.Length];
+
+            for (var i = 0; i < ring.Length; i += 2)
+            {
+                reversed[ring.Length - 2 - i] = ring[i];
+                reversed[ring.Length - 1 - i] = ring[i + 1];
+            }
+
+            return reversed;
+        }
+
+        /// <summary>The shoelace sum: positive for a counter-clockwise ring, y up.</summary>
+        private static double SignedArea(double[] ring)
+        {
+            var sum = 0.0;
+            var count = ring.Length / 2;
+
+            for (int i = 0, j = count - 1; i < count; j = i++)
+            {
+                sum += ring[j * 2] * ring[i * 2 + 1] - ring[i * 2] * ring[j * 2 + 1];
+            }
+
+            return sum / 2;
         }
 
         /// <summary>

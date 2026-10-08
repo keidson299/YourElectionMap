@@ -126,8 +126,8 @@ export function BoundaryPill({ count }: { count: number }) {
 }
 
 /**
- * The address's name beside its pin. The map keeps the address at its exact
- * centre, so this can be placed from the centre without measuring anything.
+ * The address's name beside its pin. Rendered inside the pin's own element,
+ * so it moves with the address as the map is dragged.
  */
 export function AddressMarker({ label }: { label: string }) {
   return (

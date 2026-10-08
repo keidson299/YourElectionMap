@@ -1,7 +1,7 @@
-/* Widths from design/canvas4/Main.dc.html, Result. Everything drawn in the
-   map's own space is multiplied by --k (see SurveyGround.css) so lines keep
-   the spec's weight as the view refits and zooms and the window resizes. The
-   pin group is scaled as a whole instead, so its widths are plain. */
+/* The map's own lines and colours are in map/style.ts, built from the tokens in
+   index.css. What is here is the frame around it and the pin, whose widths come
+   from design/canvas4/Main.dc.html, Result: they are in the pin's own survey
+   units, which its SVG scales to the size the spec draws it. */
 
 .district-map {
   position: relative;
@@ -11,44 +11,29 @@
   background: var(--bg);
 }
 
-.district-map__svg {
+/* Two classes, to outrank the .maplibregl-map MapLibre adds to this element,
+   whose position: relative would collapse it to no height at all. */
+.district-map .district-map__canvas {
   position: absolute;
   inset: 0;
-  width: 100%;
-  height: 100%;
+}
+
+.district-map__fallback {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  max-width: 280px;
+  transform: translate(-50%, -50%);
+  font-size: 13px;
+  text-align: center;
+  color: var(--ink-soft);
+}
+
+/* MapLibre places the pin's element over the address; the label beside it is
+   positioned from that element's centre (see .map-marker). */
+.district-map__pin {
   display: block;
-}
-
-.district-map__context {
-  fill: none;
-  stroke: var(--accent);
-  stroke-width: calc(2.4px * var(--k, 1));
-  stroke-linejoin: round;
-  opacity: 0.68;
-}
-
-.district-map__context--dotted {
-  stroke-linecap: round;
-}
-
-.district-map__selected {
-  fill: var(--accent-tint);
-  fill-rule: evenodd;
-  stroke: var(--accent);
-  stroke-width: calc(3.4px * var(--k, 1));
-  stroke-linejoin: round;
-}
-
-.district-map__hatch {
-  fill-rule: evenodd;
-  stroke: none;
-}
-
-.district-map__hatch-line {
-  fill: none;
-  stroke: var(--accent);
-  stroke-width: calc(0.9px * var(--k, 1));
-  opacity: 0.45;
+  overflow: visible;
 }
 
 .district-map__crosshair {
@@ -70,20 +55,25 @@
   stroke-width: 2.4;
 }
 
+/* The street data's credit, which its licence requires. Lifted clear of the
+   scale bar, and of the pill and sheet edge on a phone. */
+.district-map .maplibregl-ctrl-bottom-right {
+  bottom: 62px;
+  right: 12px;
+}
+
+.district-map .maplibregl-ctrl-attrib {
+  font-family: var(--ui);
+  font-size: 10.5px;
+  color: var(--ink-soft);
+  background: var(--card);
+}
+
+.district-map .maplibregl-ctrl-attrib a {
+  color: inherit;
+}
+
 @media (max-width: 860px) {
-  .district-map__context {
-    stroke-width: calc(2px * var(--k, 1));
-    opacity: 0.65;
-  }
-
-  .district-map__selected {
-    stroke-width: calc(3px * var(--k, 1));
-  }
-
-  .district-map__hatch-line {
-    stroke-width: calc(0.8px * var(--k, 1));
-  }
-
   .district-map__crosshair,
   .district-map__ring {
     stroke-width: 1.1;
@@ -95,5 +85,10 @@
 
   .district-map__dot {
     stroke-width: 2;
+  }
+
+  .district-map .maplibregl-ctrl-bottom-right {
+    bottom: 56px;
+    right: 4px;
   }
 }

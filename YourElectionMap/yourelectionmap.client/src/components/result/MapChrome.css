@@ -172,6 +172,8 @@
 
 /* ── Address marker ────────────────────────────────────────────────────── */
 
+/* Inside the pin's element, which the map keeps centred on the address, so
+   these offsets are from the pin. */
 .map-marker {
   left: calc(50% + 18px);
   top: calc(50% - 27px);

@@ -1,45 +1,75 @@
-import { render, screen } from '@testing-library/react'
+import { act, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import { DistrictMap } from './DistrictMap'
+import { Map, Marker, workerUrl } from '../../test/fakeMaplibre'
 import { sampleLookup } from '../../test/sampleLookup'
 import { mapLayers, resolveSelection } from '../../districts/selection'
+import { MAX_ZOOM, MIN_ZOOM, ZOOM_STEP } from '../../map/camera'
+import { TILE_SOURCE, type StyleSpecification } from '../../map/style'
+
+// maplibre-gl is replaced by the fake in src/test/fakeMaplibre.ts, which
+// records what the component tells it. What is checked here is that: the
+// style it is given, where it is told to look, and the chrome drawn over it.
 
 const lookup = sampleLookup({ address: '1420 Maple Street, Springfield' })
 
-function renderMap(selectedId: string | null = null) {
+function layersFor(selectedId: string | null = null) {
   const selected = resolveSelection(lookup.districts, selectedId)
 
   if (selected === undefined) {
     throw new Error('The sample always has districts.')
   }
 
-  const { container } = render(
+  return mapLayers(lookup.districts, selected)
+}
+
+function renderMap(selectedId: string | null = null) {
+  const view = (id: string | null) => (
     <DistrictMap
       location={lookup.location}
       label={lookup.label}
-      layers={mapLayers(lookup.districts, selected)}
+      layers={layersFor(id)}
       compact={false}
-    />,
+    />
   )
+  const { rerender } = render(view(selectedId))
+  const map = Map.instances.at(-1)
 
-  const svg = container.querySelector('svg.district-map__svg')
-
-  if (svg === null) {
-    throw new Error('The map did not render its drawing.')
+  if (map === undefined) {
+    throw new Error('The component did not make a map.')
   }
 
   return {
-    svg,
-    viewBoxWidth: () => Number(svg.getAttribute('viewBox')?.split(' ')[2]),
+    map,
+    style: () => map.style as StyleSpecification,
+    select: (id: string) => rerender(view(id)),
   }
 }
 
-describe('DistrictMap', () => {
-  it('hides the drawing and says in text what it shows', () => {
-    const { svg } = renderMap()
+/** The district ids a style draws in one of its district sources. */
+function idsIn(style: StyleSpecification, source: string): unknown[] {
+  const spec = style.sources[source]
 
-    expect(svg).toHaveAttribute('aria-hidden', 'true')
+  if (spec?.type !== 'geojson' || typeof spec.data !== 'object') {
+    throw new Error(`No GeoJSON source called ${source}.`)
+  }
+
+  const data = spec.data as { features: { properties: { id: unknown } }[] }
+
+  return data.features.map((feature) => feature.properties.id)
+}
+
+describe('DistrictMap', () => {
+  // Without it the bundled library looks for its worker beside our chunk, finds
+  // nothing, and draws only the background.
+  it('tells the map library where its bundled worker is', () => {
+    expect(workerUrl).toMatch(/maplibre-gl-worker.*\.mjs/)
+  })
+
+  it('says in text what the drawing shows', () => {
+    renderMap()
+
     expect(
       screen.getByRole('heading', { level: 2, name: 'State House · District 44' }),
     ).toBeInTheDocument()
@@ -57,80 +87,157 @@ describe('DistrictMap', () => {
     expect(screen.getByText('County Commission 3')).toBeInTheDocument()
   })
 
-  it('opens on the spec frame for a district that fits in it', () => {
-    const { svg } = renderMap()
+  it('draws the selection and its two neighbours', () => {
+    const { style } = renderMap()
 
-    expect(svg).toHaveAttribute('viewBox', '817 381 620 496')
+    expect(idsIn(style(), 'selected')).toEqual(['state-lower-44'])
+    expect(idsIn(style(), 'dashed')).toEqual(['state-upper-22'])
+    expect(idsIn(style(), 'dotted')).toEqual(['county-3'])
   })
 
-  // The boundaries here are real places. A hand-drawn river, road or neighbouring
-  // district would be saying something about those places that is not true.
-  it('draws nothing but paper under the real boundaries', () => {
-    const { svg } = renderMap()
+  it('hands the map each boundary as a MultiPolygon, holes and all', () => {
+    const { style } = renderMap()
+    const spec = style().sources.selected
+    const data = (spec as { data: { features: { geometry: unknown }[] } }).data
 
-    expect(svg.querySelector('.survey-ground__paper')).not.toBeNull()
-    expect(svg.querySelector('.survey-ground__water')).toBeNull()
-    expect(svg.querySelector('.survey-ground__roads')).toBeNull()
-    expect(svg.querySelector('.survey-ground__mesh')).toBeNull()
+    expect(data.features[0].geometry).toEqual({
+      type: 'MultiPolygon',
+      coordinates: layersFor().selected.boundary,
+    })
   })
 
-  it('lays the paper under wherever the address is', () => {
-    const { svg } = renderMap()
-    const paper = svg.querySelector('.survey-ground__paper')
+  // OpenFreeMap's tiles carry buildings, water, land use and more; only the
+  // streets and their names are drawn.
+  it('draws streets from the tile provider and nothing else of theirs', () => {
+    const { style } = renderMap()
+    const streets = style().sources.streets
 
-    expect(Number(paper?.getAttribute('x'))).toBeLessThan(817)
-    expect(Number(paper?.getAttribute('width'))).toBeGreaterThan(620)
-  })
+    expect(streets).toEqual({ type: 'vector', url: TILE_SOURCE.url })
 
-  // Hatching a district with a hole in it. A dissolved boundary does not wind
-  // consistently, so the default fill rule would fill holes and skip islands.
-  it('hatches the selection by the even-odd rule', () => {
-    const { svg } = renderMap()
-
-    expect(svg.querySelector('.district-map__hatch')).toHaveAttribute(
-      'fill-rule',
-      'evenodd',
+    const fromTiles = style().layers.filter(
+      (layer) => 'source' in layer && layer.source === 'streets',
     )
+
+    expect(fromTiles.length).toBeGreaterThan(0)
+    expect(
+      new Set(fromTiles.map((layer) => layer['source-layer' as keyof typeof layer])),
+    ).toEqual(new Set(['transportation', 'transportation_name']))
   })
 
-  it('widens the view to take in a large district', () => {
-    const { viewBoxWidth } = renderMap('congressional-7')
+  it('opens centred on the address and wide enough for the district', () => {
+    const { map } = renderMap('congressional-7')
+    const [[west, south], [east, north]] = map.options.bounds as [
+      [number, number],
+      [number, number],
+    ]
+    const [lng, lat] = lookup.location
 
-    expect(viewBoxWidth()).toBeGreaterThan(620)
+    expect((west + east) / 2).toBeCloseTo(lng, 6)
+    expect((south + north) / 2).toBeCloseTo(lat, 6)
+
+    // The sample's congressional district reaches 487 drawing units west.
+    expect(lng - west).toBeGreaterThan(487 * 0.0003)
   })
 
-  it('zooms in twice and out once from where it opens, then stops', async () => {
-    const { viewBoxWidth } = renderMap()
-    const zoomIn = screen.getByRole('button', { name: 'Zoom in' })
-    const zoomOut = screen.getByRole('button', { name: 'Zoom out' })
+  it('redraws and refits the same map when the selection changes', () => {
+    const { map, style, select } = renderMap()
 
-    await userEvent.click(zoomIn)
-    expect(viewBoxWidth()).toBeLessThan(620)
-    expect(screen.getByText('0.5 mi')).toBeInTheDocument()
+    select('congressional-7')
 
-    await userEvent.click(zoomIn)
-    expect(zoomIn).toHaveAttribute('aria-disabled', 'true')
+    expect(Map.instances).toHaveLength(1)
+    expect(idsIn(style(), 'selected')).toEqual(['congressional-7'])
+    expect(map.fitted).toHaveLength(1)
+  })
 
-    await userEvent.click(zoomOut)
-    await userEvent.click(zoomOut)
-    await userEvent.click(zoomOut)
-    expect(viewBoxWidth()).toBeGreaterThan(620)
-    expect(zoomOut).toHaveAttribute('aria-disabled', 'true')
-    expect(zoomIn).not.toHaveAttribute('aria-disabled')
+  it('puts the pin and its label on the address', () => {
+    renderMap()
+    const marker = Marker.instances.at(-1)
+
+    expect(marker?.lngLat).toEqual([...lookup.location])
+    expect(marker?.element.querySelector('.district-map__pin')).not.toBeNull()
+    expect(marker?.element).toHaveTextContent('1420 Maple Street')
+  })
+
+  it('zooms half again closer or further with each press', async () => {
+    const { map } = renderMap()
+    const start = map.getZoom()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Zoom in' }))
+    expect(map.getZoom()).toBeCloseTo(start + ZOOM_STEP)
+
+    await userEvent.click(screen.getByRole('button', { name: 'Zoom out' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Zoom out' }))
+    expect(map.getZoom()).toBeCloseTo(start - ZOOM_STEP)
   })
 
   // aria-disabled rather than disabled, so a keyboard user is not dropped
   // back to the top of the page when a limit is reached.
-  it('keeps focus on a zoom button that has reached its limit', async () => {
-    const { viewBoxWidth } = renderMap()
+  it('marks a zoom button that has reached its limit, and keeps its focus', async () => {
+    const { map } = renderMap()
     const zoomIn = screen.getByRole('button', { name: 'Zoom in' })
+    const zoomOut = screen.getByRole('button', { name: 'Zoom out' })
+
+    act(() => {
+      map.zoomTo(MAX_ZOOM)
+    })
+    expect(zoomIn).toHaveAttribute('aria-disabled', 'true')
 
     zoomIn.focus()
-    await userEvent.keyboard('{Enter}{Enter}')
-    const closest = viewBoxWidth()
     await userEvent.keyboard('{Enter}')
-
     expect(zoomIn).toHaveFocus()
-    expect(viewBoxWidth()).toBe(closest)
+    expect(map.getZoom()).toBe(MAX_ZOOM)
+
+    act(() => {
+      map.zoomTo(MIN_ZOOM)
+    })
+    expect(zoomOut).toHaveAttribute('aria-disabled', 'true')
+    expect(zoomIn).not.toHaveAttribute('aria-disabled')
+  })
+
+  it('keeps the scale bar true to the zoom', () => {
+    const { map } = renderMap()
+
+    act(() => {
+      map.zoomTo(12)
+    })
+    expect(screen.getByText('1 mi')).toBeInTheDocument()
+
+    act(() => {
+      map.zoomTo(15)
+    })
+    expect(screen.getByText('0.1 mi')).toBeInTheDocument()
+  })
+
+  it('redraws in the new colours when the theme changes', async () => {
+    const { map } = renderMap()
+    const before = map.style
+
+    act(() => {
+      document.documentElement.setAttribute('data-theme', 'dark')
+    })
+
+    // The observer reports after the attribute change, on a microtask.
+    await act(async () => {})
+
+    expect(map.style).not.toBe(before)
+    document.documentElement.removeAttribute('data-theme')
+  })
+
+  it('says so, and still shows the chrome, when the browser cannot draw a map', () => {
+    Map.failNext = true
+
+    render(
+      <DistrictMap
+        location={lookup.location}
+        label={lookup.label}
+        layers={layersFor()}
+        compact={false}
+      />,
+    )
+
+    expect(screen.getByText(/can’t be drawn in this browser/)).toBeInTheDocument()
+    expect(
+      screen.getByRole('heading', { level: 2, name: 'State House · District 44' }),
+    ).toBeInTheDocument()
   })
 })

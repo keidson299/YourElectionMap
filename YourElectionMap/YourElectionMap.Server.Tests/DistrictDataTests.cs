@@ -63,25 +63,54 @@ namespace YourElectionMap.Server.Tests
         }
 
         [Fact]
-        public void Covering_SendsBoundariesThinnedToWhatAViewCanShow()
+        public void Covering_SendsBoundariesAsPolygonsOfLongitudeAndLatitude()
         {
             var found = Covering(RaleighLatitude, RaleighLongitude);
 
             foreach (var district in found)
             {
-                var points = district.Boundary.Sum(ring => ring.Length);
-
                 Assert.NotEmpty(district.Boundary);
 
-                // Comfortably more than a rectangle, comfortably less than the tens of
-                // thousands of vertices the precincts came with.
-                Assert.InRange(points, 20, 4000);
-
-                foreach (var ring in district.Boundary)
+                foreach (var polygon in district.Boundary)
                 {
-                    Assert.Equal(2, ring[0].Length);
-                    Assert.Equal(ring[0], ring[^1]);
+                    Assert.NotEmpty(polygon);
+
+                    foreach (var ring in polygon)
+                    {
+                        // Closed, and enough points to be a real boundary.
+                        Assert.True(ring.Length >= 4);
+                        Assert.Equal(ring[0], ring[^1]);
+
+                        foreach (var point in ring)
+                        {
+                            // [longitude, latitude], somewhere in North Carolina's box.
+                            Assert.Equal(2, point.Length);
+                            Assert.InRange(point[0], -84.4, -75.4);
+                            Assert.InRange(point[1], 33.8, 36.6);
+                        }
+                    }
                 }
+
+                // At the detail the file keeps rather than thinned for one view: the map
+                // zooms to street level. More than a rectangle, less than a flood.
+                var points = district.Boundary.Sum(polygon => polygon.Sum(ring => ring.Length));
+                Assert.InRange(points, 100, 60_000);
+            }
+        }
+
+        [Fact]
+        public void Covering_PutsTheAddressInsideItsDistrictsOuterRing()
+        {
+            // The address, as the page's map will draw it, falls inside the outer ring of
+            // one of the district's polygons: the rings did not come out as holes.
+            foreach (var district in Covering(RaleighLatitude, RaleighLongitude))
+            {
+                Assert.Contains(
+                    district.Boundary,
+                    polygon => Geometry.Covers(
+                        [polygon[0].SelectMany(point => point).ToArray()],
+                        RaleighLongitude,
+                        RaleighLatitude));
             }
         }
 
@@ -166,6 +195,7 @@ namespace YourElectionMap.Server.Tests
         private static double[] Box(District district) =>
             Geometry.BoxOf(
                 district.Boundary
+                    .SelectMany(polygon => polygon)
                     .Select(ring => ring.SelectMany(point => point).ToArray())
                     .ToArray());
     }

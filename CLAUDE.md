@@ -113,15 +113,16 @@ and let the owner decide whether to authorize a search or paste the information 
 SPA (`yourelectionmap.client`), with an xUnit test project (`YourElectionMap.Server.Tests`) and a
 console project (`YourElectionMap.Tools`), run by hand, that builds the district data. The client
 has a Home page (the address form over a decorative survey map) and a result page (a rail of
-districts beside the map; on a phone, the map above a bottom sheet). The client fetches its
-districts from the server's one real endpoint, `GET /api/districts`. The current plan is
-[design/ElectionMapMainDesignPlanV4.md](design/ElectionMapMainDesignPlanV4.md); code comments refer
-to its numbered slices.
+districts beside a MapLibre street map; on a phone, the map above a bottom sheet). The client
+fetches its districts from the server's one real endpoint, `GET /api/districts`. The current plan
+is [design/ElectionMapMainDesignPlanV5.md](design/ElectionMapMainDesignPlanV5.md); code comments
+refer to its numbered slices.
 
 **The data is real, and it is North Carolina only.** An address is placed by the US Census
-geocoder — the one call this app makes out to the internet — and the point is then looked up in
+geocoder — the one call the server makes out to the internet — and the point is then looked up in
 `Districts/Data/nc-districts.json`, which holds the state's 14 US House, 50 NC Senate and 120 NC
-House districts. There is no County Commission, City Council or School Board data, and no election
+House districts. The visitor's browser makes the other outbound requests: the result map's street
+tiles and fonts come from OpenFreeMap (`TILE_SOURCE` in `src/map/style.ts`). There is no County Commission, City Council or School Board data, and no election
 data, so the rail lists three districts and its election footer stays hidden. An address anywhere
 else is a 404, which the page says in as many words.
 
@@ -225,16 +226,23 @@ boundaries contain the point, box-checked first and then by counting ray crossin
 `DistrictsController` answers 200 with a lookup, 404 when nothing can be placed or found, 503 when
 the geocoder did not answer (`GeocoderUnavailableException`), and 400 for an unusable query; the
 client reads 404 and 400 as no-match and anything else as an error, so an outage never reads as a
-bad address. Three things in there are worth knowing before changing them:
+bad address. Four things in there are worth knowing before changing them:
 
+- **Containment is in map units; everything sent is in degrees.** The point is projected into the
+  file's State Plane map units to be tested, and each boundary goes back out through
+  `StatePlane.ToLatLon` as `[longitude, latitude]`, because the result map is MapLibre, which draws
+  in degrees. The lookup's `location` is the geocoder's own longitude and latitude.
 - **Containment counts crossings rather than winding.** The boundaries come out of a dissolve, which
   does not keep the clockwise-is-outer rule a shapefile follows, so an island and a hole are
-  indistinguishable until the crossings are counted. The map's hatch needs `fill-rule="evenodd"` for
-  the same reason.
-- **The file stores boundaries finer than it sends them.** It keeps roughly 15 feet of detail,
-  because the same rings answer "which district is this address in"; each response then thins its
-  boundaries to about a pixel at the frame that district is drawn in, which is what keeps a
-  congressional district to a thousand points instead of twenty-five thousand.
+  indistinguishable until the crossings are counted. For the same reason the boundary goes out
+  through `Geometry.ToPolygons`, which sorts the rings into GeoJSON polygons (outer ring, then its
+  holes, wound counter-clockwise and clockwise) by how many others contain each one; MapLibre fills
+  by that structure, so without it holes would be filled and islands left blank.
+- **Boundaries are sent at the detail the file stores, not thinned.** That is roughly 15 feet. The
+  map zooms to street level, where a simplified line would put an address on the wrong side of the
+  street, and MapLibre simplifies for wider views itself. Each district's converted boundary is
+  worked out once and kept, and responses are gzip-compressed (`AddResponseCompression`): a Raleigh
+  lookup is about 55KB of coordinates, and the largest districts several times that.
 - **The precincts are added up by edge parity, not by keeping edges seen exactly once.** A few
   borders in this data are described three times, and dropping those tears the outline open. See the
   comment on `Dissolve` in `YourElectionMap.Tools` — it is the one piece of real geometry in the
@@ -251,7 +259,9 @@ logic is in question. Client tests are Vitest + Testing Library in `jsdom`, matc
 `ConfigureTestServices` with `FakeGeocoding`, which places any address containing one of a few
 known words ("Jones", "Tryon", …) and fakes an outage for "Outage". Everything else in
 those tests is real, including the whole district file. If you add a service that calls out, stub it
-the same way.
+the same way. On the client, `src/test/setup.ts` replaces `maplibre-gl` everywhere with
+`src/test/fakeMaplibre.ts` — jsdom has no WebGL, so the real map cannot even be constructed — and
+the fake records the style, view and pin it is given, which is what `DistrictMap.test.tsx` checks.
 
 **How the district data is checked.** The converter needs 130MB of shapefiles that are not in the
 repository, so `DissolveTests` works on hand-made polygons instead, and `DistrictDataTests` checks
@@ -268,13 +278,22 @@ there and nowhere else.
   shown, so change it only through `navigate()`.
 - `DistrictLookup` in `src/districts/types.ts` is the contract the result page renders, and the
   twin of the server's records in `Districts/DistrictLookup.cs` — change the two together.
-- **Everything drawn on the result map is in map units: one unit is 96 feet, so 55 make a mile.**
-  That number is why every size in the design spec still means what it did — it is
-  `MAP_UNITS_PER_MILE` in `src/map/frame.ts` and `StatePlane.FeetPerMapUnit` on the server, and the
-  two have to agree. Y counts downward, as SVG does, so a North Carolina address has a negative y.
+- **The result map is MapLibre GL over OpenFreeMap's street tiles.** `DistrictMap` makes one map
+  for the life of the result page and never re-keys it; its whole look comes from `buildStyle` in
+  `src/map/style.ts` (streets and street names only, then the districts), so a new selection or
+  theme is one `setStyle`, which MapLibre diffs. Colours are read from the CSS tokens at runtime, the
+  hatch is drawn on demand (`src/map/hatch.ts`), and where it opens and what the scale bar says are
+  pure functions in `src/map/camera.ts`. It is loaded lazily from `ResultView`, because the library
+  is most of the bundle. The layers handed to it are memoized in `ResultView` — a new `layers` object
+  rebuilds the style, which on every render would diff every coordinate of three boundaries.
+- **The design spec's sizes are in survey units: one unit is 96 feet, so 55 make a mile.** That
+  is `MAP_UNITS_PER_MILE` in `src/map/frame.ts`. The result map uses it only to turn the spec's
+  design frames into miles (the least it opens on) and to size the pin; the SVG survey sheets on
+  Home and the waiting page are still drawn in those units. The server's `StatePlane.FeetPerMapUnit`
+  is the same 96 feet for the district file's own units, but nothing sent to the client is in them.
 - `src/components/surveyMapGeometry.ts` is the hand-drawn stand-in, and it is now only the
-  decoration behind the home card. The result map draws real boundaries on bare paper: `SurveyGround`
-  leaves out the river, the roads and the mesh unless asked for them with `standIn`.
+  decoration behind the home card. `SurveyGround` leaves out its river, roads and mesh unless asked
+  for them with `standIn`, which only Home does.
 - `src/test/sampleLookup.ts` is a test fixture, and deliberately not what the server sends — it has
   all six levels, a ward, a zone, populations and an election, which is the only thing exercising
   the parts of the page the real three-level data has nothing to fill.
@@ -288,9 +307,9 @@ there and nowhere else.
   together.
 - Sizes, colours and line weights come from the build spec, `design/canvas4/Main.dc.html`. The
   colour tokens live in `src/index.css`, where the dark set appears twice on purpose.
-- jsdom has no `matchMedia` or `ResizeObserver`, so client tests render the desktop layout with the
-  map at its design size. To test the phone layout, stub `matchMedia` as `ResultView.test.tsx`
-  does.
+- jsdom has no `matchMedia`, `ResizeObserver` or WebGL, so client tests render the desktop layout
+  with MapLibre faked (see above). To test the phone layout, stub `matchMedia` as
+  `ResultView.test.tsx` does. The map arrives lazily, so a test that needs it waits with `findBy…`.
 
 **Linting is oxlint, not ESLint** — configured in
 [YourElectionMap/yourelectionmap.client/.oxlintrc.json](YourElectionMap/yourelectionmap.client/.oxlintrc.json).

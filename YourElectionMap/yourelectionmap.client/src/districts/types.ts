@@ -14,15 +14,17 @@ export const DISTRICT_LEVELS = [
 export type DistrictLevel = (typeof DISTRICT_LEVELS)[number]
 
 /**
- * A point in map units, the coordinate space everything drawn on the result map
- * shares. One unit is 96 feet, so 55 of them make a mile: see
- * `MAP_UNITS_PER_MILE` and the server's `StatePlane.FeetPerMapUnit`. Y counts
- * downward, the way SVG does, so north is up.
+ * A point as [longitude, latitude], the order GeoJSON and the street map use.
+ * The server answers "which district" in its own projected units, but everything
+ * it sends the page is in degrees.
  */
-export type SurveyPoint = readonly [x: number, y: number]
+export type LngLat = readonly [longitude: number, latitude: number]
 
-/** One closed ring of a boundary. */
-export type SurveyRing = readonly SurveyPoint[]
+/** One closed ring: the last point repeats the first. */
+export type Ring = readonly LngLat[]
+
+/** An outer ring, then any holes in it. */
+export type Polygon = readonly Ring[]
 
 export type District = {
   /** URL-safe and stable, e.g. 'state-lower-44'. */
@@ -38,8 +40,11 @@ export type District = {
   /** The place named on the map chip, where it is known. */
   area: string | null
   population: number | null
-  /** Rings rather than one polygon, so real islands and holes fit unchanged. */
-  boundary: readonly SurveyRing[]
+  /**
+   * A GeoJSON MultiPolygon's coordinates, so a district with islands or holes is
+   * drawn as one. The server has already sorted which ring is which.
+   */
+  boundary: readonly Polygon[]
 }
 
 export type ElectionSummary = {
@@ -52,8 +57,8 @@ export type ElectionSummary = {
 export type DistrictLookup = {
   /** The address as the page names it: '1420 Maple Street'. */
   label: string
-  /** The address in map units. */
-  location: SurveyPoint
+  /** Where the address is. */
+  location: LngLat
   /** One or more districts. Never assume six. */
   districts: readonly District[]
   /** Null hides the rail footer, for addresses with no election info. */

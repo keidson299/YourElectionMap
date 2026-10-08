@@ -29,13 +29,14 @@ describe('ResultView on a phone', () => {
     Reflect.deleteProperty(window, 'matchMedia')
   })
 
-  it('names the map with the short form and swaps the legend for a count', () => {
+  it('names the map with the short form and swaps the legend for a count', async () => {
     render(
       <ResultView lookup={lookup} requestedDistrict={null} onSelect={() => {}} />,
     )
 
+    // The map loads on its own, after the rest of the page.
     expect(
-      screen.getByRole('heading', { level: 2, name: 'State House · 44' }),
+      await screen.findByRole('heading', { level: 2, name: 'State House · 44' }),
     ).toBeInTheDocument()
     expect(screen.getByText('3 boundaries')).toBeInTheDocument()
     expect(screen.queryByText('On this map')).toBeNull()

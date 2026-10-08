@@ -1,27 +1,18 @@
 import { describe, expect, it } from 'vitest'
 import {
   DESIGN,
-  MAP_UNITS_PER_MILE,
-  MAX_ZOOM,
-  MIN_ZOOM,
-  clampZoom,
   fitFrame,
   groundOf,
-  lineScale,
   pickScaleBar,
-  ringsToPath,
-  scaleBarFor,
   viewBoxOf,
-  zoomFrame,
+  type SheetPoint,
 } from './frame'
-import type { SurveyPoint, SurveyRing } from '../districts/types'
 
-const ADDRESS: SurveyPoint = [1127, 629]
-const design = DESIGN.desktop
-const desktop = design.span
+const ADDRESS: SheetPoint = [1127, 629]
+const desktop = DESIGN.desktop.span
 
 // State House 44 from the spec: small enough to sit inside the design frame.
-const SMALL: SurveyRing[] = [
+const SMALL: SheetPoint[][] = [
   [
     [930, 495],
     [1310, 520],
@@ -31,7 +22,7 @@ const SMALL: SurveyRing[] = [
 ]
 
 // Reaches 487 units left and 379 up from the address.
-const LARGE: SurveyRing[] = [
+const LARGE: SheetPoint[][] = [
   [
     [640, 250],
     [1560, 270],
@@ -62,76 +53,15 @@ describe('fitFrame', () => {
   })
 })
 
-describe('zoom', () => {
-  const frame = fitFrame(ADDRESS, SMALL, desktop)
-
-  it('looks closer by half again with each step in', () => {
-    expect(zoomFrame(frame, 1)).toEqual({
-      center: ADDRESS,
-      width: 620 / 1.5,
-      height: 496 / 1.5,
-    })
-  })
-
-  it('stops at its limits', () => {
-    expect(clampZoom(MAX_ZOOM + 3)).toBe(MAX_ZOOM)
-    expect(clampZoom(MIN_ZOOM - 3)).toBe(MIN_ZOOM)
-    expect(zoomFrame(frame, 10)).toEqual(zoomFrame(frame, MAX_ZOOM))
-  })
-
-  it('scales line weights with how far the view has widened', () => {
-    expect(lineScale(frame, design.map, design)).toBe(1)
-    expect(lineScale(zoomFrame(frame, -1), design.map, design)).toBeCloseTo(1.5)
-    expect(lineScale(zoomFrame(frame, 1), design.map, design)).toBeCloseTo(
-      1 / 1.5,
-    )
-  })
-
-  it('thins line weights on a map drawn larger than the design', () => {
-    const larger = { width: 1560, height: 1248 }
-
-    expect(lineScale(frame, larger, design)).toBeCloseTo(1040 / 1560)
-  })
-})
-
-describe('scale bar', () => {
-  it('reads one mile at the design frame, as the spec draws it', () => {
-    const scale = scaleBarFor(fitFrame(ADDRESS, SMALL, desktop), design.map, 55)
-
-    expect(scale.miles).toBe(1)
-    expect(scale.width).toBeCloseTo(92, 0)
-  })
-
-  it('shortens the distance as the view zooms in', () => {
-    const frame = fitFrame(ADDRESS, SMALL, desktop)
-
-    expect(scaleBarFor(zoomFrame(frame, 1), design.map, 55).miles).toBe(0.5)
-    expect(scaleBarFor(zoomFrame(frame, 2), design.map, 55).miles).toBe(0.5)
-  })
-
-  // A 1366×768 laptop: the short side limits the fit, so a mile is ~64px.
-  it('measures against the map at the size it is really drawn', () => {
-    const frame = fitFrame(ADDRESS, SMALL, desktop)
-    const scale = scaleBarFor(frame, { width: 966, height: 582 }, 55)
-
-    expect(scale.miles).toBe(1)
-    expect(scale.width).toBeCloseTo(64.5, 0)
-  })
-
-  it('picks the round distance closest to the drawn length', () => {
+describe('pickScaleBar', () => {
+  it('picks the round distance closest to the spec’s 92px', () => {
     expect(pickScaleBar(92)).toEqual({ miles: 1, width: 92 })
     expect(pickScaleBar(40)).toEqual({ miles: 2, width: 80 })
     expect(pickScaleBar(400)).toEqual({ miles: 0.25, width: 100 })
   })
 
-  it('reaches the distances a congressional district is measured in', () => {
-    const across = 100 * MAP_UNITS_PER_MILE
-    const frame = fitFrame(ADDRESS, [[[0, 0], [across, across]]], desktop)
-    const scale = scaleBarFor(frame, design.map, MAP_UNITS_PER_MILE)
-
-    expect(scale.miles).toBeGreaterThanOrEqual(10)
-    expect(scale.width).toBeGreaterThan(40)
-    expect(scale.width).toBeLessThan(150)
+  it('goes down to a tenth of a mile for a street-level view', () => {
+    expect(pickScaleBar(920)).toEqual({ miles: 0.1, width: 92 })
   })
 })
 
@@ -147,39 +77,12 @@ describe('groundOf', () => {
     })
   })
 
-  it('follows the frame out to the far side of the state', () => {
+  it('follows the frame wherever it is centred', () => {
     const ground = groundOf(fitFrame([31_000, -10_000], SMALL, desktop))
 
     expect(ground.x).toBeLessThan(31_000)
     expect(ground.x + ground.width).toBeGreaterThan(31_000)
     expect(ground.y).toBeLessThan(-10_000)
     expect(ground.y + ground.height).toBeGreaterThan(-10_000)
-  })
-
-  it('still covers the view after a zoom out', () => {
-    const frame = zoomFrame(fitFrame(ADDRESS, SMALL, desktop), MIN_ZOOM)
-    const ground = groundOf(frame)
-
-    expect(ground.width).toBeGreaterThan(frame.width)
-    expect(ground.height).toBeGreaterThan(frame.height)
-  })
-})
-
-describe('ringsToPath', () => {
-  it('closes one subpath per ring', () => {
-    expect(
-      ringsToPath([
-        [
-          [0, 0],
-          [10, 0],
-          [10, 10],
-        ],
-        [
-          [2, 2],
-          [4, 2],
-          [4, 4],
-        ],
-      ]),
-    ).toBe('M0,0 L10,0 L10,10 Z M2,2 L4,2 L4,4 Z')
   })
 })

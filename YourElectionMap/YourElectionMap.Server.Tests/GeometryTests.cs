@@ -3,8 +3,8 @@ using YourElectionMap.Server.Districts;
 namespace YourElectionMap.Server.Tests
 {
     /// <summary>
-    /// The geometry behind "which district am I in" and "how much of this boundary is
-    /// worth sending". Rings here are written out by hand, so what is being asserted is
+    /// The geometry behind "which district am I in", "which ring is a hole" and "how
+    /// much of this boundary is worth keeping". Rings here are written out by hand, so what is being asserted is
     /// visible in the test.
     /// </summary>
     public class GeometryTests
@@ -62,6 +62,66 @@ namespace YourElectionMap.Server.Tests
         }
 
         [Fact]
+        public void ToPolygons_MakesOneRingOnePolygon()
+        {
+            var polygons = Geometry.ToPolygons([Square]);
+
+            Assert.Single(polygons);
+            Assert.Single(polygons[0]);
+        }
+
+        [Fact]
+        public void ToPolygons_PutsAHoleInsideTheRingAroundIt()
+        {
+            // Wound the same way, as a dissolve can leave them.
+            var polygons = Geometry.ToPolygons([HoleInIt, Square]);
+
+            var polygon = Assert.Single(polygons);
+            Assert.Equal(2, polygon.Count);
+            Assert.Equal(Geometry.BoxOf([Square]), Geometry.BoxOf([polygon[0]]));
+            Assert.Equal(Geometry.BoxOf([HoleInIt]), Geometry.BoxOf([polygon[1]]));
+        }
+
+        [Fact]
+        public void ToPolygons_KeepsSeparateRingsSeparate()
+        {
+            var polygons = Geometry.ToPolygons([Square, Island]);
+
+            Assert.Equal(2, polygons.Count);
+            Assert.All(polygons, polygon => Assert.Single(polygon));
+        }
+
+        [Fact]
+        public void ToPolygons_MakesAnIslandInAHoleItsOwnPolygon()
+        {
+            double[] islet = [4.5, 4.5, 5.5, 4.5, 5.5, 5.5, 4.5, 5.5, 4.5, 4.5];
+
+            var polygons = Geometry.ToPolygons([Square, HoleInIt, islet]);
+
+            Assert.Equal(2, polygons.Count);
+            Assert.Equal(2, polygons[0].Count); // the square, with the hole in it
+            Assert.Single(polygons[1]); // the islet, filled again
+            Assert.Equal(Geometry.BoxOf([islet]), Geometry.BoxOf([polygons[1][0]]));
+        }
+
+        [Fact]
+        public void ToPolygons_WindsOutersCounterClockwiseAndHolesClockwise()
+        {
+            // This square runs clockwise (y up) and the hole counter-clockwise: both the
+            // wrong way round for what they turn out to be.
+            double[] clockwiseSquare = [0, 0, 0, 10, 10, 10, 10, 0, 0, 0];
+
+            var polygon = Assert.Single(Geometry.ToPolygons([clockwiseSquare, HoleInIt]));
+
+            Assert.True(SignedArea(polygon[0]) > 0, "the outer ring should turn counter-clockwise");
+            Assert.True(SignedArea(polygon[1]) < 0, "the hole should turn clockwise");
+
+            // Reversed, still closed.
+            Assert.Equal(polygon[0][0], polygon[0][^2]);
+            Assert.Equal(polygon[0][1], polygon[0][^1]);
+        }
+
+        [Fact]
         public void Thin_DropsWhatIsAlreadyOnTheLine()
         {
             // A square whose sides carry nine needless vertices each.
@@ -96,6 +156,18 @@ namespace YourElectionMap.Server.Tests
         public void Thin_LeavesARingItCannotUsefullyShorten()
         {
             Assert.Equal(Square, Geometry.Thin(Square, 100));
+        }
+
+        private static double SignedArea(double[] ring)
+        {
+            var sum = 0.0;
+
+            for (var i = 0; i < ring.Length - 2; i += 2)
+            {
+                sum += ring[i] * ring[i + 3] - ring[i + 2] * ring[i + 1];
+            }
+
+            return sum / 2;
         }
 
         /// <summary>A 10x10 square with ten vertices along each side, closed.</summary>

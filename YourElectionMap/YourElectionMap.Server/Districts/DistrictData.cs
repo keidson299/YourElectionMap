@@ -46,9 +46,9 @@ namespace YourElectionMap.Server.Districts
         public int Count => _districts.Length;
 
         /// <summary>
-        /// Every district covering a point in map units, broad to local, with each
-        /// boundary thinned to what a view of that district can actually show. Empty for
-        /// a point outside the state.
+        /// Every district covering a point in map units, broad to local, each with its
+        /// boundary in latitude and longitude for the page's map. Empty for a point
+        /// outside the state.
         /// </summary>
         public List<District> Covering(double x, double y)
         {
@@ -62,23 +62,10 @@ namespace YourElectionMap.Server.Districts
                     continue;
                 }
 
-                found.Add(district.ToDistrict(ToleranceFor(district)));
+                found.Add(district.ToDistrict());
             }
 
             return found;
-        }
-
-        /// <summary>
-        /// How finely to draw this district: 1/1500 of its longer side, roughly a pixel
-        /// at the frame the map fits it into. A congressional district then sends about
-        /// a thousand points instead of tens of thousands, and looks no different.
-        /// </summary>
-        private static double ToleranceFor(Stored district)
-        {
-            var width = district.Bbox[2] - district.Bbox[0];
-            var height = district.Bbox[3] - district.Bbox[1];
-
-            return Math.Max(width, height) / 1500;
         }
 
         private static int Compare(Stored left, Stored right)
@@ -114,6 +101,13 @@ namespace YourElectionMap.Server.Districts
         /// <summary>A district as the file stores it, rings flattened to <c>[x, y, x, y, …]</c>.</summary>
         private sealed class Stored
         {
+            /// <summary>
+            /// Degrees to five places, about a metre — finer than the fifteen feet the
+            /// file keeps, and no longer on the wire than it needs to be.
+            /// </summary>
+            private const int Decimals = 5;
+
+            private double[][][][]? _boundary;
             public string Id { get; init; } = "";
 
             public string Level { get; init; } = "";
@@ -128,7 +122,7 @@ namespace YourElectionMap.Server.Districts
 
             public double[][] Rings { get; init; } = [];
 
-            public District ToDistrict(double tolerance) =>
+            public District ToDistrict() =>
                 new(
                     Id,
                     Level,
@@ -140,11 +134,41 @@ namespace YourElectionMap.Server.Districts
                     // they are not given.
                     Area: null,
                     Population: null,
-                    Boundary: Array.ConvertAll(
-                        Rings,
-                        ring => ToPairs(Geometry.Thin(ring, tolerance))));
+                    // Worked out the first time the district is asked for and kept, since
+                    // the data never changes while the app runs.
+                    Boundary: _boundary ??= Boundary());
 
-            /// <summary>Flat back to the [x, y] pairs the client's boundary type holds.</summary>
+            /// <summary>
+            /// The rings at the detail the file stores, not thinned: the page's map zooms
+            /// to street level, where a simplified line would land on the wrong side of
+            /// the street. The map simplifies for wider views itself.
+            /// </summary>
+            private double[][][][] Boundary()
+            {
+                var degrees = Array.ConvertAll(Rings, ToDegrees);
+
+                return Geometry.ToPolygons(degrees)
+                    .Select(polygon => polygon.Select(ToPairs).ToArray())
+                    .ToArray();
+            }
+
+            /// <summary>A ring in map units as a flat ring of [longitude, latitude].</summary>
+            private static double[] ToDegrees(double[] ring)
+            {
+                var degrees = new double[ring.Length];
+
+                for (var i = 0; i < ring.Length; i += 2)
+                {
+                    var (latitude, longitude) = StatePlane.ToLatLon(ring[i], ring[i + 1]);
+
+                    degrees[i] = Math.Round(longitude, Decimals);
+                    degrees[i + 1] = Math.Round(latitude, Decimals);
+                }
+
+                return degrees;
+            }
+
+            /// <summary>Flat back to the pairs GeoJSON holds.</summary>
             private static double[][] ToPairs(double[] ring)
             {
                 var pairs = new double[ring.Length / 2][];
