@@ -24,14 +24,15 @@ npm install
 ```
 
 **Generate the district file.** `YourElectionMap.Server/Districts/Data/nc-districts.json` is
-git-ignored, and the server will not start without it. It is built from the 2024 North Carolina
-precinct shapefiles, about 130MB, which are kept outside the repository; see
-[DATA-SOURCE.md](YourElectionMap/YourElectionMap.Tools/DATA-SOURCE.md) for where they come from.
-From `YourElectionMap/`:
+git-ignored, and the server will not start without it. It is built from the North Carolina
+General Assembly's enacted district plans (the 2025 congressional plan and the 2023 legislative
+plans), whose shapefiles are kept outside the repository; see
+[DATA-SOURCE.md](YourElectionMap/YourElectionMap.Tools/DATA-SOURCE.md) for where they come from
+and the folder layout the tool expects. From `YourElectionMap/`:
 
 ```powershell
 dotnet run --project YourElectionMap.Tools -- `
-  "<folder holding the NC 2024 precinct shapefiles>" `
+  "<MapShapeFiles folder holding the three plan folders>" `
   YourElectionMap.Server\Districts\Data\nc-districts.json
 ```
 

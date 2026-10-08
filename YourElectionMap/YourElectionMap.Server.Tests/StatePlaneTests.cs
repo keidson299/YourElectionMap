@@ -27,7 +27,7 @@ namespace YourElectionMap.Server.Tests
         [Fact]
         public void ToStatePlaneFeet_LandsRaleighInsideTheShapefilesOwnExtent()
         {
-            // The bounding box the precinct shapefiles declare, in the same feet.
+            // The state's extent, as the district plans declare it, in the same feet.
             var (easting, northing) = StatePlane.ToStatePlaneFeet(
                 RaleighLatitude,
                 RaleighLongitude);

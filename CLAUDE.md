@@ -121,10 +121,12 @@ refer to its numbered slices.
 **The data is real, and it is North Carolina only.** An address is placed by the US Census
 geocoder — the one call the server makes out to the internet — and the point is then looked up in
 `Districts/Data/nc-districts.json`, which holds the state's 14 US House, 50 NC Senate and 120 NC
-House districts. The visitor's browser makes the other outbound requests: the result map's street
-tiles and fonts come from OpenFreeMap (`TILE_SOURCE` in `src/map/style.ts`). There is no County Commission, City Council or School Board data, and no election
-data, so the rail lists three districts and its election footer stays hidden. An address anywhere
-else is a 404, which the page says in as many words.
+House districts as the General Assembly enacted them — the 2025 congressional plan and the 2023
+legislative plans — with each district's 2020 population. The visitor's browser makes the other
+outbound requests: the result map's street tiles and fonts come from OpenFreeMap (`TILE_SOURCE` in
+`src/map/style.ts`). There is no County Commission, City Council or School Board data, and no
+election data, so the rail lists three districts and its election footer stays hidden. An address
+anywhere else is a 404, which the page says in as many words.
 
 **The site must credit the Redistricting Data Hub for the map data**, with a link to
 https://redistrictingdatahub.org/. `src/components/DataCredit.tsx` does it, on Home and under the
@@ -154,11 +156,11 @@ dotnet test YourElectionMap.Server.Tests/YourElectionMap.Server.Tests.csproj `
   --filter "FullyQualifiedName~Get_WithAnAddress_ReturnsTheLookupTheClientReads"   # one test
 dotnet publish YourElectionMap.Server/YourElectionMap.Server.csproj         # also builds SPA into wwwroot
 
-# Builds Districts/Data/nc-districts.json from the precinct shapefiles. Needed once per clone
-# (the file is git-ignored) and again when the boundaries change; see
+# Builds Districts/Data/nc-districts.json from the enacted plans' shapefiles. Needed once per
+# clone (the file is git-ignored) and again when a plan changes; see
 # YourElectionMap.Tools/DATA-SOURCE.md.
 dotnet run --project YourElectionMap.Tools -- `
-  "D:\VisualStudio\GitProjects\YourElectionMap\Docs\MapShapeFiles\NC_2024_Precint_Bounds" `
+  "D:\VisualStudio\GitProjects\YourElectionMap\Docs\MapShapeFiles" `
   YourElectionMap.Server\Districts\Data\nc-districts.json
 ```
 
@@ -226,27 +228,24 @@ boundaries contain the point, box-checked first and then by counting ray crossin
 `DistrictsController` answers 200 with a lookup, 404 when nothing can be placed or found, 503 when
 the geocoder did not answer (`GeocoderUnavailableException`), and 400 for an unusable query; the
 client reads 404 and 400 as no-match and anything else as an error, so an outage never reads as a
-bad address. Four things in there are worth knowing before changing them:
+bad address. Three things in there are worth knowing before changing them:
 
 - **Containment is in map units; everything sent is in degrees.** The point is projected into the
   file's State Plane map units to be tested, and each boundary goes back out through
   `StatePlane.ToLatLon` as `[longitude, latitude]`, because the result map is MapLibre, which draws
   in degrees. The lookup's `location` is the geocoder's own longitude and latitude.
-- **Containment counts crossings rather than winding.** The boundaries come out of a dissolve, which
-  does not keep the clockwise-is-outer rule a shapefile follows, so an island and a hole are
-  indistinguishable until the crossings are counted. For the same reason the boundary goes out
-  through `Geometry.ToPolygons`, which sorts the rings into GeoJSON polygons (outer ring, then its
-  holes, wound counter-clockwise and clockwise) by how many others contain each one; MapLibre fills
-  by that structure, so without it holes would be filled and islands left blank.
+- **Containment counts crossings rather than winding.** The file stores a district as loose rings
+  and says nothing about which is an island and which a hole, so only the crossing count can tell.
+  For the same reason the boundary goes out through `Geometry.ToPolygons`, which sorts the rings
+  into GeoJSON polygons (outer ring, then its holes, wound counter-clockwise and clockwise) by how
+  many others contain each one; MapLibre fills by that structure, so without it holes would be
+  filled and islands left blank. Every district in the enacted plans happens to be one ring, but
+  nothing relies on that.
 - **Boundaries are sent at the detail the file stores, not thinned.** That is roughly 15 feet. The
   map zooms to street level, where a simplified line would put an address on the wrong side of the
   street, and MapLibre simplifies for wider views itself. Each district's converted boundary is
   worked out once and kept, and responses are gzip-compressed (`AddResponseCompression`): a Raleigh
   lookup is about 55KB of coordinates, and the largest districts several times that.
-- **The precincts are added up by edge parity, not by keeping edges seen exactly once.** A few
-  borders in this data are described three times, and dropping those tears the outline open. See the
-  comment on `Dissolve` in `YourElectionMap.Tools` — it is the one piece of real geometry in the
-  project and it explains why.
 
 **Server tests host the whole app in memory.** `DistrictsEndpointTests` uses its nested `OfflineApp`,
 a `WebApplicationFactory<Program>`, and reads the raw JSON, so routing, model binding and the names and
@@ -263,13 +262,14 @@ the same way. On the client, `src/test/setup.ts` replaces `maplibre-gl` everywhe
 `src/test/fakeMaplibre.ts` — jsdom has no WebGL, so the real map cannot even be constructed — and
 the fake records the style, view and pin it is given, which is what `DistrictMap.test.tsx` checks.
 
-**How the district data is checked.** The converter needs 130MB of shapefiles that are not in the
-repository, so `DissolveTests` works on hand-made polygons instead, and `DistrictDataTests` checks
-the generated file. The strongest of those is
-`Covering_HasTheThreeLevelsAgreeAcrossTheWholeState`: the three layers were dissolved independently
-from the same precincts and each covers the state exactly once, so a grid of points over the state
-has to find one district per level everywhere. A hole or an overlap left by the dissolve shows up
-there and nowhere else.
+**How the district data is checked.** The converter needs the plans' shapefiles, which are not in
+the repository, so it has no tests of its own: it refuses to write a file whose plans are in the
+wrong units or missing a district, and `DistrictDataTests` checks the file it wrote. The strongest
+of those is `Covering_HasTheThreeLevelsAgreeAcrossTheWholeState`: the three plans were enacted
+separately but each is built from the same census blocks and covers the state exactly once, so a
+grid of points over the state has to find one district per level everywhere. A layer read wrongly
+or converted with the wrong units shows up there. The populations are checked against what each
+plan was drawn to, and `DistrictsEndpointTests` pins the three districts of a Raleigh address.
 
 **Client structure.**
 

@@ -6,8 +6,9 @@ namespace YourElectionMap.Server.Districts
     /// Every district the site knows, held in memory for the life of the process.
     /// <para>
     /// The file behind it is built by YourElectionMap.Tools from the North Carolina
-    /// precinct shapefiles — see that project's DATA-SOURCE.md. It is read once, at
-    /// startup, because it is four megabytes that never change while the app runs.
+    /// General Assembly's enacted district plans — see that project's DATA-SOURCE.md.
+    /// It is read once, at startup, because it is megabytes that never change while
+    /// the app runs.
     /// </para>
     /// </summary>
     public sealed class DistrictData
@@ -118,6 +119,9 @@ namespace YourElectionMap.Server.Districts
 
             public string Detail { get; init; } = "";
 
+            /// <summary>Residents at the 2020 census, or null in a file that has none.</summary>
+            public int? Population { get; init; }
+
             public double[] Bbox { get; init; } = [];
 
             public double[][] Rings { get; init; } = [];
@@ -130,10 +134,10 @@ namespace YourElectionMap.Server.Districts
                     "District",
                     Number,
                     Detail,
-                    // Neither is in this data. The rail and the map chip leave out what
-                    // they are not given.
+                    // The plans name no place; the map chip leaves out what it is not
+                    // given. Population is the 2020 census count the plan was drawn to.
                     Area: null,
-                    Population: null,
+                    Population: Population,
                     // Worked out the first time the district is asked for and kept, since
                     // the data never changes while the app runs.
                     Boundary: _boundary ??= Boundary());

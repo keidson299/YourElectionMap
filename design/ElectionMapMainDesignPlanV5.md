@@ -24,13 +24,13 @@ The work is split into numbered slices, and comments in the code refer to them b
 | 2. Result page            | The district rail, the map and the phone layout, all on an invented sample lookup                                                       | Done    |
 | 3. Districts API          | A server endpoint returns the lookup and the page fetches it; designed loading, error and no-districts states                          | Done    |
 | 4. Real North Carolina    | Real districts and real boundaries for a real address: geocoding, and the state's US House, State Senate and State House districts     | Done    |
-| 5. Street map             | The result map becomes a real, draggable street map with the districts drawn over it                                                    | Built; browser check pending |
-| 6. Enacted district maps  | The three levels built from the General Assembly's own plans, including the 2025 congressional map, with each district's population    | Next    |
-| 7. Election information   | The next election's date, candidates, ballot measures and voting places, which brings the rail's footer back                           | Planned |
-| 8. The other three levels | County Commission, City Council and School Board                                                                                       | Planned |
+| 5. Street map             | The result map becomes a real, draggable street map with the districts drawn over it                                                    | Done    |
+| 6. Enacted district maps  | The three levels built from the General Assembly's own plans, including the 2025 congressional map, with each district's population    | Done    |
+| 7. Election information   | The next election's date, candidates, ballot measures and voting places, which brings the rail's footer back                           | Next    |
+| 8. The other three levels | County Commission, City Council and School Board, and the county's name on the map chip                                                 | Planned |
 | Later                     | More states; the election detail view                                                                                                    | Planned |
 
-**Deployment is the last step, not a slice.** It comes once the slices that should be live are done. With the general election on 3 November 2026, that can be straight after slice 6.
+**Deployment is the last step, not a slice.** It comes once the slices that should be live are done. With the general election on 3 November 2026 and the current maps in place, it can come now, ahead of slice 7.
 
 Two changes from V4's order. Slice 5 is new: the street map had been left out of every plan so far, and the site does not do its job without it. And election information now comes before the other three levels, because its data can come ready-made from an outside service (see **Outside data**), while local district boundaries have no statewide source.
 
@@ -84,7 +84,7 @@ With three nested levels rather than six, those context boundaries are often muc
 
 At the foot of the rail, under "Also for this address", sit the next election's date, the number of candidates on the ballot, and the number of ballot measures. This footer is left out when the address has no election information, **which is every address today**, until slice 7.
 
-In the corner of the rail, the rail names the data the boundaries were drawn from: "NC 2024 precincts". These boundaries are precinct shapes added together, and the data's own documentation warns that a precinct's district assignment may not follow the district exactly in large unpopulated areas, so the page says which data drew the line rather than presenting it as the last word. Slice 6 replaces them with the enacted plans themselves.
+In the corner of the rail, the rail names the data the boundaries were drawn from: "NCGA enacted maps", the General Assembly's own plans. Districts are redrawn, and North Carolina's congressional districts were redrawn in 2025, so the page says which maps it is showing.
 
 ### Map
 
@@ -100,7 +100,7 @@ The tile provider requires a credit, which sits in the map's corner as a small e
 
 Over the map sit:
 
-- a "Showing" chip naming the selected district, with its area and population when they are known — neither is in this data yet, so the chip shows the name alone
+- a "Showing" chip naming the selected district and its population (the 2020 census count the plan was drawn to); the area it covers, such as its county, joins it in slice 8
 - a legend keying the three line styles
 - a scale bar
 - the address's label beside its pin
@@ -180,10 +180,10 @@ The client reads 404 and 400 as no-match and every other failure, a 503 included
 
 Because districts are found from the point itself, an address in an unincorporated area will simply have no city district once there is city data, which the page already handles.
 
-**Data.** The boundaries come from the North Carolina State Board of Elections' 2024 precinct shapefiles, retrieved through the Redistricting Data Hub. They are not in the repository — they are about 130MB — and they are not read at runtime either. A console project, `YourElectionMap.Tools`, is run by hand to turn them into one four-megabyte file, `nc-districts.json`, which the server reads at startup. That file is generated rather than checked in — it is git-ignored — so a fresh copy of the repository needs the shapefiles and a run of the tool before the server will start or its data tests pass; [DATA-SOURCE.md](../YourElectionMap/YourElectionMap.Tools/DATA-SOURCE.md) records where they came from and what they can be trusted to say. Three things about that are worth stating as design decisions rather than implementation detail:
+**Data.** The boundaries are the North Carolina General Assembly's enacted district plans, retrieved unmodified through the Redistricting Data Hub: the 2025 congressional plan (CCM-2, enacted 21 October 2025) and the 2023 State Senate and State House plans (Session Laws 2023-146 and 2023-149). They are not in the repository and not read at runtime. A console project, `YourElectionMap.Tools`, is run by hand to turn them into one file of about four megabytes, `nc-districts.json`, which the server reads at startup. That file is generated rather than checked in — it is git-ignored — so a fresh copy of the repository needs the shapefiles and a run of the tool before the server will start or its data tests pass; [DATA-SOURCE.md](../YourElectionMap/YourElectionMap.Tools/DATA-SOURCE.md) records where they came from. Three things about that are worth stating as design decisions rather than implementation detail:
 
-- **The district boundaries are precinct boundaries added together.** The files give each precinct's district, not each district's shape, so the shapes are dissolved out of the precincts. The data's own documentation warns that a precinct's district assignment may not follow the district exactly in large unpopulated areas. Slice 6 replaces this with the General Assembly's enacted plans, which are the districts themselves.
-- **It is generated once, not computed per request.** Nothing about those boundaries changes between redistrictings, so dissolving them at startup or per lookup would be work repeated for no reason.
+- **The boundaries are the districts as enacted.** Each plan holds one shape per district, along with the 2020 census population it was drawn to, which the map chip shows. Slice 4 had to build districts by adding up 2024 precincts, which approximated the lines in open country and showed the US House map the 2025 plan replaced.
+- **It is generated once, not computed per request.** Nothing about those boundaries changes between redistrictings, so converting them at startup or per lookup would be work repeated for no reason.
 - **Which district an address is in is answered from the same boundaries the page draws**, at the same detail. That keeps one source of truth, and means the only thing standing between an address and an answer is a point-in-polygon test. The test runs in the projected coordinates the file holds; only what goes to the page is converted to degrees.
 
 An address is placed by the **US Census geocoder** (`geocoding.geo.census.gov`, free and keyless). It is the one call the server makes out to the internet. A geocoder that answers with no match is "could not place it", the same 404 as an address that does not exist. A geocoder that is down, gives up after eight seconds, or answers with something that is not JSON is a different matter: that says nothing about the address, so it is a 503 and the page offers to try again.

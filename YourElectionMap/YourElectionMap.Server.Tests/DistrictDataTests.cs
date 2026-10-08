@@ -4,12 +4,12 @@ namespace YourElectionMap.Server.Tests
 {
     /// <summary>
     /// The real district file, as the server loads it. These tests are the only check
-    /// that the converter's output is sane, since the converter itself needs 130MB of
-    /// shapefiles that are not in the repository.
+    /// that the converter's output is sane, since the converter itself needs the
+    /// enacted plans' shapefiles, which are not in the repository.
     /// </summary>
     public class DistrictDataTests
     {
-        // Loaded once: it is four megabytes, and nothing here changes it.
+        // Loaded once: it is megabytes, and nothing here changes it.
         private static readonly DistrictData Data = new();
 
         // The State Legislative Building, 16 W Jones Street, Raleigh.
@@ -20,7 +20,7 @@ namespace YourElectionMap.Server.Tests
         public void Loads_EveryDistrictOfTheThreeLevelsNorthCarolinaHas()
         {
             Assert.Equal(184, Data.Count);
-            Assert.Equal("NC 2024 precincts", Data.Source);
+            Assert.Equal("NCGA enacted maps", Data.Source);
         }
 
         [Fact]
@@ -56,10 +56,30 @@ namespace YourElectionMap.Server.Tests
                 Assert.Equal($"{district.Level}-{district.Number}", district.Id);
                 Assert.Equal("District", district.Unit);
 
-                // Neither is in this data.
+                // The plans name no place.
                 Assert.Null(district.Area);
-                Assert.Null(district.Population);
             }
+        }
+
+        /// <summary>
+        /// Each plan was drawn to equal 2020 populations: US House to the person, the
+        /// legislature within the five per cent either way North Carolina allows.
+        /// </summary>
+        [Theory]
+        [InlineData(RaleighLatitude, RaleighLongitude)]
+        [InlineData(35.0873, -84.0346)] // Murphy
+        [InlineData(35.9082, -75.6757)] // Manteo
+        [InlineData(35.6127, -77.3664)] // Greenville
+        public void Covering_GivesEachDistrictThePopulationItsPlanWasDrawnTo(
+            double latitude,
+            double longitude)
+        {
+            var found = Covering(latitude, longitude);
+
+            Assert.Equal(3, found.Count);
+            Assert.InRange(found[0].Population ?? 0, 745_670, 745_671);
+            Assert.InRange(found[1].Population ?? 0, 190_000, 230_000);
+            Assert.InRange(found[2].Population ?? 0, 80_000, 95_000);
         }
 
         [Fact]
@@ -136,11 +156,12 @@ namespace YourElectionMap.Server.Tests
         }
 
         /// <summary>
-        /// The one check on the dissolve that needs no outside authority. The three layers
-        /// were dissolved independently out of the same precincts, and each one covers the
-        /// whole state exactly once, so anywhere one of them places you the other two have
-        /// to as well — and never twice. A hole or an overlap left by the dissolve would
-        /// have to show up here.
+        /// The one check on the file that needs no outside authority. The three plans were
+        /// enacted separately, but each is built from the same 2020 census blocks and
+        /// covers the whole state exactly once, so anywhere one of them places you the
+        /// other two have to as well — and never twice. A plan read wrongly, a district
+        /// missing, or a conversion that put one layer off by a few feet along the coast
+        /// would have to show up here.
         /// </summary>
         [Fact]
         public void Covering_HasTheThreeLevelsAgreeAcrossTheWholeState()

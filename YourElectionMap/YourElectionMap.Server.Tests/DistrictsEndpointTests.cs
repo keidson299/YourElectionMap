@@ -35,7 +35,7 @@ namespace YourElectionMap.Server.Tests
             var lookup = await LookupAsync(AddressQuery(RaleighAddress));
 
             Assert.Equal("16 W Jones St", lookup.GetProperty("label").GetString());
-            Assert.Equal("NC 2024 precincts", lookup.GetProperty("source").GetString());
+            Assert.Equal("NCGA enacted maps", lookup.GetProperty("source").GetString());
 
             // No election data yet, which is what hides the rail's footer.
             Assert.Equal(JsonValueKind.Null, lookup.GetProperty("election").ValueKind);
@@ -62,7 +62,7 @@ namespace YourElectionMap.Server.Tests
         [Fact]
         public async Task Get_PlacesARaleighAddressInTheDistrictsThatCoverIt()
         {
-            // Pinned, so that a change to the projection, the dissolve or the data file
+            // Pinned, so that a change to the projection, the converter or the data file
             // cannot quietly start answering with the wrong districts.
             var lookup = await LookupAsync(AddressQuery(RaleighAddress));
 
@@ -126,11 +126,20 @@ namespace YourElectionMap.Server.Tests
             var lookup = await LookupAsync(AddressQuery(RaleighAddress));
             var first = lookup.GetProperty("districts")[0];
 
-            // Neither the area nor the population is in this data, and the rail and chip
-            // leave out what they are not given.
+            // The plans name no place, and the chip leaves out what it is not given.
             Assert.Equal(JsonValueKind.Null, first.GetProperty("area").ValueKind);
-            Assert.Equal(JsonValueKind.Null, first.GetProperty("population").ValueKind);
             Assert.Equal("District", first.GetProperty("unit").GetString());
+        }
+
+        [Fact]
+        public async Task Get_SendsEachDistrictsPopulationAsANumber()
+        {
+            var lookup = await LookupAsync(AddressQuery(RaleighAddress));
+
+            foreach (var district in lookup.GetProperty("districts").EnumerateArray())
+            {
+                Assert.True(district.GetProperty("population").GetInt32() > 0);
+            }
         }
 
         [Theory]

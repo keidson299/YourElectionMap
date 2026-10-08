@@ -5,40 +5,42 @@ using YourElectionMap.Server.Districts;
 namespace YourElectionMap.Tools
 {
     /// <summary>
-    /// Builds the district file the server serves, out of the North Carolina precinct
-    /// shapefiles. Run by hand, and again only when the boundaries change. The output is
-    /// git-ignored. See DATA-SOURCE.md.
+    /// Builds the district file the server serves, out of the North Carolina General
+    /// Assembly's enacted district plans. Run by hand, and again only when a plan
+    /// changes. The output is git-ignored. See DATA-SOURCE.md.
     /// <para>
-    /// <c>dotnet run --project YourElectionMap.Tools -- &lt;shapefile folder&gt; &lt;output file&gt;</c>
+    /// <c>dotnet run --project YourElectionMap.Tools -- &lt;MapShapeFiles folder&gt; &lt;output file&gt;</c>
     /// </para>
     /// </summary>
     public static class Program
     {
         /// <summary>
-        /// What the file keeps. Finer than the map draws, because the server also answers
-        /// "which district is this address in" from these same rings.
+        /// What the file keeps. The server answers "which district is this address in"
+        /// from these rings and sends them to the page as they are, so this is also
+        /// the finest the map ever draws a boundary.
         /// </summary>
         private const double StoredToleranceFeet = 15;
 
-        /// <summary>
-        /// Rings narrower than this are dropped: the slivers the dissolve leaves where
-        /// neighbouring precincts disagree about a border by a few feet. No real island
-        /// is anywhere near this small.
-        /// </summary>
-        private const double SmallestRingFeet = 200;
+        /// <summary>US survey feet in a metre, exactly, by its definition.</summary>
+        private const double FeetPerMetre = 3937.0 / 1200.0;
+
+        private const string Source = "NCGA enacted maps";
 
         /// <summary>
-        /// The three layers, and what each one's districts are called. The precinct
-        /// files carry no district column, so the district comes from which contest the
-        /// precinct recorded votes in: <c>GCON07RROU</c> is US House 7. The README that
-        /// came with the data documents CONG_DIST, SLDU_DIST and SLDL_DIST columns that
-        /// are not actually there.
+        /// The three plans, where each sits under the folder given, and how many
+        /// districts it must have.
         /// </summary>
         private static readonly Layer[] Layers =
         [
-            new("nc_2024_gen_cong_prec", "GCON", 2, "congressional", "U.S. House", "Federal"),
-            new("nc_2024_gen_sldu_prec", "GSU", 2, "state-upper", "State Senate", "State"),
-            new("nc_2024_gen_sldl_prec", "GSL", 3, "state-lower", "State House", "State"),
+            new(
+                Path.Combine("nc_cong_adopted_2025", "NCGA_CCM-2 - Shapefile", "CCM-2.shp"),
+                "congressional", "U.S. House", "Federal", 14),
+            new(
+                Path.Combine("nc_sldu_adopted_2023", "SL 2023-146 Senate - Shapefile", "SL 2023-146.shp"),
+                "state-upper", "State Senate", "State", 50),
+            new(
+                Path.Combine("nc_sldl_adopted_2023", "SL 2023-149 House - Shapefile", "SL 2023-149.shp"),
+                "state-lower", "State House", "State", 120),
         ];
 
         public static int Main(string[] args)
@@ -46,7 +48,7 @@ namespace YourElectionMap.Tools
             if (args.Length != 2)
             {
                 Console.Error.WriteLine(
-                    "Usage: YourElectionMap.Tools <shapefile folder> <output .json>");
+                    "Usage: YourElectionMap.Tools <MapShapeFiles folder> <output .json>");
 
                 return 1;
             }
@@ -63,33 +65,23 @@ namespace YourElectionMap.Tools
 
             var districts = new List<Built>();
 
-            foreach (var layer in Layers)
+            try
             {
-                districts.AddRange(Build(layer, source));
+                foreach (var layer in Layers)
+                {
+                    districts.AddRange(Build(layer, source));
+                }
             }
-
-            var missing = districts.FindAll(district => district.Rings.Count == 0);
-
-            if (missing.Count > 0)
+            catch (InvalidDataException problem)
             {
-                Console.Error.WriteLine(
-                    $"{missing.Count} districts dissolved to nothing, starting with "
-                    + $"{missing[0].Id}. Not writing the file.");
+                Console.Error.WriteLine($"{problem.Message} Not writing the file.");
 
                 return 1;
             }
 
             Write(output, districts);
 
-            var points = 0;
-
-            foreach (var district in districts)
-            {
-                foreach (var ring in district.Rings)
-                {
-                    points += ring.Length / 2;
-                }
-            }
+            var points = districts.Sum(district => district.Rings.Sum(ring => ring.Length / 2));
 
             Console.WriteLine();
             Console.WriteLine(
@@ -102,7 +94,14 @@ namespace YourElectionMap.Tools
 
         private static List<Built> Build(Layer layer, string source)
         {
-            var path = Path.Combine(source, layer.Folder, layer.Folder + ".shp");
+            var path = Path.Combine(source, layer.Path);
+
+            if (!File.Exists(path))
+            {
+                throw new InvalidDataException($"No such shapefile: {path}.");
+            }
+
+            CheckProjection(path);
 
             using var shapes = new ShapefileReader(path);
             var table = new DbaseReader(path);
@@ -110,77 +109,72 @@ namespace YourElectionMap.Tools
             if (shapes.Count != table.Count)
             {
                 throw new InvalidDataException(
-                    $"{layer.Folder}: {shapes.Count} shapes against {table.Count} records.");
+                    $"{layer.Path}: {shapes.Count} shapes against {table.Count} records.");
             }
 
-            // Every precinct of a district, gathered before any of it is dissolved.
-            var byDistrict = new SortedDictionary<string, List<double[]>>();
-            var unplaced = 0;
+            var built = new List<Built>(shapes.Count);
 
             for (var feature = 0; feature < shapes.Count; feature++)
             {
-                var number = DistrictOf(table, feature, layer);
-
-                if (number is null)
-                {
-                    unplaced++;
-                    continue;
-                }
-
-                if (!byDistrict.TryGetValue(number, out var polygons))
-                {
-                    polygons = [];
-                    byDistrict[number] = polygons;
-                }
-
-                polygons.AddRange(shapes.ReadRings(feature));
+                built.Add(Build(layer, table, feature, shapes.ReadRings(feature)));
             }
 
-            Console.WriteLine(
-                $"{layer.Folder}: {shapes.Count} precincts, {byDistrict.Count} districts"
-                + (unplaced == 0 ? "" : $", {unplaced} precincts with no single district"));
+            // Numbered 1 to N, each once: anything else is a plan this was not written for.
+            var numbers = built.Select(district => int.Parse(district.Number)).Order().ToArray();
 
-            var built = new List<Built>(byDistrict.Count);
-
-            foreach (var (number, polygons) in byDistrict)
+            if (!numbers.SequenceEqual(Enumerable.Range(1, layer.Count)))
             {
-                built.Add(Build(layer, number, polygons));
+                throw new InvalidDataException(
+                    $"{layer.Path}: expected districts 1 to {layer.Count}, "
+                    + $"found {numbers.Length}: {string.Join(", ", numbers)}.");
             }
+
+            built.Sort((left, right) => int.Parse(left.Number) - int.Parse(right.Number));
+
+            foreach (var district in built)
+            {
+                Console.WriteLine(
+                    $"  {district.Id,-18} {district.RawPoints,8:N0} points -> "
+                    + $"{district.Rings.Sum(ring => ring.Length / 2),6:N0}  "
+                    + $"{district.Population,9:N0} residents");
+            }
+
+            Console.WriteLine($"{layer.Level}: {built.Count} districts");
 
             return built;
         }
 
-        private static Built Build(Layer layer, string number, List<double[]> polygons)
+        private static Built Build(Layer layer, DbaseReader table, int feature, List<double[]> parts)
         {
-            var dissolved = Dissolve.Rings(polygons);
-            var rings = new List<double[]>(dissolved.Rings.Count);
-            var kept = 0;
-            var slivers = dissolved.DroppedRings;
+            var number = table.Text(feature, "DISTRICT");
 
-            foreach (var ring in dissolved.Rings)
+            if (!int.TryParse(number, NumberStyles.None, CultureInfo.InvariantCulture, out var parsed))
             {
-                // Thinned before it is measured: a sliver four hundred feet long and one
-                // foot wide passes a width test and then collapses to a mark.
-                var thinned = Geometry.Thin(ToMapUnits(ring), ToMapUnits(StoredToleranceFeet));
-
-                if (Width(thinned) < ToMapUnits(SmallestRingFeet))
-                {
-                    slivers++;
-                    continue;
-                }
-
-                rings.Add(thinned);
-                kept += thinned.Length / 2;
+                throw new InvalidDataException(
+                    $"{layer.Path}: feature {feature} has district \"{number}\".");
             }
 
-            var plain = number.TrimStart('0');
+            var population = table.Text(feature, "PL20AA_TOT");
 
-            Console.WriteLine(
-                $"  {layer.Level}-{plain,-3} {polygons.Count,4} parts "
-                + $"{dissolved.Vertices,8:N0} vertices -> {dissolved.OutlineEdges,7:N0} outline "
-                + $"{rings.Count,3} rings -> {kept,6:N0} points"
-                + (slivers == 0 ? "" : $"  {slivers} slivers")
-                + (dissolved.Overlaps == 0 ? "" : $"  {dissolved.Overlaps} overlaps"));
+            if (!int.TryParse(population, NumberStyles.None, CultureInfo.InvariantCulture, out var residents))
+            {
+                throw new InvalidDataException(
+                    $"{layer.Path}: district {parsed} has population \"{population}\".");
+            }
+
+            var rings = new List<double[]>(parts.Count);
+
+            foreach (var part in parts)
+            {
+                rings.Add(Geometry.Thin(ToMapUnits(part), StoredToleranceFeet / StatePlane.FeetPerMapUnit));
+            }
+
+            if (rings.Count == 0)
+            {
+                throw new InvalidDataException($"{layer.Path}: district {parsed} has no shape.");
+            }
+
+            var plain = parsed.ToString(CultureInfo.InvariantCulture);
 
             return new Built(
                 $"{layer.Level}-{plain}",
@@ -188,46 +182,42 @@ namespace YourElectionMap.Tools
                 layer.Office,
                 plain,
                 layer.Detail,
+                residents,
+                parts.Sum(part => part.Length / 2),
                 rings);
         }
 
         /// <summary>
-        /// Which district this precinct voted in, or null when its votes do not point at
-        /// exactly one. The current files have none of those; any that appear are counted
-        /// and reported.
+        /// The plans are in NC State Plane in metres. The precinct files the site used
+        /// to be built from were the same projection in feet, so a plan in any other
+        /// unit would land a few times too small and still look plausible: stop instead.
         /// </summary>
-        private static string? DistrictOf(DbaseReader table, int feature, Layer layer)
+        private static void CheckProjection(string path)
         {
-            string? found = null;
+            var prj = Path.ChangeExtension(path, ".prj");
 
-            foreach (var field in table.FieldsWithVotes(feature, layer.Prefix))
+            if (!File.Exists(prj))
             {
-                if (field.Length < layer.Prefix.Length + layer.Digits)
-                {
-                    continue;
-                }
-
-                var number = field.Substring(layer.Prefix.Length, layer.Digits);
-
-                if (!int.TryParse(number, out _))
-                {
-                    continue;
-                }
-
-                if (found is not null && found != number)
-                {
-                    return null;
-                }
-
-                found = number;
+                throw new InvalidDataException($"{path} has no .prj beside it.");
             }
 
-            return found;
+            var text = File.ReadAllText(prj);
+
+            // The projection's own unit is the last UNIT in the text; the earlier one
+            // belongs to the geographic system underneath.
+            var unit = text[text.LastIndexOf("UNIT[", StringComparison.Ordinal)..];
+
+            if (!text.Contains("North_Carolina_FIPS_3200", StringComparison.Ordinal)
+                || !unit.StartsWith("UNIT[\"Meter\"", StringComparison.Ordinal))
+            {
+                throw new InvalidDataException(
+                    $"{prj} is not NC State Plane (FIPS 3200) in metres.");
+            }
         }
 
         /// <summary>
-        /// Feet to the map's own units, flipping north so that the client can draw the
-        /// result without transforming it: in SVG, y counts downward.
+        /// Metres to the map's own units, by way of the US survey feet those units are
+        /// counted in, flipping north so that y counts downward like the rest of the file.
         /// </summary>
         private static double[] ToMapUnits(double[] ring)
         {
@@ -235,26 +225,17 @@ namespace YourElectionMap.Tools
 
             for (var i = 0; i < ring.Length; i += 2)
             {
-                converted[i] = ring[i] / StatePlane.FeetPerMapUnit;
-                converted[i + 1] = -ring[i + 1] / StatePlane.FeetPerMapUnit;
+                converted[i] = ring[i] * FeetPerMetre / StatePlane.FeetPerMapUnit;
+                converted[i + 1] = -ring[i + 1] * FeetPerMetre / StatePlane.FeetPerMapUnit;
             }
 
             return converted;
         }
 
-        private static double ToMapUnits(double feet) => feet / StatePlane.FeetPerMapUnit;
-
-        /// <summary>The longer side of the ring's box: how much ground it covers at all.</summary>
-        private static double Width(double[] ring)
-        {
-            var box = Geometry.BoxOf([ring]);
-
-            return Math.Max(box[2] - box[0], box[3] - box[1]);
-        }
-
         /// <summary>
         /// Written by hand rather than serialized: one district per line, and numbers to a
-        /// hundredth of a unit (about a foot) rather than seventeen digits.
+        /// hundredth of a unit (about a foot) rather than seventeen digits. Two runs of the
+        /// same plans write the same bytes, apart from the date.
         /// </summary>
         private static void Write(string output, List<Built> districts)
         {
@@ -268,7 +249,7 @@ namespace YourElectionMap.Tools
             using var file = new StreamWriter(output, false, new UTF8Encoding(false));
 
             file.WriteLine("{");
-            file.WriteLine("  \"source\": \"NC 2024 precincts\",");
+            file.WriteLine($"  \"source\": \"{Source}\",");
             file.WriteLine(
                 $"  \"generated\": \"{DateTime.UtcNow:yyyy-MM-dd}\",");
             file.WriteLine(
@@ -287,6 +268,7 @@ namespace YourElectionMap.Tools
                 line.Append($"\"office\": \"{district.Office}\", ");
                 line.Append($"\"number\": \"{district.Number}\", ");
                 line.Append($"\"detail\": \"{district.Detail}\", ");
+                line.Append($"\"population\": {district.Population.ToString(CultureInfo.InvariantCulture)}, ");
                 line.Append("\"bbox\": [");
                 Append(line, Geometry.BoxOf(district.Rings));
                 line.Append("], \"rings\": [");
@@ -331,12 +313,11 @@ namespace YourElectionMap.Tools
         }
 
         private sealed record Layer(
-            string Folder,
-            string Prefix,
-            int Digits,
+            string Path,
             string Level,
             string Office,
-            string Detail);
+            string Detail,
+            int Count);
 
         private sealed record Built(
             string Id,
@@ -344,6 +325,8 @@ namespace YourElectionMap.Tools
             string Office,
             string Number,
             string Detail,
+            int Population,
+            int RawPoints,
             List<double[]> Rings);
     }
 }

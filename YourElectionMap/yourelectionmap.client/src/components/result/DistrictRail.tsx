@@ -52,8 +52,8 @@ export function DistrictRail({
   const baseId = useId()
   const titleId = `${baseId}-title`
   const listId = `${baseId}-list`
-  // Credit the data: these boundaries are added up from precincts, not published
-  // district lines, so the page should not present them as the last word.
+  // Name the data the boundaries were drawn from, so a visitor can tell which
+  // maps they are looking at — districts are redrawn, and have been recently.
   const sourceTag =
     source === null ? null : <span className="source-tag">{source}</span>
 

@@ -7,7 +7,8 @@ namespace YourElectionMap.Tools
     /// a header, a list of fixed-width field descriptors, and then one fixed-width
     /// record per feature in the same order as the shapes.
     /// <para>
-    /// The whole file is held in memory; the largest of these is 15MB.
+    /// The whole file is held in memory; the district plans' tables are a few
+    /// kilobytes.
     /// </para>
     /// </summary>
     public sealed class DbaseReader
@@ -48,27 +49,21 @@ namespace YourElectionMap.Tools
         public int Count { get; }
 
         /// <summary>
-        /// The names of the fields starting with <paramref name="prefix"/> that hold a
-        /// number above zero in this record.
+        /// One field of one record, trimmed. A field the table does not have throws
+        /// rather than reading as empty, so a renamed column stops the run.
         /// </summary>
-        public List<string> FieldsWithVotes(int record, string prefix)
+        public string Text(int record, string field)
         {
-            var found = new List<string>();
-
-            foreach (var field in _fields)
+            foreach (var candidate in _fields)
             {
-                if (!field.Name.StartsWith(prefix, StringComparison.Ordinal))
+                if (candidate.Name == field)
                 {
-                    continue;
-                }
-
-                if (double.TryParse(Text(record, field), out var votes) && votes > 0)
-                {
-                    found.Add(field.Name);
+                    return Text(record, candidate);
                 }
             }
 
-            return found;
+            throw new InvalidDataException(
+                $"No field {field}; the table has {string.Join(", ", _fields.Select(f => f.Name))}.");
         }
 
         private string Text(int record, Field field)
@@ -76,8 +71,8 @@ namespace YourElectionMap.Tools
             // Each record opens with a one byte deletion flag.
             var at = _firstRecord + record * _recordLength + 1 + field.Offset;
 
-            // The .cpg beside these files names ISO-8859-1.
-            return Encoding.Latin1.GetString(_bytes, at, field.Length).Trim();
+            // The .cpg beside each plan's files names UTF-8.
+            return Encoding.UTF8.GetString(_bytes, at, field.Length).Trim();
         }
 
         private readonly record struct Field(string Name, int Offset, int Length);

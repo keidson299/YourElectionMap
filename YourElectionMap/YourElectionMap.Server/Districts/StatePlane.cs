@@ -3,13 +3,13 @@ namespace YourElectionMap.Server.Districts
     /// <summary>
     /// The one projection this site uses: NAD83 / North Carolina State Plane
     /// (FIPS 3200, US survey feet), a Lambert conformal conic. Every parameter below
-    /// is read straight off the <c>.prj</c> file that came with the precinct
-    /// shapefiles, so the points this produces land in the same space as their
-    /// boundaries.
+    /// is the one the district plans' <c>.prj</c> files state; those count in metres,
+    /// and the converter turns them into these feet, so the points this produces land
+    /// in the same space as the boundaries.
     /// <para>
     /// Latitudes and longitudes arrive as WGS84, from the browser or the geocoder, and
     /// are used as if they were NAD83. The two differ by about a metre in this part of
-    /// the world, against a map whose boundaries are thinned to tens of feet.
+    /// the world, against boundaries kept to fifteen feet.
     /// </para>
     /// </summary>
     public static class StatePlane

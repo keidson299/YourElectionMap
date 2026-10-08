@@ -103,9 +103,9 @@ describe('DistrictRail', () => {
   })
 
   it('credits the data the boundaries came from', () => {
-    renderRail({ source: 'NC 2024 precincts' })
+    renderRail({ source: 'NCGA enacted maps' })
 
-    expect(screen.getByText('NC 2024 precincts')).toBeInTheDocument()
+    expect(screen.getByText('NCGA enacted maps')).toBeInTheDocument()
   })
 
   it('names the Redistricting Data Hub under the districts, with a link', () => {
