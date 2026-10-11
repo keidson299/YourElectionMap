@@ -70,18 +70,27 @@ namespace YourElectionMap.Server.Tests
             Assert.Equal(new[] { "Federal", "State", "State" }, Each(districts, "detail"));
         }
 
-        [Fact]
-        public async Task Get_PlacesASacramentoAddressInCaliforniasDistricts()
+        [Theory]
+        [InlineData(SacramentoAddress, 7, 8, 6, "State Assembly")]
+        [InlineData("900 Court St NE, Salem OR", 6, 11, 21, "State House")]
+        [InlineData("1100 Gervais St, Columbia SC", 6, 26, 72, "State House")]
+        [InlineData("416 Sid Snyder Ave SW, Olympia WA", 10, 22, 22, "State House")]
+        public async Task Get_PlacesEachOtherCapitolInItsStatesDistricts(
+            string address,
+            int congressional,
+            int upper,
+            int lower,
+            string lowerHouse)
         {
-            // Pinned the same way.
-            var lookup = await LookupAsync(AddressQuery(SacramentoAddress));
+            // Pinned the same way as Raleigh.
+            var lookup = await LookupAsync(AddressQuery(address));
             var districts = lookup.GetProperty("districts");
 
             Assert.Equal(
-                new[] { "congressional-7", "state-upper-8", "state-lower-6" },
+                new[] { $"congressional-{congressional}", $"state-upper-{upper}", $"state-lower-{lower}" },
                 Each(districts, "id"));
             Assert.Equal(
-                new[] { "U.S. House", "State Senate", "State Assembly" },
+                new[] { "U.S. House", "State Senate", lowerHouse },
                 Each(districts, "office"));
         }
 
@@ -192,7 +201,7 @@ namespace YourElectionMap.Server.Tests
         [Fact]
         public async Task Get_UsesTheFirstMatchInACoveredState()
         {
-            // The stub answers Greenville SC first and Greenville NC second, as the real
+            // The stub answers Greenville MS first and Greenville NC second, as the real
             // geocoder can for an address with no state.
             var lookup = await LookupAsync(AddressQuery("100 Main St, Greenville"));
 
@@ -206,14 +215,14 @@ namespace YourElectionMap.Server.Tests
         [Fact]
         public async Task Get_AsksGoogleAboutTheAddressTheGeocoderMatchedInACoveredState()
         {
-            // Typed with no state, and matched in South Carolina first: Google must be
+            // Typed with no state, and matched in Mississippi first: Google must be
             // asked about the match the districts came from, spelled with its state.
             await LookupAsync(AddressQuery("100 Main St, Greenville"));
 
             Assert.Contains(
                 FakeVoterInfo.Asked,
                 asked => asked.Contains("100 MAIN ST, GREENVILLE, NC, 27858"));
-            Assert.DoesNotContain(FakeVoterInfo.Asked, asked => asked.Contains(", SC,"));
+            Assert.DoesNotContain(FakeVoterInfo.Asked, asked => asked.Contains(", MS,"));
         }
 
         [Fact]

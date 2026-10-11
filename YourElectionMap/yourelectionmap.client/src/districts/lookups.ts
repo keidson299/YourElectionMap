@@ -86,11 +86,20 @@ export function useLookup(target: LookupTarget) {
   return { state, retry }
 }
 
-/** The states the server has districts for, as the page names them. */
-export const COVERED_STATES = 'North Carolina and California'
+/** The states the server has districts for. */
+const STATES = [
+  'California',
+  'North Carolina',
+  'Oregon',
+  'South Carolina',
+  'Washington',
+]
 
-/** The same states, for a sentence that finds none of them. Change the two together. */
-const EITHER_STATE = 'North Carolina or California'
+/** The states as the page names them: "California, …, South Carolina and Washington". */
+export const COVERED_STATES = `${STATES.slice(0, -1).join(', ')} and ${STATES.at(-1)}`
+
+/** The same states, for a sentence that finds none of them. */
+const ANY_STATE = `${STATES.slice(0, -1).join(', ')} or ${STATES.at(-1)}`
 
 // A 404 is either an address the server could not place or one outside the
 // states it covers, and it cannot tell us which. The second is likelier, so the
@@ -112,7 +121,7 @@ export function problemNotice(
 
   return {
     text: typed
-      ? `We could not find ${EITHER_STATE} districts for that address. Check it, or try adding your city or ZIP code.`
+      ? `We could not find districts for that address in ${ANY_STATE}. Check it, or try adding your city or ZIP code.`
       : `We could not find districts at your location. The site covers ${COVERED_STATES} so far.`,
     // A location that could not be placed says nothing about the empty field.
     field: typed,

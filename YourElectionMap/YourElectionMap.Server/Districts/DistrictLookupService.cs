@@ -6,7 +6,7 @@ namespace YourElectionMap.Server.Districts
     /// An address that lands in a state the site covers is then sent to Google for its
     /// next election.
     /// <para>
-    /// The data covers North Carolina and California, so an address in another state is
+    /// The data covers only some states, so an address in another state is
     /// placed and then found in no district — the same null as an address that could not
     /// be placed.
     /// </para>

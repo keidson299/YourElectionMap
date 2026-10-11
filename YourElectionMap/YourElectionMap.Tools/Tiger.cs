@@ -39,6 +39,29 @@ namespace YourElectionMap.Tools
                     new("sldu.geojson", "state-upper", "State Senate", "State", 50),
                     new("sldl.geojson", "state-lower", "State House", "State", 120),
                 ]),
+            ["OR"] = new(
+                "41",
+                [
+                    new("cd.geojson", "congressional", "U.S. House", "Federal", 6),
+                    new("sldu.geojson", "state-upper", "State Senate", "State", 30),
+                    new("sldl.geojson", "state-lower", "State House", "State", 60),
+                ]),
+            ["SC"] = new(
+                "45",
+                [
+                    new("cd.geojson", "congressional", "U.S. House", "Federal", 7),
+                    new("sldu.geojson", "state-upper", "State Senate", "State", 46),
+                    new("sldl.geojson", "state-lower", "State House", "State", 124),
+                ]),
+            // One set of 49 districts, each electing a senator and two representatives:
+            // TIGER has it in both layers.
+            ["WA"] = new(
+                "53",
+                [
+                    new("cd.geojson", "congressional", "U.S. House", "Federal", 10),
+                    new("sldu.geojson", "state-upper", "State Senate", "State", 49),
+                    new("sldl.geojson", "state-lower", "State House", "State", 49),
+                ]),
         };
 
         public static Built Build(string state, string source)

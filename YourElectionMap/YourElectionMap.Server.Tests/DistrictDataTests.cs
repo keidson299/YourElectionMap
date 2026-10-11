@@ -13,6 +13,15 @@ namespace YourElectionMap.Server.Tests
         private static readonly DistrictData Data = new();
 
         /// <summary>
+        /// Each state's file loaded on its own, for the grid checks: a state's neighbours
+        /// sit inside its box, and must neither be counted as it nor overlap it.
+        /// </summary>
+        private static readonly Dictionary<string, DistrictData> Alone = Directory
+            .GetFiles(Path.Combine(AppContext.BaseDirectory, "Districts", "Data"), "*-districts.json")
+            .Select(path => new DistrictData(path))
+            .ToDictionary(data => data.States[0]);
+
+        /// <summary>
         /// Each state's capitol, what its lower house is called, and the box around the
         /// state that every boundary point must fall in.
         /// </summary>
@@ -22,19 +31,30 @@ namespace YourElectionMap.Server.Tests
             ["NC"] = new(35.7822, -78.6398, "State House", (-84.4, -75.4), (33.8, 36.6)),
             // The State Capitol, 1315 10th Street, Sacramento.
             ["CA"] = new(38.5767, -121.4934, "State Assembly", (-124.5, -114.1), (32.5, 42.1)),
+            // The State Capitol, 900 Court Street NE, Salem.
+            ["OR"] = new(44.9385, -123.0301, "State House", (-124.75, -116.4), (41.95, 46.35)),
+            // The State House, 1100 Gervais Street, Columbia.
+            ["SC"] = new(34.0004, -81.0330, "State House", (-83.4, -78.45), (31.95, 35.25)),
+            // The Legislative Building, 416 Sid Snyder Avenue SW, Olympia.
+            ["WA"] = new(47.0358, -122.9048, "State House", (-124.9, -116.9), (45.5, 49.1)),
         };
 
         [Fact]
-        public void Loads_EveryDistrictOfBothStates()
+        public void Loads_EveryDistrictOfEveryState()
         {
-            // North Carolina 14 + 50 + 120, California 52 + 40 + 80.
-            Assert.Equal(["CA", "NC"], Data.States);
-            Assert.Equal(184 + 172, Data.Count);
+            // North Carolina 14 + 50 + 120, California 52 + 40 + 80, Oregon 6 + 30 + 60,
+            // South Carolina 7 + 46 + 124, and Washington 10 + 49 + 49: its House is
+            // elected two to a Senate district.
+            Assert.Equal(["CA", "NC", "OR", "SC", "WA"], Data.States);
+            Assert.Equal(184 + 172 + 96 + 177 + 108, Data.Count);
         }
 
         [Theory]
         [InlineData("NC")]
         [InlineData("CA")]
+        [InlineData("OR")]
+        [InlineData("SC")]
+        [InlineData("WA")]
         public void Covering_FindsOneDistrictPerLevelAtTheCapitol(string code)
         {
             var state = States[code];
@@ -63,6 +83,9 @@ namespace YourElectionMap.Server.Tests
         [Theory]
         [InlineData("NC")]
         [InlineData("CA")]
+        [InlineData("OR")]
+        [InlineData("SC")]
+        [InlineData("WA")]
         public void Covering_SendsBoundariesAsPolygonsOfLongitudeAndLatitude(string code)
         {
             var state = States[code];
@@ -107,6 +130,9 @@ namespace YourElectionMap.Server.Tests
         [Theory]
         [InlineData("NC")]
         [InlineData("CA")]
+        [InlineData("OR")]
+        [InlineData("SC")]
+        [InlineData("WA")]
         public void Covering_PutsTheCapitolInsideItsDistrictsOuterRing(string code)
         {
             var state = States[code];
@@ -131,6 +157,12 @@ namespace YourElectionMap.Server.Tests
         [InlineData(35.9082, -75.6757)] // Manteo, the east
         [InlineData(41.7558, -124.2026)] // Crescent City, the north-west of California
         [InlineData(32.7920, -115.5631)] // El Centro, the south-east
+        [InlineData(42.0526, -124.2840)] // Brookings, the south-west of Oregon
+        [InlineData(44.0266, -116.9629)] // Ontario, the east
+        [InlineData(34.7648, -83.0640)] // Walhalla, the west of South Carolina
+        [InlineData(33.8730, -78.6142)] // Little River, the north-east
+        [InlineData(48.3681, -124.6250)] // Neah Bay, the north-west of Washington
+        [InlineData(46.4163, -117.0457)] // Clarkston, the south-east
         public void Covering_ReachesTheEndsOfEachState(double latitude, double longitude)
         {
             Assert.Equal(3, Covering(latitude, longitude).Count);
@@ -138,13 +170,18 @@ namespace YourElectionMap.Server.Tests
 
         [Theory]
         [InlineData(38.8977, -77.0365)] // the White House
-        [InlineData(32.7765, -79.9311)] // Charleston, South Carolina
+        [InlineData(33.4735, -82.0105)] // Augusta, Georgia
+        [InlineData(32.0809, -81.0912)] // Savannah, Georgia
         [InlineData(36.8508, -76.2859)] // Norfolk, Virginia
         [InlineData(33.5, -76.0)] // the Atlantic, east of North Carolina
         [InlineData(39.5296, -119.8138)] // Reno, Nevada
         [InlineData(36.1699, -115.1398)] // Las Vegas, Nevada
         [InlineData(32.5149, -117.0382)] // Tijuana, Mexico
         [InlineData(36.0, -125.0)] // the Pacific, west of California
+        [InlineData(44.0, -125.5)] // the Pacific, west of Oregon
+        [InlineData(43.6150, -116.2023)] // Boise, Idaho
+        [InlineData(46.4165, -117.0177)] // Lewiston, Idaho, across the river from Clarkston
+        [InlineData(49.2827, -123.1207)] // Vancouver, British Columbia
         public void Covering_FindsNothingOutsideTheStates(double latitude, double longitude)
         {
             Assert.Null(Data.Covering(longitude, latitude));
@@ -156,53 +193,46 @@ namespace YourElectionMap.Server.Tests
         /// covers the whole state exactly once, so anywhere one of them places you the
         /// other two have to as well — and never twice. A plan read wrongly, a district
         /// missing, or a conversion that put one layer off by a few feet along the coast
-        /// would have to show up here.
+        /// would have to show up here. So would two states' files overlapping, where a
+        /// border runs through the grid.
         /// </summary>
-        [Fact]
-        public void Covering_HasTheThreeLevelsAgreeAcrossNorthCarolina()
+        [Theory]
+        [InlineData("NC", 0.05, 4_000, 7_000)]
+        [InlineData("CA", 0.1, 3_000, 6_000)]
+        [InlineData("OR", 0.05, 9_000, 14_000)]
+        [InlineData("SC", 0.05, 2_500, 4_500)]
+        [InlineData("WA", 0.05, 7_000, 11_000)]
+        public void Covering_HasTheThreeLevelsAgreeAcrossTheState(
+            string code,
+            double step,
+            int fewest,
+            int most)
         {
-            var inside = AssertLevelsAgree(
-                (-84.35, -75.40),
-                (33.80, 36.60),
-                0.05);
+            var inside = AssertLevelsAgree(code, step);
 
             // Enough of the grid to have covered the state rather than clipped a corner.
-            Assert.InRange(inside, 4_000, 7_000);
-        }
-
-        /// <summary>The same check as North Carolina's.</summary>
-        [Fact]
-        public void Covering_HasTheThreeLevelsAgreeAcrossCalifornia()
-        {
-            var inside = AssertLevelsAgree(
-                (-124.5, -114.0),
-                (32.5, 42.1),
-                0.1);
-
-            Assert.InRange(inside, 3_000, 6_000);
+            Assert.InRange(inside, fewest, most);
         }
 
         private static List<District> Covering(double latitude, double longitude) =>
             Data.Covering(longitude, latitude)?.Districts ?? [];
 
         /// <summary>
-        /// Walks a grid over one state, and at every point some district covers, checks
-        /// there is exactly one district per level. Returns how many points were covered.
-        /// The two states' boxes do not meet, so the grid never reaches the other one.
+        /// Walks a grid over one state's box, and at every point the state covers, checks
+        /// there is exactly one district per level and that no other state covers it too.
+        /// Returns how many points the state covered.
         /// </summary>
-        private static int AssertLevelsAgree(
-            (double West, double East) longitudes,
-            (double South, double North) latitudes,
-            double step)
+        private static int AssertLevelsAgree(string code, double step)
         {
+            var state = States[code];
             var inside = 0;
             var disagreed = new List<string>();
 
-            for (var longitude = longitudes.West; longitude < longitudes.East; longitude += step)
+            for (var longitude = state.Longitudes.Low; longitude < state.Longitudes.High; longitude += step)
             {
-                for (var latitude = latitudes.South; latitude < latitudes.North; latitude += step)
+                for (var latitude = state.Latitudes.Low; latitude < state.Latitudes.High; latitude += step)
                 {
-                    var found = Data.Covering(longitude, latitude);
+                    var found = Alone[code].Covering(longitude, latitude);
 
                     if (found is null)
                     {
@@ -216,6 +246,14 @@ namespace YourElectionMap.Server.Tests
                     if (!levels.SequenceEqual(["congressional", "state-upper", "state-lower"]))
                     {
                         disagreed.Add($"({longitude:0.00}, {latitude:0.00}): {string.Join(", ", levels)}");
+                    }
+
+                    foreach (var (other, data) in Alone)
+                    {
+                        if (other != code && data.Covering(longitude, latitude) is not null)
+                        {
+                            disagreed.Add($"({longitude:0.00}, {latitude:0.00}): also in {other}");
+                        }
                     }
                 }
             }

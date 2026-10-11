@@ -126,8 +126,8 @@ describe('App', () => {
     expect(currentUrl()).toBe('/')
     expect(
       screen.getByText(
-        'We could not find North Carolina or California districts for that'
-        + ' address. Check it,'
+        'We could not find districts for that address in California,'
+        + ' North Carolina, Oregon, South Carolina or Washington. Check it,'
         + ' or try adding your city or ZIP code.',
       ),
     ).toBeInTheDocument()
@@ -238,7 +238,9 @@ describe('App', () => {
       }),
     ).toBeInTheDocument()
     expect(
-      screen.getByText(/covers North Carolina and California so far/),
+      screen.getByText(
+        /covers California, North Carolina, Oregon, South Carolina and Washington so far/,
+      ),
     ).toBeInTheDocument()
     expect(screen.queryByRole('radio')).toBeNull()
   })
@@ -394,7 +396,7 @@ describe('App', () => {
 
     expect(currentUrl()).toBe('/map?address=1420+Maple+Street')
     expect(
-      screen.getByText(/We could not find North Carolina or California districts/),
+      screen.getByText(/We could not find districts for that address/),
     ).toBeInTheDocument()
     expect(await districtList()).toBeInTheDocument()
   })

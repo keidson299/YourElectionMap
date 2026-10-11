@@ -118,8 +118,8 @@ server's one endpoint, `GET /api/districts`. The current plan is
 [design/ElectionMapMainDesignPlanV5.md](design/ElectionMapMainDesignPlanV5.md); code comments
 refer to its numbered slices.
 
-**The data is real and covers North Carolina and California**: each state's US House, State Senate
-and State House/Assembly districts, from the Census Bureau's TIGERweb layers. An address is placed
+**The data is real and covers five states**, California, North Carolina, Oregon, South Carolina
+and Washington: each state's US House, State Senate and State House/Assembly districts, from the Census Bureau's TIGERweb layers. An address is placed
 by the US Census geocoder and looked up in one file per state in `Districts/Data/`; the next
 election at the address comes from Google's voter lookup. Those are the server's only two calls out.
 The browser fetches the street tiles and the map's label fonts from OpenFreeMap (`TILE_SOURCE` in
@@ -140,7 +140,7 @@ it, and any new page that offers or draws the map needs it too.
 
 **The `*-districts.json` files are generated and git-ignored.** A fresh clone has no
 `Districts/Data/` folder; with no file at all the server stops at startup (`Program.cs` loads
-`DistrictData` eagerly), and without both states' files `DistrictDataTests` and
+`DistrictData` eagerly), and without every state's file `DistrictDataTests` and
 `DistrictsEndpointTests` fail. They are
 built by `YourElectionMap.Tools` from TIGERweb GeoJSON kept outside the repository (see
 `YourElectionMap.Tools/DATA-SOURCE.md`), and reach `bin/` through the Web SDK's default `**/*.json`
@@ -165,12 +165,11 @@ dotnet publish YourElectionMap.Server/YourElectionMap.Server.csproj         # al
 
 # Builds each state's district file from its TIGERweb layers. Needed once per clone and again
 # when a plan changes.
-dotnet run --project YourElectionMap.Tools -- tiger NC `
-  "D:\VisualStudio\GitProjects\YourElectionMap\Docs\Tiger\nc" `
-  YourElectionMap.Server\Districts\Data\nc-districts.json
-dotnet run --project YourElectionMap.Tools -- tiger CA `
-  "D:\VisualStudio\GitProjects\YourElectionMap\Docs\Tiger\ca" `
-  YourElectionMap.Server\Districts\Data\ca-districts.json
+foreach ($state in 'ca', 'nc', 'or', 'sc', 'wa') {
+  dotnet run --project YourElectionMap.Tools -- tiger $state `
+    "D:\VisualStudio\GitProjects\YourElectionMap\Docs\Tiger\$state" `
+    "YourElectionMap.Server\Districts\Data\$state-districts.json"
+}
 ```
 
 ```powershell

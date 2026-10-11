@@ -9,6 +9,9 @@ holds its rings in longitude and latitude, to six decimal places, thinned to 15 
 | --- | --- | --- | --- | --- |
 | `nc-districts.json` | North Carolina | 37 | `Tiger\nc` | 2026-10-11 |
 | `ca-districts.json` | California | 06 | `Tiger\ca` | 2026-10-11 |
+| `or-districts.json` | Oregon | 41 | `Tiger\or` | 2026-10-11 |
+| `sc-districts.json` | South Carolina | 45 | `Tiger\sc` | 2026-10-11 |
+| `wa-districts.json` | Washington | 53 | `Tiger\wa` | 2026-10-11 |
 
 ## The source
 
@@ -47,6 +50,13 @@ map before it. Saved as `Tiger\ca\cd-119.geojson`, it places 34% of a 0.02° gri
 in different districts from layer 0, which is how it was confirmed that layer 0 holds the new
 map. The tool does not read it.
 
+### Washington
+
+The Legislature has 49 districts, each electing one senator and two representatives. TIGER
+holds them in both legislative layers, "Legislative (Senate) District 22" and "Legislative
+(House) District 22", so the file has 49 State Senate and 49 State House districts with the same
+outlines.
+
 ## What the files hold
 
 - **One feature per district**, named "Congressional District 7", "State Senate District 8",
@@ -58,8 +68,9 @@ map. The tool does not read it.
 - **Longitude and latitude, WGS84,** which is what `outSR=4326` asks for. The tool thins each ring to 15 feet, taken as degrees of
   latitude, which keeps slightly more than that east to west.
 
-In both states the three layers cover the state exactly once each: on a 0.02° grid, every point
-is in one district of each level, give or take a point on a district line.
+In every state the three layers cover the state exactly once each: on a 0.02° grid, every point
+is in one district of each level, give or take a point on a district line. No point is in two
+states, where Washington meets Oregon or South Carolina meets North Carolina.
 
 ## Credit
 
@@ -73,12 +84,11 @@ result page.
 From `YourElectionMap/`, once per state:
 
 ```powershell
-dotnet run --project YourElectionMap.Tools -- tiger NC `
-  "D:\VisualStudio\GitProjects\YourElectionMap\Docs\Tiger\nc" `
-  YourElectionMap.Server\Districts\Data\nc-districts.json
-dotnet run --project YourElectionMap.Tools -- tiger CA `
-  "D:\VisualStudio\GitProjects\YourElectionMap\Docs\Tiger\ca" `
-  YourElectionMap.Server\Districts\Data\ca-districts.json
+foreach ($state in 'ca', 'nc', 'or', 'sc', 'wa') {
+  dotnet run --project YourElectionMap.Tools -- tiger $state `
+    "D:\VisualStudio\GitProjects\YourElectionMap\Docs\Tiger\$state" `
+    "YourElectionMap.Server\Districts\Data\$state-districts.json"
+}
 ```
 
 It prints a line per district — points in, points kept — and refuses to write the file if:

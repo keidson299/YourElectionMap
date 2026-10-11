@@ -24,12 +24,18 @@ namespace YourElectionMap.Server.Tests
             ("Mangum", [new(35.9960, -78.9017, "101 N MANGUM ST, DURHAM, NC, 27701")]),
             // The California State Capitol, Sacramento.
             ("Sacramento", [new(38.5767, -121.4934, "1315 10TH ST, SACRAMENTO, CA, 95814")]),
-            // The White House, which is in neither state the site covers.
+            // The Oregon State Capitol, Salem.
+            ("Salem", [new(44.9385, -123.0301, "900 COURT ST NE, SALEM, OR, 97301")]),
+            // The South Carolina State House, Columbia.
+            ("Gervais", [new(34.0004, -81.0330, "1100 GERVAIS ST, COLUMBIA, SC, 29201")]),
+            // The Washington Legislative Building, Olympia.
+            ("Olympia", [new(47.0358, -122.9048, "416 SID SNYDER AVE SW, OLYMPIA, WA, 98504")]),
+            // The White House, which is in no state the site covers.
             ("Pennsylvania", [new(38.8977, -77.0365, "1600 PENNSYLVANIA AVE NW, WASHINGTON, DC, 20500")]),
-            // A town name with no state: Greenville SC first, then Greenville NC.
+            // A town name with no state: Greenville MS first, then Greenville NC.
             ("Greenville",
             [
-                new(34.8526, -82.3940, "100 MAIN ST, GREENVILLE, SC, 29601"),
+                new(33.4101, -91.0618, "100 MAIN ST, GREENVILLE, MS, 38701"),
                 new(35.6127, -77.3664, "100 MAIN ST, GREENVILLE, NC, 27858"),
             ]),
         ];

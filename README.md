@@ -6,9 +6,9 @@ An ASP.NET Core 9 API (`YourElectionMap.Server`) serving a React 19 + Vite SPA
 (`yourelectionmap.client`), with an xUnit test project (`YourElectionMap.Server.Tests`) and a
 console project (`YourElectionMap.Tools`) that builds the district data.
 
-The data is real and covers **North Carolina and California**: North Carolina's 14 US House,
-50 State Senate and 120 State House districts, and California's 52 US House, 40 State Senate and
-80 Assembly districts, all from the Census Bureau's TIGERweb, drawn with [MapLibre GL](https://maplibre.org/) over a street map from
+The data is real and covers **California, North Carolina, Oregon, South Carolina and
+Washington**: each state's US House, State Senate and State House or Assembly districts, all from
+the Census Bureau's TIGERweb, drawn with [MapLibre GL](https://maplibre.org/) over a street map from
 [OpenFreeMap](https://openfreemap.org/), with the next election at the address — its date and how
 many candidates and ballot measures are on the ballot — from Google's voter lookup. Four things
 reach out to the internet: the server places addresses with the US Census geocoder and asks the
@@ -33,12 +33,10 @@ outside the repository. See [DATA-SOURCE.md](YourElectionMap/YourElectionMap.Too
 for the download query and the folder layout the tool expects. From `YourElectionMap/`:
 
 ```powershell
-dotnet run --project YourElectionMap.Tools -- tiger NC `
-  "<folder holding North Carolina's cd.geojson, sldu.geojson and sldl.geojson>" `
-  YourElectionMap.Server\Districts\Data\nc-districts.json
-dotnet run --project YourElectionMap.Tools -- tiger CA `
-  "<folder holding California's cd.geojson, sldu.geojson and sldl.geojson>" `
-  YourElectionMap.Server\Districts\Data\ca-districts.json
+# Once for each state: CA, NC, OR, SC and WA.
+dotnet run --project YourElectionMap.Tools -- tiger <state> `
+  "<folder holding the state's cd.geojson, sldu.geojson and sldl.geojson>" `
+  YourElectionMap.Server\Districts\Data\<state>-districts.json
 ```
 
 **Add a Google Civic Information API key (optional).** Without one the site works, but the

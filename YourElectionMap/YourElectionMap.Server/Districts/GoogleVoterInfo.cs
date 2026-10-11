@@ -20,9 +20,9 @@ namespace YourElectionMap.Server.Districts
             "https://www.googleapis.com/civicinfo/v2/voterinfo?address=";
 
         /// <summary>
-        /// Where "today" is decided: the westernmost time zone the site covers, California's,
-        /// so an election counts as over once its day has ended in every state. North
-        /// Carolina's stays up until 3 a.m. there, which does no harm.
+        /// Where "today" is decided: the westernmost time zone the site covers, the Pacific
+        /// coast's, so an election counts as over once its day has ended in every state. The
+        /// Carolinas' stays up until 3 a.m. there, which does no harm.
         /// </summary>
         private static readonly TimeZoneInfo LastToClose =
             TimeZoneInfo.FindSystemTimeZoneById("America/Los_Angeles");
