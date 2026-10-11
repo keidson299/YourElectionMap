@@ -1,5 +1,6 @@
 import { Suspense, lazy, useMemo, useState } from 'react'
 import { DistrictRail } from './DistrictRail'
+import { maxBoundsFor } from '../../map/camera'
 import {
   mapLayers,
   orderDistricts,
@@ -40,6 +41,7 @@ export function ResultView({
     () => orderDistricts(lookup.districts),
     [lookup.districts],
   )
+  const maxBounds = useMemo(() => maxBoundsFor(districts), [districts])
   const selected = resolveSelection(districts, requestedDistrict)
   const layers = useMemo(
     () => (selected === undefined ? null : mapLayers(districts, selected)),
@@ -92,6 +94,7 @@ export function ResultView({
           location={lookup.location}
           label={lookup.label}
           layers={layers}
+          maxBounds={maxBounds}
           compact={compact}
         />
       </Suspense>

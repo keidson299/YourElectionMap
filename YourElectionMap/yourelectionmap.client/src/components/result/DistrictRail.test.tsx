@@ -133,12 +133,18 @@ describe('DistrictRail', () => {
     expect(screen.getByText('NCGA enacted maps')).toBeInTheDocument()
   })
 
-  it('names the Redistricting Data Hub under the districts, with a link', () => {
+  it('names both data sources under the districts, with links', () => {
     renderRail()
 
     expect(
       screen.getByRole('link', { name: 'Redistricting Data Hub' }),
     ).toHaveAttribute('href', 'https://redistrictingdatahub.org/')
+    expect(
+      screen.getByRole('link', { name: 'U.S. Census Bureau' }),
+    ).toHaveAttribute(
+      'href',
+      'https://tigerweb.geo.census.gov/tigerwebmain/TIGERweb_main.html',
+    )
   })
 
   it('leaves the source tag out when there is no source to name', () => {

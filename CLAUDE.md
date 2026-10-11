@@ -118,10 +118,14 @@ fetches its districts from the server's one real endpoint, `GET /api/districts`.
 is [design/ElectionMapMainDesignPlanV5.md](design/ElectionMapMainDesignPlanV5.md); code comments
 refer to its numbered slices.
 
-**The data is real, and it is North Carolina only.** An address is placed by the US Census
-geocoder, and the point is then looked up in `Districts/Data/nc-districts.json`, which holds the
-state's 14 US House, 50 NC Senate and 120 NC House districts as the General Assembly enacted them —
-the 2025 congressional plan and the 2023 legislative plans — with each district's 2020 population.
+**The data is real, and it covers North Carolina and California.** An address is placed by the US
+Census geocoder, and the point is then looked up in one file per state in `Districts/Data/`.
+`nc-districts.json` holds North Carolina's 14 US House, 50 NC Senate and 120 NC House districts as
+the General Assembly enacted them — the 2025 congressional plan and the 2023 legislative plans —
+with each district's 2020 population. `ca-districts.json` holds California's 52 US House, 40 State
+Senate and 80 State Assembly districts from the Census Bureau's TIGERweb layers (the 120th
+Congress's districts and the 2026 legislative ones), with no population: the map chip names the
+district alone.
 The next election at the address — its date and how many candidates and ballot measures — comes
 from Google's voter lookup and fills the rail's footer. Those are the server's two calls out to
 the internet. The visitor's browser makes the other outbound requests: the result map's street
@@ -138,14 +142,17 @@ key is a secret under Part 1: do not read, set or print it.
 
 **The site must credit the Redistricting Data Hub for the map data**, with a link to
 https://redistrictingdatahub.org/. `src/components/DataCredit.tsx` does it, on Home and under the
-result page's district list, and tests check both. Do not remove it, and any new page that offers
-or draws the map needs it too.
+result page's district list, beside the U.S. Census Bureau (linked to TIGERweb) for California,
+and tests check both. Do not remove either, and any new page that offers or draws the map needs
+the credit too.
 
-**`nc-districts.json` is generated and git-ignored, not checked in.** A fresh clone has no
-`Districts/Data/` folder, and without it the server stops at startup (`Program.cs` loads
-`DistrictData` eagerly) and `DistrictDataTests` and `DistrictsEndpointTests` fail. It is built by
-`YourElectionMap.Tools` from shapefiles kept outside the repository; nothing in the `.csproj` names
-it, and the Web SDK's default `**/*.json` content glob is what copies it to `bin/`.
+**The `*-districts.json` files are generated and git-ignored, not checked in.** A fresh clone has
+no `Districts/Data/` folder, and without one the server stops at startup (`Program.cs` loads
+`DistrictData` eagerly, and it reads every `*-districts.json` there) and `DistrictDataTests` and
+`DistrictsEndpointTests` fail; they need both states' files. They are built by
+`YourElectionMap.Tools` from shapefiles and GeoJSON kept outside the repository; nothing in the
+`.csproj` names them, and the Web SDK's default `**/*.json` content glob is what copies them to
+`bin/`. A file still in the old NC State Plane map units is refused at startup: rebuild it.
 
 ## Project priorities
 
@@ -164,12 +171,15 @@ dotnet test YourElectionMap.Server.Tests/YourElectionMap.Server.Tests.csproj `
   --filter "FullyQualifiedName~Get_WithAnAddress_ReturnsTheLookupTheClientReads"   # one test
 dotnet publish YourElectionMap.Server/YourElectionMap.Server.csproj         # also builds SPA into wwwroot
 
-# Builds Districts/Data/nc-districts.json from the enacted plans' shapefiles. Needed once per
-# clone (the file is git-ignored) and again when a plan changes; see
-# YourElectionMap.Tools/DATA-SOURCE.md.
-dotnet run --project YourElectionMap.Tools -- `
+# Builds each state's district file: North Carolina from the enacted plans' shapefiles,
+# California from TIGERweb layers saved as GeoJSON. Needed once per clone (the files are
+# git-ignored) and again when a plan changes; see YourElectionMap.Tools/DATA-SOURCE.md.
+dotnet run --project YourElectionMap.Tools -- nc `
   "D:\VisualStudio\GitProjects\YourElectionMap\Docs\MapShapeFiles" `
   YourElectionMap.Server\Districts\Data\nc-districts.json
+dotnet run --project YourElectionMap.Tools -- tiger CA `
+  "D:\VisualStudio\GitProjects\YourElectionMap\Docs\Tiger\ca" `
+  YourElectionMap.Server\Districts\Data\ca-districts.json
 ```
 
 ```powershell
@@ -230,9 +240,9 @@ controllers + OpenAPI (dev only, at `/openapi/v1.json`), static assets, then
 `WebApplicationFactory<Program>` can host the app in memory; do not remove it.
 
 **How a lookup is answered**, all in `YourElectionMap.Server/Districts/`. `CensusGeocoder` turns an
-address into a latitude and longitude; `StatePlane` projects that into map units with the parameters
-from the shapefiles' own `.prj`; `DistrictData` — a singleton holding the whole file — answers which
-boundaries contain the point, box-checked first and then by counting ray crossings in `Geometry`.
+address into a latitude and longitude; `DistrictData` — a singleton holding every state's file —
+answers which boundaries contain the point, box-checked first and then by counting ray crossings
+in `Geometry`, along with the source credit of the state it fell in.
 For a typed address, `GoogleVoterInfo` then asks Google for the next election, sending the
 geocoder's own spelling of the match (`CensusGeocoder` returns it with each point), which names the
 state; a location lookup has no address to send, so it gets no election. `DistrictsController`
@@ -241,17 +251,18 @@ answer (`GeocoderUnavailableException`), and 400 for an unusable query; the clie
 as no-match and anything else as an error, so an outage never reads as a bad address. Four things
 in there are worth knowing before changing them:
 
-- **Containment is in map units; everything sent is in degrees.** The point is projected into the
-  file's State Plane map units to be tested, and each boundary goes back out through
-  `StatePlane.ToLatLon` as `[longitude, latitude]`, because the result map is MapLibre, which draws
-  in degrees. The lookup's `location` is the geocoder's own longitude and latitude.
+- **Everything is in degrees.** The files hold `[longitude, latitude]` rings, the point is tested
+  as the geocoder gave it, and boundaries go out as stored, because the result map is MapLibre,
+  which draws in degrees. Nothing is projected at runtime. `StatePlane` is used only by the tool,
+  which thins North Carolina's plans in their own State Plane map units before converting them.
+  The lookup's `location` is the geocoder's own longitude and latitude.
 - **Containment counts crossings rather than winding.** The file stores a district as loose rings
   and says nothing about which is an island and which a hole, so only the crossing count can tell.
   For the same reason the boundary goes out through `Geometry.ToPolygons`, which sorts the rings
   into GeoJSON polygons (outer ring, then its holes, wound counter-clockwise and clockwise) by how
   many others contain each one; MapLibre fills by that structure, so without it holes would be
-  filled and islands left blank. Every district in the enacted plans happens to be one ring, but
-  nothing relies on that.
+  filled and islands left blank. Every district in North Carolina's plans happens to be one ring;
+  a few of California's have islands.
 - **Boundaries are sent at the detail the file stores, not thinned.** That is roughly 15 feet. The
   map zooms to street level, where a simplified line would put an address on the wrong side of the
   street, and MapLibre simplifies for wider views itself. Each district's converted boundary is
@@ -261,7 +272,8 @@ in there are worth knowing before changing them:
   returns null — never throws — for no key, no election (which Google answers as an error status),
   a refusal, its four-second timeout or an unreadable answer. Only the browser cancelling
   propagates. When Google names the election but leaves out the contests, the candidate and measure
-  counts are null rather than 0, and the footer leaves those lines out.
+  counts are null rather than 0, and the footer leaves those lines out. An election counts as past
+  once its day has ended in California's time zone, the last of the states covered.
 
 **Server tests host the whole app in memory.** `DistrictsEndpointTests` uses its nested `OfflineApp`,
 a `WebApplicationFactory<Program>`, and reads the raw JSON, so routing, model binding and the names and
@@ -272,23 +284,26 @@ logic is in question. Client tests are Vitest + Testing Library in `jsdom`, matc
 
 **No test reaches the internet.** `OfflineApp` replaces the geocoder's `HttpClient` handler in
 `ConfigureTestServices` with `FakeGeocoding`, which places any address containing one of a few
-known words ("Jones", "Tryon", …) and fakes an outage for "Outage", and Google's with
-`FakeVoterInfo`, which has an election for Raleigh, is down for Durham and has none elsewhere; it
-sets a dummy `GoogleCivic:ApiKey` so Google is asked at all. The fake election's date is relative
-to today, so the suite does not start failing after a real election day. Everything else in
-those tests is real, including the whole district file. If you add a service that calls out, stub it
+known words ("Jones", "Tryon", "Sacramento", …) and fakes an outage for "Outage", and Google's
+with `FakeVoterInfo`, which has an election for Raleigh, is down for Durham and has none
+elsewhere; it sets a dummy `GoogleCivic:ApiKey` so Google is asked at all. The fake election's date
+is relative to today, so the suite does not start failing after a real election day. Everything
+else in those tests is real, including every district file. If you add a service that calls out, stub it
 the same way. On the client, `src/test/setup.ts` replaces `maplibre-gl` everywhere with
 `src/test/fakeMaplibre.ts` — jsdom has no WebGL, so the real map cannot even be constructed — and
 the fake records the style, view and pin it is given, which is what `DistrictMap.test.tsx` checks.
 
-**How the district data is checked.** The converter needs the plans' shapefiles, which are not in
-the repository, so it has no tests of its own: it refuses to write a file whose plans are in the
-wrong units or missing a district, and `DistrictDataTests` checks the file it wrote. The strongest
-of those is `Covering_HasTheThreeLevelsAgreeAcrossTheWholeState`: the three plans were enacted
-separately but each is built from the same census blocks and covers the state exactly once, so a
-grid of points over the state has to find one district per level everywhere. A layer read wrongly
-or converted with the wrong units shows up there. The populations are checked against what each
-plan was drawn to, and `DistrictsEndpointTests` pins the three districts of a Raleigh address.
+**How the district data is checked.** The converter needs the plans' shapefiles and the TIGER
+layers, which are not in the repository, so it has no tests of its own: it refuses to write a file
+whose plans are in the wrong units or state, cut short, or missing a district, and
+`DistrictDataTests` checks the files it wrote. The strongest of those are
+`Covering_HasTheThreeLevelsAgreeAcrossNorthCarolina` and `…AcrossCalifornia`: each state's three
+plans were drawn separately but each is built from the same census blocks and covers the state
+exactly once, so a grid of points over the state has to find one district per level everywhere.
+A layer read wrongly or converted with the wrong units shows up there. North Carolina's
+populations are checked against what each plan was drawn to, California's are checked to be
+absent, and `DistrictsEndpointTests` pins the three districts of a Raleigh address and of a
+Sacramento one.
 
 **Client structure.**
 
@@ -309,7 +324,12 @@ plan was drawn to, and `DistrictsEndpointTests` pins the three districts of a Ra
   is `MAP_UNITS_PER_MILE` in `src/map/frame.ts`. The result map uses it only to turn the spec's
   design frames into miles (the least it opens on) and to size the pin; the SVG survey sheets on
   Home and the waiting page are still drawn in those units. The server's `StatePlane.FeetPerMapUnit`
-  is the same 96 feet for the district file's own units, but nothing sent to the client is in them.
+  is the same 96 feet, used only by the tool to thin North Carolina's plans; nothing stored or sent
+  is in those units.
+- The result map can be dragged only so far from the lookup: `maxBoundsFor` in
+  `src/map/camera.ts` gives the box around its districts plus 2°, and `DistrictMap` moves the
+  limits when the lookup moves, so a search from Raleigh to Sacramento is not held in North
+  Carolina.
 - `src/components/surveyMapGeometry.ts` is the hand-drawn stand-in, and it is now only the
   decoration behind the home card. `SurveyGround` leaves out its river, roads and mesh unless asked
   for them with `standIn`, which only Home does.

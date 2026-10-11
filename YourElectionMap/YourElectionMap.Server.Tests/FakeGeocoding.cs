@@ -22,7 +22,9 @@ namespace YourElectionMap.Server.Tests
             ("Tryon", [new(35.2271, -80.8431, "101 S TRYON ST, CHARLOTTE, NC, 28202")]),
             // Downtown Durham.
             ("Mangum", [new(35.9960, -78.9017, "101 N MANGUM ST, DURHAM, NC, 27701")]),
-            // The White House, which is in no North Carolina district.
+            // The California State Capitol, Sacramento.
+            ("Sacramento", [new(38.5767, -121.4934, "1315 10TH ST, SACRAMENTO, CA, 95814")]),
+            // The White House, which is in neither state the site covers.
             ("Pennsylvania", [new(38.8977, -77.0365, "1600 PENNSYLVANIA AVE NW, WASHINGTON, DC, 20500")]),
             // A town name with no state: Greenville SC first, then Greenville NC.
             ("Greenville",

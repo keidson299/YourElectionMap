@@ -14,13 +14,16 @@ namespace YourElectionMap.Server.Tests
     /// contract is pinned down.
     /// <para>
     /// The geocoder's and Google's handlers are replaced, so no test reaches the internet.
-    /// Everything else is real, including the four megabytes of North Carolina boundaries.
+    /// Everything else is real, including every state's boundaries.
     /// </para>
     /// </summary>
     public class DistrictsEndpointTests : IClassFixture<DistrictsEndpointTests.OfflineApp>
     {
         /// <summary>16 W Jones Street, Raleigh: an address the stubbed geocoder places.</summary>
         private const string RaleighAddress = "16 W Jones St, Raleigh NC";
+
+        /// <summary>The California State Capitol: an address the stubbed geocoder places.</summary>
+        private const string SacramentoAddress = "1315 10th St, Sacramento CA";
 
         private readonly OfflineApp _app;
 
@@ -67,13 +70,44 @@ namespace YourElectionMap.Server.Tests
         [Fact]
         public async Task Get_PlacesARaleighAddressInTheDistrictsThatCoverIt()
         {
-            // Pinned, so that a change to the projection, the converter or the data file
+            // Pinned, so that a change to the converter or the data file
             // cannot quietly start answering with the wrong districts.
             var lookup = await LookupAsync(AddressQuery(RaleighAddress));
 
             Assert.Equal(
                 new[] { "congressional-2", "state-upper-14", "state-lower-38" },
                 Each(lookup.GetProperty("districts"), "id"));
+        }
+
+        [Fact]
+        public async Task Get_PlacesASacramentoAddressInCaliforniasDistricts()
+        {
+            // Pinned the same way, against the TIGER layers.
+            var lookup = await LookupAsync(AddressQuery(SacramentoAddress));
+            var districts = lookup.GetProperty("districts");
+
+            Assert.Equal(
+                new[] { "congressional-7", "state-upper-8", "state-lower-6" },
+                Each(districts, "id"));
+            Assert.Equal(
+                new[] { "U.S. House", "State Senate", "State Assembly" },
+                Each(districts, "office"));
+
+            // TIGER has no population: sent as null, not left out, and not 0.
+            foreach (var district in districts.EnumerateArray())
+            {
+                Assert.Equal(JsonValueKind.Null, district.GetProperty("population").ValueKind);
+            }
+        }
+
+        [Theory]
+        [InlineData(RaleighAddress, "NCGA enacted maps")]
+        [InlineData(SacramentoAddress, "U.S. Census Bureau TIGER")]
+        public async Task Get_NamesEachStatesOwnSource(string address, string source)
+        {
+            var lookup = await LookupAsync(AddressQuery(address));
+
+            Assert.Equal(source, lookup.GetProperty("source").GetString());
         }
 
         [Fact]
@@ -194,7 +228,7 @@ namespace YourElectionMap.Server.Tests
         }
 
         [Fact]
-        public async Task Get_UsesTheFirstMatchInNorthCarolina()
+        public async Task Get_UsesTheFirstMatchInACoveredState()
         {
             // The stub answers Greenville SC first and Greenville NC second, as the real
             // geocoder can for an address with no state.
@@ -208,7 +242,7 @@ namespace YourElectionMap.Server.Tests
         }
 
         [Fact]
-        public async Task Get_AsksGoogleAboutTheAddressTheGeocoderMatchedInNorthCarolina()
+        public async Task Get_AsksGoogleAboutTheAddressTheGeocoderMatchedInACoveredState()
         {
             // Typed with no state, and matched in South Carolina first: Google must be
             // asked about the match the districts came from, spelled with its state.
@@ -221,7 +255,7 @@ namespace YourElectionMap.Server.Tests
         }
 
         [Fact]
-        public async Task Get_DoesNotAskGoogleAboutAnAddressOutsideNorthCarolina()
+        public async Task Get_DoesNotAskGoogleAboutAnAddressOutsideTheCoveredStates()
         {
             await GetAsync(AddressQuery("1600 Pennsylvania Ave, Washington DC"));
 
@@ -231,6 +265,7 @@ namespace YourElectionMap.Server.Tests
         [Theory]
         [InlineData("101 S Tryon St")] // Google has no election for it
         [InlineData("101 N Mangum St")] // Google is down
+        [InlineData(SacramentoAddress)] // Google has no election for it either
         public async Task Get_StillAnswersWhenGoogleHasNoElectionToGive(string address)
         {
             // The districts do not depend on the election, so they come back without it.

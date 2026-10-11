@@ -8,7 +8,7 @@ builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
-// Four megabytes of boundaries, read from disk once and shared by every lookup.
+// Every state's boundaries, megabytes of them, read from disk once and shared by every lookup.
 builder.Services.AddSingleton<DistrictData>();
 
 // A typed client gets a pooled, rotated handler but is itself transient, so the

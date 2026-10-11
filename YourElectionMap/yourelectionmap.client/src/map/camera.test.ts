@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { minimumSpan, openingBounds, scaleBarAt } from './camera'
-import type { LngLat, Polygon } from '../districts/types'
+import { maxBoundsFor, minimumSpan, openingBounds, scaleBarAt } from './camera'
+import type { District, LngLat, Polygon } from '../districts/types'
 
 // Downtown Raleigh, where a degree of longitude is about 56 miles and a degree
 // of latitude about 69.
@@ -62,6 +62,55 @@ describe('openingBounds', () => {
     expect(openingBounds(ADDRESS, [[outer, hole]], desktop)).toEqual(
       openingBounds(ADDRESS, [[outer]], desktop),
     )
+  })
+})
+
+describe('maxBoundsFor', () => {
+  function district(boundary: Polygon[]): District {
+    return {
+      id: 'x',
+      level: 'state-lower',
+      office: 'State House',
+      unit: 'District',
+      number: '1',
+      detail: 'State',
+      area: null,
+      population: null,
+      boundary,
+    }
+  }
+
+  it('is the box around every district, two degrees wider each way', () => {
+    const [lng, lat] = ADDRESS
+
+    expect(
+      maxBoundsFor([
+        district(box(0.5, 0.1, 0.1, 0.1)),
+        district(box(0.1, 0.3, 0.2, 0.4)),
+      ]),
+    ).toEqual([
+      [expect.closeTo(lng - 2.5), expect.closeTo(lat - 2.3)],
+      [expect.closeTo(lng + 2.2), expect.closeTo(lat + 2.4)],
+    ])
+  })
+
+  it('follows the lookup to another state', () => {
+    // The State Capitol, Sacramento: nowhere near North Carolina.
+    const [[west], [east]] = maxBoundsFor([
+      district([
+        [
+          [
+            [-121.6, 38.5],
+            [-121.4, 38.5],
+            [-121.4, 38.7],
+            [-121.6, 38.5],
+          ],
+        ],
+      ]),
+    ])
+
+    expect(west).toBeCloseTo(-123.6)
+    expect(east).toBeCloseTo(-119.4)
   })
 })
 

@@ -1,15 +1,14 @@
 namespace YourElectionMap.Server.Districts
 {
     /// <summary>
-    /// The one projection this site uses: NAD83 / North Carolina State Plane
-    /// (FIPS 3200, US survey feet), a Lambert conformal conic. Every parameter below
-    /// is the one the district plans' <c>.prj</c> files state; those count in metres,
-    /// and the converter turns them into these feet, so the points this produces land
-    /// in the same space as the boundaries.
+    /// NAD83 / North Carolina State Plane (FIPS 3200, US survey feet), a Lambert
+    /// conformal conic: the projection North Carolina's enacted plans are drawn in.
+    /// Every parameter below is the one the plans' <c>.prj</c> files state; those count
+    /// in metres, and the converter turns them into these feet.
     /// <para>
-    /// Latitudes and longitudes arrive as WGS84, from the browser or the geocoder, and
-    /// are used as if they were NAD83. The two differ by about a metre in this part of
-    /// the world, against boundaries kept to fifteen feet.
+    /// Only YourElectionMap.Tools uses it, to thin the NC plans in their own space and
+    /// then turn them into the degrees the district files hold. The server tests and
+    /// sends everything in degrees.
     /// </para>
     /// </summary>
     public static class StatePlane
@@ -17,7 +16,7 @@ namespace YourElectionMap.Server.Districts
         /// <summary>
         /// 96 feet to the map unit, so a mile is 55 units — the scale the design spec was
         /// drawn at, and the client's <c>MAP_UNITS_PER_MILE</c> in <c>src/map/frame.ts</c>.
-        /// The district file is stored in these units; the page itself is sent degrees.
+        /// The converter thins North Carolina's plans in these units.
         /// </summary>
         public const double FeetPerMapUnit = 96;
 
@@ -45,7 +44,7 @@ namespace YourElectionMap.Server.Districts
 
         /// <summary>
         /// A latitude and longitude in map units: x east, y <em>down</em>, the way SVG
-        /// counts, so the client draws north up without flipping.
+        /// counts.
         /// </summary>
         public static (double X, double Y) ToMapUnits(double latitude, double longitude)
         {
@@ -72,9 +71,8 @@ namespace YourElectionMap.Server.Districts
         }
 
         /// <summary>
-        /// The way back: a point in map units as a latitude and longitude. Containment is
-        /// answered in map units, but the page's map draws in latitude and longitude, so
-        /// every boundary goes out through here.
+        /// The way back: a point in map units as a latitude and longitude, which is how
+        /// every vertex of North Carolina's plans reaches the district file.
         /// </summary>
         public static (double Latitude, double Longitude) ToLatLon(double x, double y)
         {

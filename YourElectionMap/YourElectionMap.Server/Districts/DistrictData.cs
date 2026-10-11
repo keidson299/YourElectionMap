@@ -5,68 +5,97 @@ namespace YourElectionMap.Server.Districts
     /// <summary>
     /// Every district the site knows, held in memory for the life of the process.
     /// <para>
-    /// The file behind it is built by YourElectionMap.Tools from the North Carolina
-    /// General Assembly's enacted district plans — see that project's DATA-SOURCE.md.
-    /// It is read once, at startup, because it is megabytes that never change while
-    /// the app runs.
+    /// There is one file per state, <c>nc-districts.json</c> and so on, each built by
+    /// YourElectionMap.Tools — see that project's DATA-SOURCE.md. Every one in the data
+    /// folder is read once, at startup, because they are megabytes that never change
+    /// while the app runs. Each holds its rings in longitude and latitude, which is
+    /// what an address is tested against and what the page is sent.
     /// </para>
     /// </summary>
     public sealed class DistrictData
     {
-        private const string FileName = "nc-districts.json";
+        private const string FilePattern = "*-districts.json";
 
         private static readonly JsonSerializerOptions ReadOptions =
             new() { PropertyNameCaseInsensitive = true };
 
-        private readonly Stored[] _districts;
+        private readonly Document[] _states;
 
         public DistrictData()
-            : this(Path.Combine(AppContext.BaseDirectory, "Districts", "Data", FileName))
+            : this(Directory.GetFiles(
+                Path.Combine(AppContext.BaseDirectory, "Districts", "Data"),
+                FilePattern))
         {
         }
 
-        /// <summary>Loads from a given path, which is how a test reaches a small one.</summary>
-        public DistrictData(string path)
+        /// <summary>Loads the given files, which is how a test reaches a small one.</summary>
+        public DistrictData(params string[] paths)
+        {
+            if (paths.Length == 0)
+            {
+                throw new InvalidDataException(
+                    $"No {FilePattern} files to load. Build them with YourElectionMap.Tools.");
+            }
+
+            _states = Array.ConvertAll(paths, Load);
+            Array.Sort(_states, (left, right) => string.CompareOrdinal(left.State, right.State));
+        }
+
+        /// <summary>The states loaded, by postal code: "CA", "NC".</summary>
+        public IReadOnlyList<string> States => Array.ConvertAll(_states, state => state.State);
+
+        public int Count => _states.Sum(state => state.Districts.Length);
+
+        /// <summary>
+        /// Every district covering a point, broad to local, each with its boundary for the
+        /// page's map, and what the state's boundaries are credited to. Null for a point
+        /// in no state the site covers.
+        /// </summary>
+        public Found? Covering(double longitude, double latitude)
+        {
+            foreach (var state in _states)
+            {
+                var found = new List<District>();
+
+                foreach (var district in state.Districts)
+                {
+                    if (Geometry.BoxCovers(district.Bbox, longitude, latitude)
+                        && Geometry.Covers(district.Rings, longitude, latitude))
+                    {
+                        found.Add(district.ToDistrict());
+                    }
+                }
+
+                // States do not overlap, so the first to cover the point is the only one.
+                if (found.Count > 0)
+                {
+                    return new Found(state.Source, found);
+                }
+            }
+
+            return null;
+        }
+
+        private static Document Load(string path)
         {
             using var file = File.OpenRead(path);
 
             var document = JsonSerializer.Deserialize<Document>(file, ReadOptions)
                 ?? throw new InvalidDataException($"{path} held no district data.");
 
-            Source = document.Source;
-            _districts = document.Districts;
+            // A file from before the switch to degrees is in NC State Plane map units, and
+            // would load fine and then place nothing.
+            if (document.Units != "degrees")
+            {
+                throw new InvalidDataException(
+                    $"{path} is not in degrees. Rebuild it with YourElectionMap.Tools.");
+            }
 
             // Broad to local, which is the order the rail lists them in, so the lookup
             // never has to sort. Within a level, by number.
-            Array.Sort(_districts, Compare);
-        }
+            Array.Sort(document.Districts, Compare);
 
-        /// <summary>What to credit the boundaries to, as the page shows it.</summary>
-        public string Source { get; }
-
-        public int Count => _districts.Length;
-
-        /// <summary>
-        /// Every district covering a point in map units, broad to local, each with its
-        /// boundary in latitude and longitude for the page's map. Empty for a point
-        /// outside the state.
-        /// </summary>
-        public List<District> Covering(double x, double y)
-        {
-            var found = new List<District>();
-
-            foreach (var district in _districts)
-            {
-                if (!Geometry.BoxCovers(district.Bbox, x, y)
-                    || !Geometry.Covers(district.Rings, x, y))
-                {
-                    continue;
-                }
-
-                found.Add(district.ToDistrict());
-            }
-
-            return found;
+            return document;
         }
 
         private static int Compare(Stored left, Stored right)
@@ -99,7 +128,7 @@ namespace YourElectionMap.Server.Districts
             _ => 6,
         };
 
-        /// <summary>A district as the file stores it, rings flattened to <c>[x, y, x, y, …]</c>.</summary>
+        /// <summary>A district as the file stores it, rings flattened to <c>[lon, lat, lon, lat, …]</c>.</summary>
         private sealed class Stored
         {
             /// <summary>
@@ -135,7 +164,8 @@ namespace YourElectionMap.Server.Districts
                     Number,
                     Detail,
                     // The plans name no place; the map chip leaves out what it is not
-                    // given. Population is the 2020 census count the plan was drawn to.
+                    // given. Population is the 2020 census count the plan was drawn to,
+                    // where the source has one.
                     Area: null,
                     Population: Population,
                     // Worked out the first time the district is asked for and kept, since
@@ -149,28 +179,15 @@ namespace YourElectionMap.Server.Districts
             /// </summary>
             private double[][][][] Boundary()
             {
-                var degrees = Array.ConvertAll(Rings, ToDegrees);
+                var rounded = Array.ConvertAll(Rings, Round);
 
-                return Geometry.ToPolygons(degrees)
+                return Geometry.ToPolygons(rounded)
                     .Select(polygon => polygon.Select(ToPairs).ToArray())
                     .ToArray();
             }
 
-            /// <summary>A ring in map units as a flat ring of [longitude, latitude].</summary>
-            private static double[] ToDegrees(double[] ring)
-            {
-                var degrees = new double[ring.Length];
-
-                for (var i = 0; i < ring.Length; i += 2)
-                {
-                    var (latitude, longitude) = StatePlane.ToLatLon(ring[i], ring[i + 1]);
-
-                    degrees[i] = Math.Round(longitude, Decimals);
-                    degrees[i + 1] = Math.Round(latitude, Decimals);
-                }
-
-                return degrees;
-            }
+            private static double[] Round(double[] ring) =>
+                Array.ConvertAll(ring, value => Math.Round(value, Decimals));
 
             /// <summary>Flat back to the pairs GeoJSON holds.</summary>
             private static double[][] ToPairs(double[] ring)
@@ -186,12 +203,22 @@ namespace YourElectionMap.Server.Districts
             }
         }
 
-        /// <summary>The file as a whole.</summary>
+        /// <summary>One state's file as a whole.</summary>
         private sealed class Document
         {
+            public string State { get; init; } = "";
+
             public string Source { get; init; } = "";
+
+            public string Units { get; init; } = "";
 
             public Stored[] Districts { get; init; } = [];
         }
     }
+
+    /// <summary>
+    /// The districts covering a point, broad to local, and what that state's boundaries
+    /// are credited to: "NCGA enacted maps", "U.S. Census Bureau TIGER".
+    /// </summary>
+    public sealed record Found(string Source, List<District> Districts);
 }

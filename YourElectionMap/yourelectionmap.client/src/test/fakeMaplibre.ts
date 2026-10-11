@@ -28,6 +28,8 @@ export class Map {
   options: Record<string, unknown>
   style: unknown
   fitted: { bounds: Bounds; options?: unknown }[] = []
+  /** Every setMaxBounds after construction, oldest first. */
+  limited: Bounds[] = []
   removed = false
   images = new Set<string>()
 
@@ -81,6 +83,11 @@ export class Map {
     this.fitted.push({ bounds, options })
     this.center = centreOf(bounds)
     this.fire('move')
+    return this
+  }
+
+  setMaxBounds(bounds: Bounds) {
+    this.limited.push(bounds)
     return this
   }
 

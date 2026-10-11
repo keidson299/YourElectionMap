@@ -36,8 +36,8 @@ namespace YourElectionMap.Server.Districts
         /// <summary>
         /// Every place the address could be, in the geocoder's order, or none when it
         /// cannot be placed. An address with no state can match in several. Latitude and
-        /// longitude come back as WGS84, which is what <see cref="StatePlane"/> expects,
-        /// and each match carries the geocoder's own full spelling of the address, state
+        /// longitude come back as WGS84, against boundaries stored in NAD83, which differs
+        /// by about a metre in the states covered; each match carries the geocoder's own full spelling of the address, state
         /// included: "16 W JONES ST, RALEIGH, NC, 27601".
         /// </summary>
         /// <exception cref="GeocoderUnavailableException">

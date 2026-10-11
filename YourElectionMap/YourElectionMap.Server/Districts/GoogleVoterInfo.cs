@@ -19,9 +19,13 @@ namespace YourElectionMap.Server.Districts
         private const string Endpoint =
             "https://www.googleapis.com/civicinfo/v2/voterinfo?address=";
 
-        /// <summary>Where "today" is decided, so an election is over when NC says it is.</summary>
-        private static readonly TimeZoneInfo NorthCarolina =
-            TimeZoneInfo.FindSystemTimeZoneById("America/New_York");
+        /// <summary>
+        /// Where "today" is decided: the westernmost time zone the site covers, California's,
+        /// so an election counts as over once its day has ended in every state. North
+        /// Carolina's stays up until 3 a.m. there, which does no harm.
+        /// </summary>
+        private static readonly TimeZoneInfo LastToClose =
+            TimeZoneInfo.FindSystemTimeZoneById("America/Los_Angeles");
 
         private readonly HttpClient _client;
         private readonly string? _apiKey;
@@ -71,7 +75,7 @@ namespace YourElectionMap.Server.Districts
                 using var json = await JsonDocument.ParseAsync(body, default, cancellationToken);
 
                 var today = DateOnly.FromDateTime(
-                    TimeZoneInfo.ConvertTime(DateTimeOffset.UtcNow, NorthCarolina).DateTime);
+                    TimeZoneInfo.ConvertTime(DateTimeOffset.UtcNow, LastToClose).DateTime);
 
                 return Summary(json.RootElement, today);
             }

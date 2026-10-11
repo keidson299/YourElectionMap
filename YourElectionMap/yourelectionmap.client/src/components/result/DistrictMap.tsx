@@ -13,8 +13,8 @@ import {
 } from './MapChrome'
 import { layerCount, type MapLayers } from '../../districts/selection'
 import type { LngLat } from '../../districts/types'
+import type { Bounds } from '../../map/camera'
 import {
-  MAX_BOUNDS,
   MAX_ZOOM,
   MIN_ZOOM,
   ZOOM_STEP,
@@ -53,6 +53,8 @@ type DistrictMapProps = {
   location: LngLat
   label: string
   layers: MapLayers
+  /** How far the map can be dragged: around the lookup, from maxBoundsFor. */
+  maxBounds: Bounds
   /** The phone layout: a tighter frame, a short chip, a pill for the legend. */
   compact: boolean
 }
@@ -72,6 +74,7 @@ export function DistrictMap({
   location,
   label,
   layers,
+  maxBounds,
   compact,
 }: DistrictMapProps) {
   const titleId = useId()
@@ -96,13 +99,16 @@ export function DistrictMap({
 
   // What the map was last given, so a re-render that changes nothing it shows
   // does not touch it, and the first render's values are not applied twice.
-  const applied = useRef<{ style: StyleSpecification; fit: string } | null>(
-    null,
-  )
+  const applied = useRef<{
+    style: StyleSpecification
+    fit: string
+    limits: string
+  } | null>(null)
   const fitKey = `${layers.selected.id}|${location.join(',')}|${compact}`
+  const limitsKey = maxBounds.flat().join(',')
 
   // Read through a ref by the effect that creates the map, which runs once.
-  const initial = useRef({ style, bounds, fitKey })
+  const initial = useRef({ style, bounds, fitKey, maxBounds, limitsKey })
 
   useEffect(() => {
     const container = containerRef.current
@@ -120,7 +126,7 @@ export function DistrictMap({
         bounds: initial.current.bounds,
         minZoom: MIN_ZOOM,
         maxZoom: MAX_ZOOM,
-        maxBounds: MAX_BOUNDS,
+        maxBounds: initial.current.maxBounds,
         dragRotate: false,
         pitchWithRotate: false,
         touchPitch: false,
@@ -159,6 +165,7 @@ export function DistrictMap({
     applied.current = {
       style: initial.current.style,
       fit: initial.current.fitKey,
+      limits: initial.current.limitsKey,
     }
     setMap(created)
 
@@ -179,11 +186,18 @@ export function DistrictMap({
       map.setStyle(style)
     }
 
+    // Before the refit, so a lookup in another state is not fitted inside the
+    // last one's limits.
+    if (applied.current.limits !== limitsKey) {
+      applied.current.limits = limitsKey
+      map.setMaxBounds(maxBounds)
+    }
+
     if (applied.current.fit !== fitKey) {
       applied.current.fit = fitKey
       map.fitBounds(bounds, { duration: REFIT_MS })
     }
-  }, [map, style, fitKey, bounds])
+  }, [map, style, fitKey, bounds, limitsKey, maxBounds])
 
   useEffect(() => {
     if (map === null) {

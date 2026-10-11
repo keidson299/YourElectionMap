@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState, type FormEvent } from 'react'
 import { CrosshairIcon, PinIcon, SpinnerIcon } from './icons'
 import type { Coordinates } from '../routing/routes'
+import { COVERED_STATES } from '../districts/lookups'
 import './AddressForm.css'
 
 // One form serves the home card and the result header; only the sizes differ.
@@ -228,7 +229,8 @@ export function AddressForm({
           </button>
           <span className="address-form__divider" aria-hidden="true" />
           <p className="address-form__note">
-            North Carolina addresses for now. Used only to look up your districts.
+            {COVERED_STATES} addresses for now. Used only to look up your
+            districts.
           </p>
         </div>
       )}

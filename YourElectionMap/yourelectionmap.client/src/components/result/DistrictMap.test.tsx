@@ -5,7 +5,13 @@ import { DistrictMap } from './DistrictMap'
 import { Map, Marker, workerUrl } from '../../test/fakeMaplibre'
 import { sampleLookup } from '../../test/sampleLookup'
 import { mapLayers, resolveSelection } from '../../districts/selection'
-import { MAX_ZOOM, MIN_ZOOM, ZOOM_STEP } from '../../map/camera'
+import {
+  MAX_ZOOM,
+  MIN_ZOOM,
+  ZOOM_STEP,
+  maxBoundsFor,
+  type Bounds,
+} from '../../map/camera'
 import { TILE_SOURCE, type StyleSpecification } from '../../map/style'
 
 // maplibre-gl is replaced by the fake in src/test/fakeMaplibre.ts, which
@@ -24,12 +30,15 @@ function layersFor(selectedId: string | null = null) {
   return mapLayers(lookup.districts, selected)
 }
 
+const sampleLimits = maxBoundsFor(lookup.districts)
+
 function renderMap(selectedId: string | null = null) {
-  const view = (id: string | null) => (
+  const view = (id: string | null, maxBounds: Bounds = sampleLimits) => (
     <DistrictMap
       location={lookup.location}
       label={lookup.label}
       layers={layersFor(id)}
+      maxBounds={maxBounds}
       compact={false}
     />
   )
@@ -44,6 +53,7 @@ function renderMap(selectedId: string | null = null) {
     map,
     style: () => map.style as StyleSpecification,
     select: (id: string) => rerender(view(id)),
+    limit: (maxBounds: Bounds) => rerender(view(null, maxBounds)),
   }
 }
 
@@ -149,6 +159,32 @@ describe('DistrictMap', () => {
     expect(map.fitted).toHaveLength(1)
   })
 
+  it('keeps the map near the lookup it was given', () => {
+    const { map } = renderMap()
+
+    expect(map.options.maxBounds).toEqual(sampleLimits)
+    expect(map.limited).toEqual([])
+  })
+
+  it('moves its limits when the lookup moves, before refitting', () => {
+    const { map, limit } = renderMap()
+    const california: Bounds = [
+      [-126.5, 30.5],
+      [-112.1, 44.1],
+    ]
+
+    limit(california)
+
+    expect(map.limited).toEqual([california])
+
+    // Limits that say the same thing are not handed over again.
+    limit([
+      [-126.5, 30.5],
+      [-112.1, 44.1],
+    ])
+    expect(map.limited).toHaveLength(1)
+  })
+
   it('puts the pin and its label on the address', () => {
     renderMap()
     const marker = Marker.instances.at(-1)
@@ -231,6 +267,7 @@ describe('DistrictMap', () => {
         location={lookup.location}
         label={lookup.label}
         layers={layersFor()}
+        maxBounds={sampleLimits}
         compact={false}
       />,
     )

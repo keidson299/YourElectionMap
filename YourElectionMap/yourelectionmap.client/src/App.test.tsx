@@ -58,6 +58,12 @@ describe('App', () => {
     expect(
       screen.getByRole('link', { name: 'Redistricting Data Hub' }),
     ).toHaveAttribute('href', 'https://redistrictingdatahub.org/')
+    expect(
+      screen.getByRole('link', { name: 'U.S. Census Bureau' }),
+    ).toHaveAttribute(
+      'href',
+      'https://tigerweb.geo.census.gov/tigerwebmain/TIGERweb_main.html',
+    )
   })
 
   it('sends a submitted address to the result page', async () => {
@@ -123,7 +129,8 @@ describe('App', () => {
     expect(currentUrl()).toBe('/')
     expect(
       screen.getByText(
-        'We could not find North Carolina districts for that address. Check it,'
+        'We could not find North Carolina or California districts for that'
+        + ' address. Check it,'
         + ' or try adding your city or ZIP code.',
       ),
     ).toBeInTheDocument()
@@ -234,7 +241,7 @@ describe('App', () => {
       }),
     ).toBeInTheDocument()
     expect(
-      screen.getByText(/covers North Carolina so far/),
+      screen.getByText(/covers North Carolina and California so far/),
     ).toBeInTheDocument()
     expect(screen.queryByRole('radio')).toBeNull()
   })
@@ -390,7 +397,7 @@ describe('App', () => {
 
     expect(currentUrl()).toBe('/map?address=1420+Maple+Street')
     expect(
-      screen.getByText(/We could not find North Carolina districts/),
+      screen.getByText(/We could not find North Carolina or California districts/),
     ).toBeInTheDocument()
     expect(await districtList()).toBeInTheDocument()
   })

@@ -6,8 +6,9 @@ An ASP.NET Core 9 API (`YourElectionMap.Server`) serving a React 19 + Vite SPA
 (`yourelectionmap.client`), with an xUnit test project (`YourElectionMap.Server.Tests`) and a
 console project (`YourElectionMap.Tools`) that builds the district data.
 
-The data is real and covers **North Carolina only**: its 14 US House, 50 State Senate and 120
-State House districts, drawn with [MapLibre GL](https://maplibre.org/) over a street map from
+The data is real and covers **North Carolina and California**: North Carolina's 14 US House,
+50 State Senate and 120 State House districts, and California's 52 US House, 40 State Senate and
+80 Assembly districts, drawn with [MapLibre GL](https://maplibre.org/) over a street map from
 [OpenFreeMap](https://openfreemap.org/), with the next election at the address — its date and how
 many candidates and ballot measures are on the ballot — from Google's voter lookup. Three things
 reach out to the internet: the server places addresses with the US Census geocoder and asks the
@@ -25,17 +26,21 @@ cd YourElectionMap/yourelectionmap.client
 npm install
 ```
 
-**Generate the district file.** `YourElectionMap.Server/Districts/Data/nc-districts.json` is
-git-ignored, and the server will not start without it. It is built from the North Carolina
-General Assembly's enacted district plans (the 2025 congressional plan and the 2023 legislative
-plans), whose shapefiles are kept outside the repository; see
-[DATA-SOURCE.md](YourElectionMap/YourElectionMap.Tools/DATA-SOURCE.md) for where they come from
-and the folder layout the tool expects. From `YourElectionMap/`:
+**Generate the district files.** `YourElectionMap.Server/Districts/Data/` holds one file per
+state, git-ignored, and the server will not start without at least one. North Carolina's is built
+from the General Assembly's enacted district plans (the 2025 congressional plan and the 2023
+legislative plans), whose shapefiles are kept outside the repository. California's is built from
+the Census Bureau's TIGERweb district layers, downloaded once as GeoJSON. See
+[DATA-SOURCE.md](YourElectionMap/YourElectionMap.Tools/DATA-SOURCE.md) for where both come from,
+the download query, and the folder layout the tool expects. From `YourElectionMap/`:
 
 ```powershell
-dotnet run --project YourElectionMap.Tools -- `
+dotnet run --project YourElectionMap.Tools -- nc `
   "<MapShapeFiles folder holding the three plan folders>" `
   YourElectionMap.Server\Districts\Data\nc-districts.json
+dotnet run --project YourElectionMap.Tools -- tiger CA `
+  "<folder holding cd.geojson, sldu.geojson and sldl.geojson>" `
+  YourElectionMap.Server\Districts\Data\ca-districts.json
 ```
 
 **Add a Google Civic Information API key (optional).** Without one the site works, but the
@@ -90,8 +95,8 @@ npm run test:watch                                # vitest in watch mode
 
 `YourElectionMap.Server.Tests` uses `WebApplicationFactory<Program>` to host the real app in
 memory; `Program` is declared `public partial` at the bottom of `Program.cs` to allow that. The
-geocoder and Google's voter lookup are stubbed, so no test reaches the internet, but the tests read the real district file
-and need it generated first. The client tests replace MapLibre with a fake
+geocoder and Google's voter lookup are stubbed, so no test reaches the internet, but the tests read the real district files
+and need both generated first. The client tests replace MapLibre with a fake
 (`src/test/fakeMaplibre.ts`), since jsdom has no WebGL, so they fetch no tiles either.
 
 Run the client tests from a path with an uppercase drive letter (`D:\...`). From `d:\...`, Vitest

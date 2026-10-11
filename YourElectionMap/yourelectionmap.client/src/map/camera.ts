@@ -1,5 +1,5 @@
 import { DESIGN, MAP_UNITS_PER_MILE, pickScaleBar, type ScaleBar } from './frame'
-import type { LngLat, Polygon } from '../districts/types'
+import type { District, LngLat, Polygon } from '../districts/types'
 
 // Where the street map looks and what its scale bar says. Pure, so it can be
 // tested without a map: the component hands the results to MapLibre.
@@ -17,11 +17,8 @@ export const MAX_ZOOM = 17
 /** The spec's ×1.5 a press, in MapLibre's doubling zoom levels. */
 export const ZOOM_STEP = Math.log2(1.5)
 
-/** North Carolina with room around it, so a coastal district can still be framed. */
-export const MAX_BOUNDS: Bounds = [
-  [-86.5, 32.5],
-  [-73.5, 37.8],
-]
+/** How far past a lookup's districts the map can be dragged, in degrees. */
+const MAX_BOUNDS_PADDING = 2
 
 const FIT_PADDING = 0.08
 const MILES_PER_DEGREE_LATITUDE = 69.0
@@ -81,6 +78,34 @@ export function openingBounds(
   return [
     [lng - halfLng, lat - halfLat],
     [lng + halfLng, lat + halfLat],
+  ]
+}
+
+/**
+ * How far the map can wander: the box around every district of the lookup, with
+ * room around it so a coastal district can still be framed. It follows the
+ * lookup, so a California address is not held in North Carolina.
+ */
+export function maxBoundsFor(districts: readonly District[]): Bounds {
+  let west = Infinity
+  let south = Infinity
+  let east = -Infinity
+  let north = -Infinity
+
+  for (const district of districts) {
+    for (const [outer] of district.boundary) {
+      for (const [x, y] of outer ?? []) {
+        west = Math.min(west, x)
+        east = Math.max(east, x)
+        south = Math.min(south, y)
+        north = Math.max(north, y)
+      }
+    }
+  }
+
+  return [
+    [west - MAX_BOUNDS_PADDING, Math.max(-85, south - MAX_BOUNDS_PADDING)],
+    [east + MAX_BOUNDS_PADDING, Math.min(85, north + MAX_BOUNDS_PADDING)],
   ]
 }
 

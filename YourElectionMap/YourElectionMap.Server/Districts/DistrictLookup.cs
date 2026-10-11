@@ -16,7 +16,8 @@ namespace YourElectionMap.Server.Districts
     /// none to show: no election, no answer, or a lookup by location.
     /// </param>
     /// <param name="Source">
-    /// What the boundaries were drawn from, for the page to name: "NCGA enacted maps".
+    /// What the boundaries were drawn from, for the page to name: "NCGA enacted maps"
+    /// in North Carolina, "U.S. Census Bureau TIGER" in California.
     /// Null when there is nothing to credit.
     /// </param>
     public sealed record DistrictLookup(

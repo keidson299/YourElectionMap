@@ -2,12 +2,13 @@ namespace YourElectionMap.Server.Districts
 {
     /// <summary>
     /// Turns an address or a point into the districts covering it: an address is placed
-    /// by the Census geocoder, then the point is projected into map units and handed to
-    /// <see cref="DistrictData"/>. An address that lands in North Carolina is then sent
-    /// to Google for its next election.
+    /// by the Census geocoder, then the point is handed to <see cref="DistrictData"/>.
+    /// An address that lands in a state the site covers is then sent to Google for its
+    /// next election.
     /// <para>
-    /// The data covers North Carolina only, so an address in another state is placed and
-    /// then found in no district — the same null as an address that could not be placed.
+    /// The data covers North Carolina and California, so an address in another state is
+    /// placed and then found in no district — the same null as an address that could not
+    /// be placed.
     /// </para>
     /// </summary>
     public class DistrictLookupService
@@ -29,7 +30,7 @@ namespace YourElectionMap.Server.Districts
         /// <summary>
         /// The districts covering a typed address, or null when it cannot be placed in
         /// any of them. An address with no state can match in several; the first match
-        /// inside North Carolina wins.
+        /// inside a state the site covers wins.
         /// </summary>
         /// <exception cref="GeocoderUnavailableException">The geocoder did not answer.</exception>
         public async Task<DistrictLookup?> LookupAddressAsync(
@@ -71,22 +72,19 @@ namespace YourElectionMap.Server.Districts
 
         private DistrictLookup? At(double latitude, double longitude, string label)
         {
-            var (x, y) = StatePlane.ToMapUnits(latitude, longitude);
-            var covering = _districts.Covering(x, y);
+            var found = _districts.Covering(longitude, latitude);
 
-            if (covering.Count == 0)
+            if (found is null)
             {
                 return null;
             }
 
-            // Containment is answered in map units, but the page's map draws in degrees,
-            // so the point goes back out as it came in.
             return new DistrictLookup(
                 label,
                 [longitude, latitude],
-                covering,
+                found.Districts,
                 Election: null,
-                _districts.Source);
+                found.Source);
         }
 
         /// <summary>'1420 Maple Street, Springfield' is named '1420 Maple Street'.</summary>
