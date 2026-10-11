@@ -15,9 +15,9 @@ namespace YourElectionMap.Server.Districts
         /// <summary>
         /// True when the point falls inside an odd number of the rings.
         /// <para>
-        /// Even-odd rather than winding: the rings come out of a dissolve, which does
-        /// not preserve the clockwise-is-outer rule a shapefile follows, so an island
-        /// and a hole look the same until the crossings are counted.
+        /// Even-odd rather than winding: the file keeps a district's rings loose, with
+        /// no promise about which way the source layers wound them, so an island and a
+        /// hole look the same until the crossings are counted.
         /// </para>
         /// </summary>
         public static bool Covers(IReadOnlyList<double[]> rings, double x, double y)
@@ -71,7 +71,7 @@ namespace YourElectionMap.Server.Districts
         /// latitude does). That is the shape GeoJSON asks for, and the page's map fills
         /// by it.
         /// <para>
-        /// The rings say nothing about which is which — they come out of a dissolve —
+        /// The rings say nothing about which is which — the file keeps them loose —
         /// so it is worked out the way <see cref="Covers"/> would: a ring inside an even
         /// number of others is an outer one, an island in a lake counting as outer again,
         /// and a ring inside an odd number is a hole in the innermost of them.
@@ -264,7 +264,7 @@ namespace YourElectionMap.Server.Districts
         }
 
         /// <summary>
-        /// Whether one ring lies inside another. Rings of a dissolve never cross, so one
+        /// Whether one ring lies inside another. A district's rings never cross, so one
         /// vertex settles it — any vertex but one the two rings share, which would sit on
         /// the outer ring's edge and answer either way.
         /// </summary>

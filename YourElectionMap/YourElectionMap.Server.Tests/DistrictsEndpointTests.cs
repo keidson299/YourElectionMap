@@ -38,7 +38,7 @@ namespace YourElectionMap.Server.Tests
             var lookup = await LookupAsync(AddressQuery(RaleighAddress));
 
             Assert.Equal("16 W Jones St", lookup.GetProperty("label").GetString());
-            Assert.Equal("NCGA enacted maps", lookup.GetProperty("source").GetString());
+            Assert.Equal("U.S. Census Bureau TIGER", lookup.GetProperty("source").GetString());
 
             // The stub's election: a date the client reads as "2026-11-03", and the counts
             // the rail's footer states.
@@ -82,7 +82,7 @@ namespace YourElectionMap.Server.Tests
         [Fact]
         public async Task Get_PlacesASacramentoAddressInCaliforniasDistricts()
         {
-            // Pinned the same way, against the TIGER layers.
+            // Pinned the same way.
             var lookup = await LookupAsync(AddressQuery(SacramentoAddress));
             var districts = lookup.GetProperty("districts");
 
@@ -93,7 +93,6 @@ namespace YourElectionMap.Server.Tests
                 new[] { "U.S. House", "State Senate", "State Assembly" },
                 Each(districts, "office"));
 
-            // TIGER has no population: sent as null, not left out, and not 0.
             foreach (var district in districts.EnumerateArray())
             {
                 Assert.Equal(JsonValueKind.Null, district.GetProperty("population").ValueKind);
@@ -101,13 +100,13 @@ namespace YourElectionMap.Server.Tests
         }
 
         [Theory]
-        [InlineData(RaleighAddress, "NCGA enacted maps")]
-        [InlineData(SacramentoAddress, "U.S. Census Bureau TIGER")]
-        public async Task Get_NamesEachStatesOwnSource(string address, string source)
+        [InlineData(RaleighAddress)]
+        [InlineData(SacramentoAddress)]
+        public async Task Get_CreditsTheCensusForEveryState(string address)
         {
             var lookup = await LookupAsync(AddressQuery(address));
 
-            Assert.Equal(source, lookup.GetProperty("source").GetString());
+            Assert.Equal("U.S. Census Bureau TIGER", lookup.GetProperty("source").GetString());
         }
 
         [Fact]
@@ -171,13 +170,14 @@ namespace YourElectionMap.Server.Tests
         }
 
         [Fact]
-        public async Task Get_SendsEachDistrictsPopulationAsANumber()
+        public async Task Get_SendsEachDistrictsPopulationAsNull()
         {
+            // TIGER has no population: sent as null, not left out, and not 0.
             var lookup = await LookupAsync(AddressQuery(RaleighAddress));
 
             foreach (var district in lookup.GetProperty("districts").EnumerateArray())
             {
-                Assert.True(district.GetProperty("population").GetInt32() > 0);
+                Assert.Equal(JsonValueKind.Null, district.GetProperty("population").ValueKind);
             }
         }
 

@@ -8,7 +8,7 @@ console project (`YourElectionMap.Tools`) that builds the district data.
 
 The data is real and covers **North Carolina and California**: North Carolina's 14 US House,
 50 State Senate and 120 State House districts, and California's 52 US House, 40 State Senate and
-80 Assembly districts, drawn with [MapLibre GL](https://maplibre.org/) over a street map from
+80 Assembly districts, all from the Census Bureau's TIGERweb, drawn with [MapLibre GL](https://maplibre.org/) over a street map from
 [OpenFreeMap](https://openfreemap.org/), with the next election at the address — its date and how
 many candidates and ballot measures are on the ballot — from Google's voter lookup. Three things
 reach out to the internet: the server places addresses with the US Census geocoder and asks the
@@ -27,19 +27,17 @@ npm install
 ```
 
 **Generate the district files.** `YourElectionMap.Server/Districts/Data/` holds one file per
-state, git-ignored, and the server will not start without at least one. North Carolina's is built
-from the General Assembly's enacted district plans (the 2025 congressional plan and the 2023
-legislative plans), whose shapefiles are kept outside the repository. California's is built from
-the Census Bureau's TIGERweb district layers, downloaded once as GeoJSON. See
-[DATA-SOURCE.md](YourElectionMap/YourElectionMap.Tools/DATA-SOURCE.md) for where both come from,
-the download query, and the folder layout the tool expects. From `YourElectionMap/`:
+state, git-ignored, and the server will not start without at least one. Each is built from the
+Census Bureau's TIGERweb district layers for that state, downloaded once as GeoJSON and kept
+outside the repository. See [DATA-SOURCE.md](YourElectionMap/YourElectionMap.Tools/DATA-SOURCE.md)
+for the download query and the folder layout the tool expects. From `YourElectionMap/`:
 
 ```powershell
-dotnet run --project YourElectionMap.Tools -- nc `
-  "<MapShapeFiles folder holding the three plan folders>" `
+dotnet run --project YourElectionMap.Tools -- tiger NC `
+  "<folder holding North Carolina's cd.geojson, sldu.geojson and sldl.geojson>" `
   YourElectionMap.Server\Districts\Data\nc-districts.json
 dotnet run --project YourElectionMap.Tools -- tiger CA `
-  "<folder holding cd.geojson, sldu.geojson and sldl.geojson>" `
+  "<folder holding California's cd.geojson, sldu.geojson and sldl.geojson>" `
   YourElectionMap.Server\Districts\Data\ca-districts.json
 ```
 

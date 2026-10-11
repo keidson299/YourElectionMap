@@ -40,7 +40,7 @@
   color: var(--ink-soft);
 }
 
-/* Credits the data the boundaries were drawn from: 'NCGA enacted maps'. */
+/* Credits the data the boundaries were drawn from: 'U.S. Census Bureau TIGER'. */
 .source-tag {
   padding: 1px 7px;
   font-size: 9.5px;

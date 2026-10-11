@@ -4,8 +4,8 @@ namespace YourElectionMap.Server.Tests
 {
     /// <summary>
     /// The real district files, as the server loads them. These tests are the only check
-    /// that the converter's output is sane, since the converter itself needs the source
-    /// shapefiles and layers, which are not in the repository.
+    /// that the converter's output is sane, since the converter itself needs the TIGER
+    /// layers, which are not in the repository.
     /// </summary>
     public class DistrictDataTests
     {
@@ -20,8 +20,8 @@ namespace YourElectionMap.Server.Tests
         private const double SacramentoLatitude = 38.5767;
         private const double SacramentoLongitude = -121.4934;
 
-        private const string NorthCarolinaSource = "NCGA enacted maps";
-        private const string CaliforniaSource = "U.S. Census Bureau TIGER";
+        // Both states come from TIGER.
+        private const string Source = "U.S. Census Bureau TIGER";
 
         [Fact]
         public void Loads_EveryDistrictOfBothStates()
@@ -31,7 +31,7 @@ namespace YourElectionMap.Server.Tests
             Assert.Equal(184 + 172, Data.Count);
         }
 
-        // ---- North Carolina: the General Assembly's enacted plans ----
+        // ---- North Carolina ----
 
         [Fact]
         public void Covering_FindsOneDistrictPerLevelOverARaleighAddress()
@@ -44,9 +44,9 @@ namespace YourElectionMap.Server.Tests
         }
 
         [Fact]
-        public void Covering_CreditsNorthCarolinasDistrictsToTheEnactedPlans()
+        public void Covering_CreditsNorthCarolinasDistrictsToTheCensus()
         {
-            Assert.Equal(NorthCarolinaSource, Data.Covering(RaleighLongitude, RaleighLatitude)?.Source);
+            Assert.Equal(Source, Data.Covering(RaleighLongitude, RaleighLatitude)?.Source);
         }
 
         [Fact]
@@ -78,24 +78,21 @@ namespace YourElectionMap.Server.Tests
         }
 
         /// <summary>
-        /// Each plan was drawn to equal 2020 populations: US House to the person, the
-        /// legislature within the five per cent either way North Carolina allows.
+        /// TIGER has no population, so none is sent, in either state: the chip names the
+        /// district alone rather than showing a made-up or zero count.
         /// </summary>
         [Theory]
         [InlineData(RaleighLatitude, RaleighLongitude)]
         [InlineData(35.0873, -84.0346)] // Murphy
         [InlineData(35.9082, -75.6757)] // Manteo
         [InlineData(35.6127, -77.3664)] // Greenville
-        public void Covering_GivesEachDistrictThePopulationItsPlanWasDrawnTo(
-            double latitude,
-            double longitude)
+        [InlineData(SacramentoLatitude, SacramentoLongitude)]
+        public void Covering_GivesNoPopulation(double latitude, double longitude)
         {
             var found = Covering(latitude, longitude);
 
             Assert.Equal(3, found.Count);
-            Assert.InRange(found[0].Population ?? 0, 745_670, 745_671);
-            Assert.InRange(found[1].Population ?? 0, 190_000, 230_000);
-            Assert.InRange(found[2].Population ?? 0, 80_000, 95_000);
+            Assert.All(found, district => Assert.Null(district.Population));
         }
 
         [Fact]
@@ -137,7 +134,7 @@ namespace YourElectionMap.Server.Tests
 
         /// <summary>
         /// The one check on the file that needs no outside authority. The three plans were
-        /// enacted separately, but each is built from the same 2020 census blocks and
+        /// drawn separately, but each is built from the same 2020 census blocks and
         /// covers the whole state exactly once, so anywhere one of them places you the
         /// other two have to as well — and never twice. A plan read wrongly, a district
         /// missing, or a conversion that put one layer off by a few feet along the coast
@@ -147,7 +144,6 @@ namespace YourElectionMap.Server.Tests
         public void Covering_HasTheThreeLevelsAgreeAcrossNorthCarolina()
         {
             var inside = AssertLevelsAgree(
-                NorthCarolinaSource,
                 (-84.35, -75.40),
                 (33.80, 36.60),
                 0.05);
@@ -165,7 +161,7 @@ namespace YourElectionMap.Server.Tests
             Assert.NotEmpty(Covering(35.9082, -75.6757));
         }
 
-        // ---- California: the Census Bureau's TIGER layers ----
+        // ---- California ----
 
         [Fact]
         public void Covering_FindsCaliforniasThreeLevelsAtTheCapitol()
@@ -173,7 +169,7 @@ namespace YourElectionMap.Server.Tests
             var found = Data.Covering(SacramentoLongitude, SacramentoLatitude);
 
             Assert.NotNull(found);
-            Assert.Equal(CaliforniaSource, found.Source);
+            Assert.Equal(Source, found.Source);
             Assert.Equal(
                 new[] { "congressional", "state-upper", "state-lower" },
                 found.Districts.Select(district => district.Level).ToArray());
@@ -188,12 +184,10 @@ namespace YourElectionMap.Server.Tests
         }
 
         [Fact]
-        public void Covering_GivesCaliforniaNoPopulation()
+        public void Covering_GivesCaliforniasDistrictsAnIdMadeOfItsLevelAndNumber()
         {
-            // TIGER has none, and the chip leaves out what it is not given.
             foreach (var district in Covering(SacramentoLatitude, SacramentoLongitude))
             {
-                Assert.Null(district.Population);
                 Assert.Null(district.Area);
                 Assert.Equal("District", district.Unit);
                 Assert.Equal($"{district.Level}-{district.Number}", district.Id);
@@ -235,14 +229,12 @@ namespace YourElectionMap.Server.Tests
         }
 
         /// <summary>
-        /// The same check as North Carolina's. TIGER's three layers are separate files,
-        /// each built from the census blocks, so they too must cover the state once.
+        /// The same check as North Carolina's.
         /// </summary>
         [Fact]
         public void Covering_HasTheThreeLevelsAgreeAcrossCalifornia()
         {
             var inside = AssertLevelsAgree(
-                CaliforniaSource,
                 (-124.5, -114.0),
                 (32.5, 42.1),
                 0.1);
@@ -254,12 +246,11 @@ namespace YourElectionMap.Server.Tests
             Data.Covering(longitude, latitude)?.Districts ?? [];
 
         /// <summary>
-        /// Walks a grid, and at every point some district covers, checks there is exactly
-        /// one district per level and that they come from the expected state. Returns how
-        /// many points were covered.
+        /// Walks a grid over one state, and at every point some district covers, checks
+        /// there is exactly one district per level. Returns how many points were covered.
+        /// The two states' boxes do not meet, so the grid never reaches the other one.
         /// </summary>
         private static int AssertLevelsAgree(
-            string source,
             (double West, double East) longitudes,
             (double South, double North) latitudes,
             double step)
@@ -273,7 +264,7 @@ namespace YourElectionMap.Server.Tests
                 {
                     var found = Data.Covering(longitude, latitude);
 
-                    if (found is null || found.Source != source)
+                    if (found is null)
                     {
                         continue;
                     }

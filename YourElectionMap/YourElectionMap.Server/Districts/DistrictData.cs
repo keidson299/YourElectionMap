@@ -83,8 +83,7 @@ namespace YourElectionMap.Server.Districts
             var document = JsonSerializer.Deserialize<Document>(file, ReadOptions)
                 ?? throw new InvalidDataException($"{path} held no district data.");
 
-            // A file from before the switch to degrees is in NC State Plane map units, and
-            // would load fine and then place nothing.
+            // A file in any other units would load fine and then place nothing.
             if (document.Units != "degrees")
             {
                 throw new InvalidDataException(
@@ -163,9 +162,9 @@ namespace YourElectionMap.Server.Districts
                     "District",
                     Number,
                     Detail,
-                    // The plans name no place; the map chip leaves out what it is not
-                    // given. Population is the 2020 census count the plan was drawn to,
-                    // where the source has one.
+                    // TIGER names no place and counts no one, so both are null; the map
+                    // chip leaves out what it is not given. A source that has them can
+                    // fill them in.
                     Area: null,
                     Population: Population,
                     // Worked out the first time the district is asked for and kept, since
@@ -218,7 +217,7 @@ namespace YourElectionMap.Server.Districts
 
     /// <summary>
     /// The districts covering a point, broad to local, and what that state's boundaries
-    /// are credited to: "NCGA enacted maps", "U.S. Census Bureau TIGER".
+    /// are credited to: "U.S. Census Bureau TIGER".
     /// </summary>
     public sealed record Found(string Source, List<District> Districts);
 }

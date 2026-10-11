@@ -6,7 +6,8 @@ using YourElectionMap.Server.Districts;
 namespace YourElectionMap.Tools
 {
     /// <summary>
-    /// A state from the Census Bureau's TIGERweb Legislative layers, saved as GeoJSON in
+    /// A state's districts from the Census Bureau's TIGERweb Legislative layers, the one
+    /// source of every boundary on the site, saved as GeoJSON in
     /// longitude and latitude: <c>cd.geojson</c>, <c>sldu.geojson</c> and
     /// <c>sldl.geojson</c> in the folder given. DATA-SOURCE.md has the query that fetches
     /// them. TIGER carries no population, so the file has none.
@@ -30,6 +31,13 @@ namespace YourElectionMap.Tools
                     new("cd.geojson", "congressional", "U.S. House", "Federal", 52),
                     new("sldu.geojson", "state-upper", "State Senate", "State", 40),
                     new("sldl.geojson", "state-lower", "State Assembly", "State", 80),
+                ]),
+            ["NC"] = new(
+                "37",
+                [
+                    new("cd.geojson", "congressional", "U.S. House", "Federal", 14),
+                    new("sldu.geojson", "state-upper", "State Senate", "State", 50),
+                    new("sldl.geojson", "state-lower", "State House", "State", 120),
                 ]),
         };
 
@@ -123,7 +131,7 @@ namespace YourElectionMap.Tools
 
         /// <summary>
         /// Every ring of a Polygon or MultiPolygon, loose: the server works out which is
-        /// a hole by counting, as it does for North Carolina's.
+        /// a hole by counting.
         /// </summary>
         private static List<double[]> Rings(JsonElement geometry, string file, string name)
         {

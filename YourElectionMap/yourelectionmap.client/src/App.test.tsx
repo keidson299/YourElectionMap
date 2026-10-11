@@ -56,14 +56,14 @@ describe('App', () => {
     render(<App />)
 
     expect(
-      screen.getByRole('link', { name: 'Redistricting Data Hub' }),
-    ).toHaveAttribute('href', 'https://redistrictingdatahub.org/')
-    expect(
       screen.getByRole('link', { name: 'U.S. Census Bureau' }),
     ).toHaveAttribute(
       'href',
       'https://tigerweb.geo.census.gov/tigerwebmain/TIGERweb_main.html',
     )
+    expect(
+      screen.queryByRole('link', { name: 'Redistricting Data Hub' }),
+    ).toBeNull()
   })
 
   it('sends a submitted address to the result page', async () => {

@@ -128,23 +128,23 @@ describe('DistrictRail', () => {
   })
 
   it('credits the data the boundaries came from', () => {
-    renderRail({ source: 'NCGA enacted maps' })
+    renderRail({ source: 'U.S. Census Bureau TIGER' })
 
-    expect(screen.getByText('NCGA enacted maps')).toBeInTheDocument()
+    expect(screen.getByText('U.S. Census Bureau TIGER')).toBeInTheDocument()
   })
 
-  it('names both data sources under the districts, with links', () => {
+  it('names the Census Bureau under the districts, with a link', () => {
     renderRail()
 
-    expect(
-      screen.getByRole('link', { name: 'Redistricting Data Hub' }),
-    ).toHaveAttribute('href', 'https://redistrictingdatahub.org/')
     expect(
       screen.getByRole('link', { name: 'U.S. Census Bureau' }),
     ).toHaveAttribute(
       'href',
       'https://tigerweb.geo.census.gov/tigerwebmain/TIGERweb_main.html',
     )
+    expect(
+      screen.queryByRole('link', { name: 'Redistricting Data Hub' }),
+    ).toBeNull()
   })
 
   it('leaves the source tag out when there is no source to name', () => {

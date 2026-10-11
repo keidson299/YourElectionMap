@@ -16,8 +16,8 @@ namespace YourElectionMap.Server.Districts
     /// none to show: no election, no answer, or a lookup by location.
     /// </param>
     /// <param name="Source">
-    /// What the boundaries were drawn from, for the page to name: "NCGA enacted maps"
-    /// in North Carolina, "U.S. Census Bureau TIGER" in California.
+    /// What the boundaries were drawn from, for the page to name: "U.S. Census Bureau
+    /// TIGER".
     /// Null when there is nothing to credit.
     /// </param>
     public sealed record DistrictLookup(
@@ -34,7 +34,10 @@ namespace YourElectionMap.Server.Districts
     /// <param name="Number">"44".</param>
     /// <param name="Detail">The rail's second line: "Federal", "Greenlake County".</param>
     /// <param name="Area">The place named on the map chip, or null.</param>
-    /// <param name="Population">Residents, or null where that is not known.</param>
+    /// <param name="Population">
+    /// Residents, or null where that is not known, which today is every district: TIGER
+    /// has no population.
+    /// </param>
     /// <param name="Boundary">
     /// The coordinates of a GeoJSON MultiPolygon: polygons, each an outer ring and
     /// then its holes, each ring closed [longitude, latitude] points. The page's map

@@ -5,16 +5,14 @@ using YourElectionMap.Server.Districts;
 namespace YourElectionMap.Tools
 {
     /// <summary>
-    /// Builds a state's district file for the server. Run by hand, and again only when a
-    /// plan changes. The output is git-ignored. See DATA-SOURCE.md.
-    /// <list type="bullet">
-    /// <item><c>nc &lt;MapShapeFiles folder&gt; &lt;output file&gt;</c>: North Carolina, from the
-    /// General Assembly's enacted plans (<see cref="EnactedPlans"/>).</item>
-    /// <item><c>tiger &lt;state&gt; &lt;layers folder&gt; &lt;output file&gt;</c>: a state from the
-    /// Census Bureau's TIGERweb layers (<see cref="Tiger"/>).</item>
-    /// </list>
-    /// Either way the file holds rings in longitude and latitude, which is what the
-    /// server tests an address against and what it sends the page.
+    /// Builds a state's district file for the server from the Census Bureau's TIGERweb
+    /// layers (<see cref="Tiger"/>). Run by hand, and again only when a plan changes. The
+    /// output is git-ignored. See DATA-SOURCE.md.
+    /// <para>
+    /// <c>tiger &lt;state&gt; &lt;layers folder&gt; &lt;output file&gt;</c>
+    /// </para>
+    /// The file holds rings in longitude and latitude, which is what the server tests an
+    /// address against and what it sends the page.
     /// </summary>
     public static class Program
     {
@@ -26,8 +24,7 @@ namespace YourElectionMap.Tools
         public const double StoredToleranceFeet = 15;
 
         private const string Usage =
-            "Usage: YourElectionMap.Tools nc <MapShapeFiles folder> <output .json>\n"
-            + "       YourElectionMap.Tools tiger <state> <layers folder> <output .json>";
+            "Usage: YourElectionMap.Tools tiger <state> <layers folder> <output .json>";
 
         public static int Main(string[] args)
         {
@@ -38,10 +35,6 @@ namespace YourElectionMap.Tools
             {
                 switch (args)
                 {
-                    case ["nc", var source, var file]:
-                        built = EnactedPlans.Build(Folder(source));
-                        output = file;
-                        break;
                     case ["tiger", var state, var source, var file]:
                         built = Tiger.Build(state, Folder(source));
                         output = file;
@@ -90,13 +83,9 @@ namespace YourElectionMap.Tools
 
             foreach (var district in built)
             {
-                var residents = district.Population is { } population
-                    ? $"{population,9:N0} residents"
-                    : "";
-
                 Console.WriteLine(
                     $"  {district.Id,-18} {district.RawPoints,8:N0} points -> "
-                    + $"{district.Rings.Sum(ring => ring.Length / 2),6:N0}  {residents}");
+                    + $"{district.Rings.Sum(ring => ring.Length / 2),6:N0}");
             }
 
             Console.WriteLine($"{level}: {built.Count} districts");
