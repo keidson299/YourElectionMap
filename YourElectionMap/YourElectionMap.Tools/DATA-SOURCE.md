@@ -55,7 +55,7 @@ map. The tool does not read it.
 - **`GEOID`**, which starts with the state's FIPS code.
 - **No population.** TIGERweb's `POP100` field is empty for these layers, so the files have none
   and the map chip names the district alone.
-- **Longitude and latitude, NAD83.** The tool thins each ring to 15 feet, taken as degrees of
+- **Longitude and latitude, WGS84,** which is what `outSR=4326` asks for. The tool thins each ring to 15 feet, taken as degrees of
   latitude, which keeps slightly more than that east to west.
 
 In both states the three layers cover the state exactly once each: on a 0.02° grid, every point

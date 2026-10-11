@@ -1,8 +1,4 @@
-/* Line weights are multiplied by --k, which the result map sets to how many
-   times smaller the drawing appears than at the spec's design frame (lineScale
-   in map/frame.ts), so lines keep their drawn width on screen at any zoom or
-   window size. Home never sets it, so it defaults to 1. Inside an SVG, px
-   here means one survey unit. */
+/* Inside an SVG, px here means one survey unit. */
 
 .survey-ground__paper {
   fill: var(--bg);
@@ -11,13 +7,13 @@
 .survey-ground__grid-fine {
   fill: none;
   stroke: var(--grid);
-  stroke-width: calc(1px * var(--k, 1));
+  stroke-width: 1px;
 }
 
 .survey-ground__grid-bold {
   fill: none;
   stroke: var(--grid-strong);
-  stroke-width: calc(1.2px * var(--k, 1));
+  stroke-width: 1.2px;
 }
 
 .survey-ground__water {
@@ -27,7 +23,7 @@
 .survey-ground__roads {
   fill: none;
   stroke: var(--road);
-  stroke-width: calc(3px * var(--k, 1));
+  stroke-width: 3px;
   stroke-linecap: round;
   opacity: 0.55;
 }
@@ -35,6 +31,6 @@
 .survey-ground__mesh {
   fill: none;
   stroke: var(--district);
-  stroke-width: calc(1.8px * var(--k, 1));
+  stroke-width: 1.8px;
   stroke-linejoin: round;
 }

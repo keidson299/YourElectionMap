@@ -1,4 +1,3 @@
-import { DESIGN, MAP_UNITS_PER_MILE, pickScaleBar, type ScaleBar } from './frame'
 import type { District, LngLat, Polygon } from '../districts/types'
 
 // Where the street map looks and what its scale bar says. Pure, so it can be
@@ -17,8 +16,12 @@ export const MAX_ZOOM = 17
 /** The spec's ×1.5 a press, in MapLibre's doubling zoom levels. */
 export const ZOOM_STEP = Math.log2(1.5)
 
-/** How far past a lookup's districts the map can be dragged, in degrees. */
-const MAX_BOUNDS_PADDING = 2
+/**
+ * How far past a lookup's districts the map can be dragged, in degrees. MapLibre
+ * will not show more than the limits, so they have to be wider than a desktop
+ * map at MIN_ZOOM (about 21°), or zooming out stops before the button says so.
+ */
+const MAX_BOUNDS_PADDING = 10
 
 const FIT_PADDING = 0.08
 const MILES_PER_DEGREE_LATITUDE = 69.0
@@ -29,17 +32,14 @@ const EARTH_CIRCUMFERENCE_METRES = 40_075_016.686
 /** MapLibre's world is 512 pixels across at zoom 0. */
 const WORLD_PIXELS_AT_ZOOM_0 = 512
 
-/**
- * The spec's design spans in miles: 11.3 by 9.0 on desktop, enough for a State
- * House district, and 7.3 by 6.0 on a phone.
- */
-export function minimumSpan(compact: boolean): MinimumSpan {
-  const span = DESIGN[compact ? 'phone' : 'desktop'].span
+/** The spec's design frames in miles; the desktop one fits a State House district. */
+const MINIMUM_SPAN: Record<'desktop' | 'phone', MinimumSpan> = {
+  desktop: { width: 11.3, height: 9.0 },
+  phone: { width: 7.3, height: 6.0 },
+}
 
-  return {
-    width: span.width / MAP_UNITS_PER_MILE,
-    height: span.height / MAP_UNITS_PER_MILE,
-  }
+export function minimumSpan(compact: boolean): MinimumSpan {
+  return MINIMUM_SPAN[compact ? 'phone' : 'desktop']
 }
 
 /**
@@ -116,6 +116,29 @@ export function scaleBarAt(zoom: number, latitude: number): ScaleBar {
     (WORLD_PIXELS_AT_ZOOM_0 * 2 ** zoom)
 
   return pickScaleBar(METRES_PER_MILE / metresPerPixel)
+}
+
+export type ScaleBar = { miles: number; width: number }
+
+// From a city block, at the street map's closest, up to fifty miles, because a
+// congressional district is a hundred miles across.
+const SCALE_DISTANCES = [0.1, 0.25, 0.5, 1, 2, 5, 10, 25, 50]
+const SCALE_TARGET_WIDTH = 92
+
+/** The round distance whose bar comes closest to the spec's 92px. */
+function pickScaleBar(pixelsPerMile: number): ScaleBar {
+  let best = SCALE_DISTANCES[0]
+
+  for (const miles of SCALE_DISTANCES) {
+    const gap = Math.abs(miles * pixelsPerMile - SCALE_TARGET_WIDTH)
+    const bestGap = Math.abs(best * pixelsPerMile - SCALE_TARGET_WIDTH)
+
+    if (gap < bestGap) {
+      best = miles
+    }
+  }
+
+  return { miles: best, width: Math.round(best * pixelsPerMile * 100) / 100 }
 }
 
 function radians(degrees: number): number {

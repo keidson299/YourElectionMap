@@ -9,8 +9,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- For Geometry: the thinning this writes with has to be the same code the server
-         thins with per request, or the stored and sent boundaries drift apart. -->
+    <!-- For Geometry: the box and thinning the files are written with, beside the
+         containment the server tests them by. -->
     <ProjectReference Include="..\YourElectionMap.Server\YourElectionMap.Server.csproj" />
   </ItemGroup>
 

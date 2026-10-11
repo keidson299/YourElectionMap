@@ -84,9 +84,36 @@ namespace YourElectionMap.Tools
                 built.Add(Build(layer, fips, feature));
             }
 
-            Program.CheckAndSort(built, layer.File, layer.Level, layer.Count);
+            CheckAndSort(built, layer);
 
             return built;
+        }
+
+        /// <summary>
+        /// Numbered 1 to N, each once, in order: anything else is a plan this was not
+        /// written for. Prints a line per district as it goes.
+        /// </summary>
+        private static void CheckAndSort(List<BuiltDistrict> built, Layer layer)
+        {
+            var numbers = built.Select(district => int.Parse(district.Number)).Order().ToArray();
+
+            if (!numbers.SequenceEqual(Enumerable.Range(1, layer.Count)))
+            {
+                throw new InvalidDataException(
+                    $"{layer.File}: expected districts 1 to {layer.Count}, "
+                    + $"found {numbers.Length}: {string.Join(", ", numbers)}.");
+            }
+
+            built.Sort((left, right) => int.Parse(left.Number) - int.Parse(right.Number));
+
+            foreach (var district in built)
+            {
+                Console.WriteLine(
+                    $"  {district.Id,-18} {district.RawPoints,8:N0} points -> "
+                    + $"{district.Rings.Sum(ring => ring.Length / 2),6:N0}");
+            }
+
+            Console.WriteLine($"{layer.Level}: {built.Count} districts");
         }
 
         private static BuiltDistrict Build(Layer layer, string fips, JsonElement feature)
@@ -124,7 +151,6 @@ namespace YourElectionMap.Tools
                 layer.Office,
                 number,
                 layer.Detail,
-                Population: null,
                 parts.Sum(part => part.Length / 2),
                 parts.Select(part => Geometry.Thin(part, ToleranceDegrees)).ToList());
         }

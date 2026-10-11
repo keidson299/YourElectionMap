@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 import {
   countOf,
   coverageTitle,
-  districtMeta,
   districtName,
   formatElectionDate,
 } from './labels'
@@ -17,7 +16,6 @@ function district(overrides: Partial<District>): District {
     number: '44',
     detail: 'State',
     area: 'Greenlake County',
-    population: 71400,
     boundary: [],
     ...overrides,
   }
@@ -78,21 +76,5 @@ describe('formatElectionDate', () => {
 
   it('hands back a value it cannot read instead of throwing', () => {
     expect(formatElectionDate('soon')).toBe('soon')
-  })
-})
-
-describe('districtMeta', () => {
-  it('names the area and the residents', () => {
-    expect(districtMeta(district({}))).toBe(
-      'Greenlake County · 71,400 residents',
-    )
-  })
-
-  it('says only what it knows', () => {
-    expect(districtMeta(district({ area: null }))).toBe('71,400 residents')
-    expect(districtMeta(district({ population: null }))).toBe(
-      'Greenlake County',
-    )
-    expect(districtMeta(district({ area: null, population: null }))).toBeNull()
   })
 })

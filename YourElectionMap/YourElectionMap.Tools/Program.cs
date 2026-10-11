@@ -64,33 +64,6 @@ namespace YourElectionMap.Tools
             return 0;
         }
 
-        /// <summary>
-        /// Numbered 1 to N, each once, in order: anything else is a plan this was not
-        /// written for. Prints a line per district as it goes.
-        /// </summary>
-        public static void CheckAndSort(List<BuiltDistrict> built, string what, string level, int count)
-        {
-            var numbers = built.Select(district => int.Parse(district.Number)).Order().ToArray();
-
-            if (!numbers.SequenceEqual(Enumerable.Range(1, count)))
-            {
-                throw new InvalidDataException(
-                    $"{what}: expected districts 1 to {count}, "
-                    + $"found {numbers.Length}: {string.Join(", ", numbers)}.");
-            }
-
-            built.Sort((left, right) => int.Parse(left.Number) - int.Parse(right.Number));
-
-            foreach (var district in built)
-            {
-                Console.WriteLine(
-                    $"  {district.Id,-18} {district.RawPoints,8:N0} points -> "
-                    + $"{district.Rings.Sum(ring => ring.Length / 2),6:N0}");
-            }
-
-            Console.WriteLine($"{level}: {built.Count} districts");
-        }
-
         private static string Folder(string path) =>
             Directory.Exists(path)
                 ? path
@@ -129,10 +102,6 @@ namespace YourElectionMap.Tools
                 line.Append($"\"office\": \"{district.Office}\", ");
                 line.Append($"\"number\": \"{district.Number}\", ");
                 line.Append($"\"detail\": \"{district.Detail}\", ");
-                line.Append(
-                    "\"population\": "
-                    + (district.Population?.ToString(CultureInfo.InvariantCulture) ?? "null")
-                    + ", ");
                 line.Append("\"bbox\": [");
                 Append(line, Geometry.BoxOf(district.Rings));
                 line.Append("], \"rings\": [");
@@ -187,7 +156,6 @@ namespace YourElectionMap.Tools
         string Office,
         string Number,
         string Detail,
-        int? Population,
         int RawPoints,
         List<double[]> Rings);
 }

@@ -36,9 +36,10 @@ namespace YourElectionMap.Server.Districts
         /// <summary>
         /// Every place the address could be, in the geocoder's order, or none when it
         /// cannot be placed. An address with no state can match in several. Latitude and
-        /// longitude come back as WGS84, against boundaries stored in NAD83, which differs
-        /// by about a metre in the states covered; each match carries the geocoder's own full spelling of the address, state
-        /// included: "16 W JONES ST, RALEIGH, NC, 27601".
+        /// longitude are in degrees, as the boundaries are stored; any difference between
+        /// the two datums is about a metre, well inside the fifteen feet the files are
+        /// thinned to. Each match carries the geocoder's own full spelling of the address,
+        /// state included: "16 W JONES ST, RALEIGH, NC, 27601".
         /// </summary>
         /// <exception cref="GeocoderUnavailableException">
         /// No usable answer: a timeout, a refusal or a reply that is not JSON. This says

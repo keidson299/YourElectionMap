@@ -1,8 +1,8 @@
 import { LineSwatch } from './LineSwatch'
-import { countOf, districtMeta, districtName } from '../../districts/labels'
+import { countOf, districtName } from '../../districts/labels'
 import type { MapLayers } from '../../districts/selection'
 import type { District } from '../../districts/types'
-import type { ScaleBar as ScaleBarValue } from '../../map/frame'
+import type { ScaleBar as ScaleBarValue } from '../../map/camera'
 import './MapChrome.css'
 
 // The cards and controls that sit over the result map. The map itself is
@@ -16,7 +16,7 @@ type ShowingChipProps = {
 }
 
 export function ShowingChip({ district, compact, titleId }: ShowingChipProps) {
-  const meta = compact ? null : districtMeta(district)
+  const meta = compact ? null : district.area
 
   return (
     <div className="map-chip">

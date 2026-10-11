@@ -22,14 +22,6 @@ function box(west: number, south: number, east: number, north: number): Polygon[
 
 const desktop = minimumSpan(false)
 
-describe('minimumSpan', () => {
-  it('is the spec’s design span in miles', () => {
-    expect(desktop.width).toBeCloseTo(620 / 55)
-    expect(desktop.height).toBeCloseTo(496 / 55)
-    expect(minimumSpan(true).width).toBeCloseTo(400 / 55)
-  })
-})
-
 describe('openingBounds', () => {
   it('keeps the design span when the district already fits', () => {
     const [[west, south], [east, north]] = openingBounds(
@@ -75,12 +67,11 @@ describe('maxBoundsFor', () => {
       number: '1',
       detail: 'State',
       area: null,
-      population: null,
       boundary,
     }
   }
 
-  it('is the box around every district, two degrees wider each way', () => {
+  it('is the box around every district, ten degrees wider each way', () => {
     const [lng, lat] = ADDRESS
 
     expect(
@@ -89,8 +80,8 @@ describe('maxBoundsFor', () => {
         district(box(0.1, 0.3, 0.2, 0.4)),
       ]),
     ).toEqual([
-      [expect.closeTo(lng - 2.5), expect.closeTo(lat - 2.3)],
-      [expect.closeTo(lng + 2.2), expect.closeTo(lat + 2.4)],
+      [expect.closeTo(lng - 10.5), expect.closeTo(lat - 10.3)],
+      [expect.closeTo(lng + 10.2), expect.closeTo(lat + 10.4)],
     ])
   })
 
@@ -109,8 +100,8 @@ describe('maxBoundsFor', () => {
       ]),
     ])
 
-    expect(west).toBeCloseTo(-123.6)
-    expect(east).toBeCloseTo(-119.4)
+    expect(west).toBeCloseTo(-131.6)
+    expect(east).toBeCloseTo(-111.4)
   })
 })
 

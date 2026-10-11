@@ -8,19 +8,6 @@
   grid-template-columns: 400px minmax(0, 1fr);
 }
 
-.result--empty {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
-}
-
-.result__empty {
-  padding: 22px 24px;
-  font-size: 14.5px;
-  color: var(--ink-soft);
-}
-
 @media (max-width: 860px) {
   .result {
     display: flex;

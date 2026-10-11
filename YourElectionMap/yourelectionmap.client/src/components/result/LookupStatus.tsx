@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { SpinnerIcon } from '../icons'
 import { SurveyGround } from '../SurveyGround'
 import { problemCard, type LookupProblem } from '../../districts/lookups'
-import { DESIGN, fitFrame, groundOf, viewBoxOf } from '../../map/frame'
 import type { LookupTarget } from '../../routing/routes'
 import './LookupStatus.css'
 
@@ -17,9 +16,10 @@ type LookupStatusProps = {
   onRetry: () => void
 }
 
-// A sheet at the spec's design span, so the grid is drawn at the weight it has
-// on the result map. Centred anywhere, since there is nothing on it to look at.
-const SHEET_FRAME = fitFrame([0, 0], [], DESIGN.desktop.span)
+// A blank sheet at the spec's 620×496 desktop design frame, with paper three
+// times that size so it fills the view whatever shape the window is.
+const SHEET_VIEW_BOX = '-310 -248 620 496'
+const SHEET_GROUND = { x: -930, y: -744, width: 1860, height: 1488 }
 
 export function LookupStatus({ state, target, onRetry }: LookupStatusProps) {
   // Set once Try again has been pressed, so the button can stay put while the
@@ -46,12 +46,12 @@ export function LookupStatus({ state, target, onRetry }: LookupStatusProps) {
     <main className={waiting ? 'lookup-status lookup-status--waiting' : 'lookup-status'}>
       <svg
         className="lookup-status__sheet"
-        viewBox={viewBoxOf(SHEET_FRAME)}
+        viewBox={SHEET_VIEW_BOX}
         preserveAspectRatio="xMidYMid meet"
         aria-hidden="true"
         focusable="false"
       >
-        <SurveyGround ground={groundOf(SHEET_FRAME)} />
+        <SurveyGround ground={SHEET_GROUND} />
       </svg>
 
       <div className="lookup-status__card card">

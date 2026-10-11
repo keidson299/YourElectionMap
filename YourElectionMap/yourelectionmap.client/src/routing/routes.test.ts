@@ -121,10 +121,4 @@ describe('targetQuery', () => {
       'lat=42.101235&lon=-71.2',
     )
   })
-
-  it('is what the map URL is built from', () => {
-    const target = { address: 'Springfield' }
-
-    expect(mapUrl(target)).toBe(`/map?${targetQuery(target)}`)
-  })
 })

@@ -1,7 +1,7 @@
 /* The map's own lines and colours are in map/style.ts, built from the tokens in
    index.css. What is here is the frame around it and the pin, whose widths come
-   from design/canvas4/Main.dc.html, Result: they are in the pin's own survey
-   units, which its SVG scales to the size the spec draws it. */
+   from design/canvas4/Main.dc.html, Result: they are in the spec's units, which
+   the pin's SVG scales to the size the spec draws it. */
 
 .district-map {
   position: relative;

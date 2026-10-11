@@ -80,10 +80,7 @@ namespace YourElectionMap.Server.Controllers
                     return ValidationProblem(ModelState);
                 }
 
-                lookup = await _lookups.LookupLocationAsync(
-                    lat.Value,
-                    lon.Value,
-                    cancellationToken);
+                lookup = _lookups.LookupLocation(lat.Value, lon.Value);
             }
             else
             {

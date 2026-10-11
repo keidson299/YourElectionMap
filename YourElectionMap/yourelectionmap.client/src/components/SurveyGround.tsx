@@ -5,20 +5,17 @@ import {
 } from './surveyMapGeometry'
 import './SurveyGround.css'
 
-// The survey sheet both maps sit on: paper and a graticule, and for Home's
-// decorative board a river, a few roads and a mesh of district outlines. It
-// renders inside an <svg> the caller owns. Pattern ids are fixed, which is safe
-// because Home and the result page never draw a map at the same time.
+// The survey sheet behind Home's card and the waiting page's: paper and a
+// graticule, and for Home a river, a few roads and a mesh of district outlines.
+// It renders inside an <svg> the caller owns. Pattern ids are fixed, which is
+// safe because the two pages never draw a sheet at the same time.
 
 type Rect = { x: number; y: number; width: number; height: number }
 
 type SurveyGroundProps = {
   /** How much paper to lay down, in map units. */
   ground: Rect
-  /**
-   * The hand-drawn river, roads and mesh. Only Home's decorative board asks for
-   * them; on the result map they would invent features of a real place.
-   */
+  /** The hand-drawn river, roads and mesh, which only Home asks for. */
   standIn?: boolean
 }
 

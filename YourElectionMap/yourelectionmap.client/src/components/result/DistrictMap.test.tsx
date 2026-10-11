@@ -84,7 +84,7 @@ describe('DistrictMap', () => {
       screen.getByRole('heading', { level: 2, name: 'State House · District 44' }),
     ).toBeInTheDocument()
     expect(
-      screen.getByText('Greenlake County · 71,400 residents'),
+      screen.getByText('Greenlake County'),
     ).toBeInTheDocument()
     expect(screen.getByText('1420 Maple Street')).toBeInTheDocument()
   })

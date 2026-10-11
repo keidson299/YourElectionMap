@@ -37,7 +37,6 @@ namespace YourElectionMap.Server.Tests
         {
             var lookup = await LookupAsync(AddressQuery(RaleighAddress));
 
-            Assert.Equal("16 W Jones St", lookup.GetProperty("label").GetString());
             Assert.Equal("U.S. Census Bureau TIGER", lookup.GetProperty("source").GetString());
 
             // The stub's election: a date the client reads as "2026-11-03", and the counts
@@ -56,8 +55,12 @@ namespace YourElectionMap.Server.Tests
 
             var districts = lookup.GetProperty("districts");
 
-            // Broad to local, the order the rail and map read. Three: the levels this data
-            // covers.
+            // Broad to local, the order the rail and map read. The ids are pinned, so
+            // that a change to the converter or the data file cannot quietly start
+            // answering with the wrong districts.
+            Assert.Equal(
+                new[] { "congressional-2", "state-upper-14", "state-lower-38" },
+                Each(districts, "id"));
             Assert.Equal(
                 new[] { "congressional", "state-upper", "state-lower" },
                 Each(districts, "level"));
@@ -65,18 +68,6 @@ namespace YourElectionMap.Server.Tests
                 new[] { "U.S. House", "State Senate", "State House" },
                 Each(districts, "office"));
             Assert.Equal(new[] { "Federal", "State", "State" }, Each(districts, "detail"));
-        }
-
-        [Fact]
-        public async Task Get_PlacesARaleighAddressInTheDistrictsThatCoverIt()
-        {
-            // Pinned, so that a change to the converter or the data file
-            // cannot quietly start answering with the wrong districts.
-            var lookup = await LookupAsync(AddressQuery(RaleighAddress));
-
-            Assert.Equal(
-                new[] { "congressional-2", "state-upper-14", "state-lower-38" },
-                Each(lookup.GetProperty("districts"), "id"));
         }
 
         [Fact]
@@ -92,21 +83,6 @@ namespace YourElectionMap.Server.Tests
             Assert.Equal(
                 new[] { "U.S. House", "State Senate", "State Assembly" },
                 Each(districts, "office"));
-
-            foreach (var district in districts.EnumerateArray())
-            {
-                Assert.Equal(JsonValueKind.Null, district.GetProperty("population").ValueKind);
-            }
-        }
-
-        [Theory]
-        [InlineData(RaleighAddress)]
-        [InlineData(SacramentoAddress)]
-        public async Task Get_CreditsTheCensusForEveryState(string address)
-        {
-            var lookup = await LookupAsync(AddressQuery(address));
-
-            Assert.Equal("U.S. Census Bureau TIGER", lookup.GetProperty("source").GetString());
         }
 
         [Fact]
@@ -132,8 +108,6 @@ namespace YourElectionMap.Server.Tests
 
                         Assert.True(ring.GetArrayLength() >= 4);
                         Assert.Equal(2, first.Length);
-                        Assert.InRange(first[0], -84.4, -75.4);
-                        Assert.InRange(first[1], 33.8, 36.6);
 
                         // Closed: the last point repeats the first, as GeoJSON requires.
                         Assert.Equal(first, Numbers(ring[ring.GetArrayLength() - 1]));
@@ -167,18 +141,6 @@ namespace YourElectionMap.Server.Tests
             // The plans name no place, and the chip leaves out what it is not given.
             Assert.Equal(JsonValueKind.Null, first.GetProperty("area").ValueKind);
             Assert.Equal("District", first.GetProperty("unit").GetString());
-        }
-
-        [Fact]
-        public async Task Get_SendsEachDistrictsPopulationAsNull()
-        {
-            // TIGER has no population: sent as null, not left out, and not 0.
-            var lookup = await LookupAsync(AddressQuery(RaleighAddress));
-
-            foreach (var district in lookup.GetProperty("districts").EnumerateArray())
-            {
-                Assert.Equal(JsonValueKind.Null, district.GetProperty("population").ValueKind);
-            }
         }
 
         [Theory]

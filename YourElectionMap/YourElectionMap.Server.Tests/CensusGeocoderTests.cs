@@ -100,22 +100,18 @@ namespace YourElectionMap.Server.Tests
                 () => geocoder.FindAsync("16 W Jones St", default));
         }
 
-        [Fact]
-        public async Task FindAsync_IsUnavailableWhenTheCallItselfFails()
+        /// <summary>A DNS failure, as it looks from here, and a timeout.</summary>
+        public static TheoryData<Exception> CallFailures => new()
         {
-            // What a DNS failure looks like from here.
-            var geocoder = Geocoder(
-                (_, _) => throw new HttpRequestException("no such host"));
+            new HttpRequestException("no such host"),
+            new TaskCanceledException("the client gave up waiting"),
+        };
 
-            await Assert.ThrowsAsync<GeocoderUnavailableException>(
-                () => geocoder.FindAsync("16 W Jones St", default));
-        }
-
-        [Fact]
-        public async Task FindAsync_IsUnavailableWhenItRunsOutOfTime()
+        [Theory]
+        [MemberData(nameof(CallFailures))]
+        public async Task FindAsync_IsUnavailableWhenTheCallItselfFails(Exception failure)
         {
-            var geocoder = Geocoder(
-                (_, _) => throw new TaskCanceledException("the client gave up waiting"));
+            var geocoder = Geocoder((_, _) => throw failure);
 
             await Assert.ThrowsAsync<GeocoderUnavailableException>(
                 () => geocoder.FindAsync("16 W Jones St", default));

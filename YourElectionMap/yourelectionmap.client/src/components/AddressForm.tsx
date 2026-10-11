@@ -6,7 +6,7 @@ import './AddressForm.css'
 
 // One form serves the home card and the result header; only the sizes differ.
 // It submits through a real <form> so Enter works, and the label is hidden
-// rather than absent, both decisions recorded in design/canvas3/Notes.dc.html.
+// rather than absent, so assistive technology still names the field.
 //
 // Submitting runs the caller's lookup and waits for it, so a place that cannot
 // be found is said here rather than on a page that has nothing to show.

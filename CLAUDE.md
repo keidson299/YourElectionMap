@@ -113,30 +113,23 @@ and let the owner decide whether to authorize a search or paste the information 
 SPA (`yourelectionmap.client`), with an xUnit test project (`YourElectionMap.Server.Tests`) and a
 console project (`YourElectionMap.Tools`), run by hand, that builds the district data. The client
 has a Home page (the address form over a decorative survey map) and a result page (a rail of
-districts beside a MapLibre street map; on a phone, the map above a bottom sheet). The client
-fetches its districts from the server's one real endpoint, `GET /api/districts`. The current plan
-is [design/ElectionMapMainDesignPlanV5.md](design/ElectionMapMainDesignPlanV5.md); code comments
+districts beside a MapLibre street map; on a phone, the map above a bottom sheet), fed by the
+server's one endpoint, `GET /api/districts`. The current plan is
+[design/ElectionMapMainDesignPlanV5.md](design/ElectionMapMainDesignPlanV5.md); code comments
 refer to its numbered slices.
 
-**The data is real, and it covers North Carolina and California.** An address is placed by the US
-Census geocoder, and the point is then looked up in one file per state in `Districts/Data/`, all
-built from the Census Bureau's TIGERweb layers (the 120th Congress's districts and the 2026
-legislative ones). `nc-districts.json` holds North Carolina's 14 US House, 50 State Senate and 120
-State House districts — the 2025 congressional plan and the 2023 legislative plans — and
-`ca-districts.json` California's 52 US House, 40 State Senate and 80 State Assembly districts.
-TIGER has no population, so the map chip names the district alone.
-The next election at the address — its date and how many candidates and ballot measures — comes
-from Google's voter lookup and fills the rail's footer. Those are the server's two calls out to
-the internet. The visitor's browser makes the other outbound requests: the result map's street
-tiles and fonts come from OpenFreeMap (`TILE_SOURCE` in `src/map/style.ts`). There is no County
-Commission, City Council or School Board data, so the rail lists three districts. An address
-anywhere else is a 404, which the page says in as many words.
+**The data is real and covers North Carolina and California**: each state's US House, State Senate
+and State House/Assembly districts, from the Census Bureau's TIGERweb layers. An address is placed
+by the US Census geocoder and looked up in one file per state in `Districts/Data/`; the next
+election at the address comes from Google's voter lookup. Those are the server's only two calls out.
+The browser fetches the street tiles and fonts from OpenFreeMap (`TILE_SOURCE` in
+`src/map/style.ts`). There is no County Commission, City Council or School Board data yet, so the
+rail lists three districts. An address anywhere else is a 404.
 
 **Google needs an API key, and nothing breaks without one.** The server reads
-`GoogleCivic:ApiKey` from configuration — user secrets in development (the server `.csproj`
-already has a `UserSecretsId`), an environment variable `GoogleCivic__ApiKey` when deployed, never
-`appsettings*.json` — and sends it as the `X-Goog-Api-Key` header, never in the URL. With no key,
-Google is not asked and every lookup goes out with `election: null`, which hides the footer. The
+`GoogleCivic:ApiKey` — user secrets in development, the environment variable `GoogleCivic__ApiKey`
+when deployed, never `appsettings*.json` — and sends it as the `X-Goog-Api-Key` header, never in the
+URL. With no key every lookup goes out with `election: null`, which hides the rail's footer. The
 key is a secret under Part 1: do not read, set or print it.
 
 **The site must credit the U.S. Census Bureau for the map data**, with a link to TIGERweb
@@ -144,19 +137,18 @@ key is a secret under Part 1: do not read, set or print it.
 does it, on Home and under the result page's district list, and tests check both. Do not remove
 it, and any new page that offers or draws the map needs it too.
 
-**The `*-districts.json` files are generated and git-ignored, not checked in.** A fresh clone has
-no `Districts/Data/` folder, and without one the server stops at startup (`Program.cs` loads
-`DistrictData` eagerly, and it reads every `*-districts.json` there) and `DistrictDataTests` and
-`DistrictsEndpointTests` fail; they need both states' files. They are built by
-`YourElectionMap.Tools` from TIGERweb GeoJSON kept outside the repository; nothing in the
-`.csproj` names them, and the Web SDK's default `**/*.json` content glob is what copies them to
-`bin/`. A file not in degrees is refused at startup: rebuild it.
+**The `*-districts.json` files are generated and git-ignored.** A fresh clone has no
+`Districts/Data/` folder; without both states' files the server stops at startup (`Program.cs`
+loads `DistrictData` eagerly) and `DistrictDataTests` and `DistrictsEndpointTests` fail. They are
+built by `YourElectionMap.Tools` from TIGERweb GeoJSON kept outside the repository (see
+`YourElectionMap.Tools/DATA-SOURCE.md`), and reach `bin/` through the Web SDK's default `**/*.json`
+content glob. A file not in degrees is refused at startup: rebuild it.
 
 ## Project priorities
 
 This is a one-person project with a small audience: voters looking up the districts they vote in.
 Prefer simple, direct code over abstraction, and treat verbosity and over-architecture as real
-problems in reviews.There are no accounts and no stored personal data.
+problems in reviews. There are no accounts and no stored personal data.
 
 ## Commands
 
@@ -169,9 +161,8 @@ dotnet test YourElectionMap.Server.Tests/YourElectionMap.Server.Tests.csproj `
   --filter "FullyQualifiedName~Get_WithAnAddress_ReturnsTheLookupTheClientReads"   # one test
 dotnet publish YourElectionMap.Server/YourElectionMap.Server.csproj         # also builds SPA into wwwroot
 
-# Builds each state's district file from its TIGERweb layers, saved as GeoJSON. Needed once per
-# clone (the files are git-ignored) and again when a plan changes; see
-# YourElectionMap.Tools/DATA-SOURCE.md.
+# Builds each state's district file from its TIGERweb layers. Needed once per clone and again
+# when a plan changes.
 dotnet run --project YourElectionMap.Tools -- tiger NC `
   "D:\VisualStudio\GitProjects\YourElectionMap\Docs\Tiger\nc" `
   YourElectionMap.Server\Districts\Data\nc-districts.json
@@ -186,7 +177,7 @@ npm test                                              # vitest run
 npm test -- src/App.test.tsx                          # one test file
 npm test -- -t "sends a submitted address to the result page"   # one test by name
 npm run test:watch                                    # vitest in watch mode
-npm run lint                                          # oxlint
+npm run lint                                          # oxlint (not ESLint), .oxlintrc.json
 npm run build                                         # tsc -b && vite build
 ```
 
@@ -196,152 +187,74 @@ Spelled `d:/`, Vitest loads two copies of its modules and every suite fails in `
 with "Vitest failed to find the current suite" before any test runs. VS Code terminals can open
 with the lowercase form, so check this first if every suite fails at once.
 
-VS Code equivalents live in [YourElectionMap/.vscode/tasks.json](YourElectionMap/.vscode/tasks.json)
-(`build`, `clean`, `publish`, `watch server`, `client: install/dev server/build/lint`,
-`test: server`, `test: client`, `test: client (watch)`, `test: all`). Debug configurations are in
-[YourElectionMap/.vscode/launch.json](YourElectionMap/.vscode/launch.json) — **Full stack (Edge/Chrome)**
-is the normal entry point; **Client: debug tests (Vitest)** debugs the client suite.
+VS Code tasks and debug configurations are in `YourElectionMap/.vscode/`; **Full stack
+(Edge/Chrome)** is the normal entry point.
 
 ## Architecture
 
 **Two dev servers, one origin.** Vite runs on `https://localhost:52462` and the API on
-`https://localhost:7132` (`http://localhost:5026`). The browser only ever talks to 52462; Vite proxies
-matching paths to the API, so there is no CORS configuration anywhere in the codebase.
-
-**The proxy route list is the coupling point.** Only prefixes listed in `apiProxyRoutes` in
-[YourElectionMap/yourelectionmap.client/vite.config.ts](YourElectionMap/yourelectionmap.client/vite.config.ts)
-reach the server — currently `/api` only. **Any new server route must be added
-there**, or it silently falls through to the SPA's `index.html` fallback and returns HTML instead of
-JSON. This is the single most common way to break the dev loop.
+`https://localhost:7132` (`http://localhost:5026`). The browser only talks to 52462, and Vite
+proxies the prefixes in `apiProxyRoutes` in
+[vite.config.ts](YourElectionMap/yourelectionmap.client/vite.config.ts) — currently `/api` only.
+**Any new server route must be added there**, or it falls through to the SPA's `index.html`
+fallback and returns HTML instead of JSON.
 
 **Ports are declared in three places and must agree:** `devServerPort` in `vite.config.ts`,
-`<SpaProxyServerUrl>` in
-[YourElectionMap/YourElectionMap.Server/YourElectionMap.Server.csproj](YourElectionMap/YourElectionMap.Server/YourElectionMap.Server.csproj),
-and the URLs in `Properties/launchSettings.json` and the VS Code tasks/launch configs. Vite uses
-`strictPort: true`, so a conflict fails loudly rather than drifting to another port and breaking the
-proxy.
+`<SpaProxyServerUrl>` in the server `.csproj`, and the URLs in `Properties/launchSettings.json` and
+the VS Code tasks/launch configs. Vite uses `strictPort: true`, so a conflict fails loudly.
 
-**HTTPS in dev is bootstrapped by Vite.** `httpsDevCertificate()` in `vite.config.ts` exports the
-ASP.NET Core dev certificate to `%APPDATA%/ASP.NET/https` on first serve so both servers present the
-same cert. It is skipped for `vite build` and for Vitest. A failure here means
-`dotnet dev-certs https --trust` has not been run (one-time setup — ask before running it).
+**HTTPS in dev is bootstrapped by Vite**, which exports the ASP.NET Core dev certificate to
+`%APPDATA%/ASP.NET/https` on first serve. A failure there means `dotnet dev-certs https --trust`
+has not been run (one-time setup — ask before running it). From VS Code, F5 runs Vite as a
+background task that outlives the debug session; from Visual Studio, `SpaProxy` starts it.
 
-**Two ways to start, same result.** From VS Code, F5 starts the API and runs Vite as a background
-task. From Visual Studio, `Microsoft.AspNetCore.SpaProxy` (wired via `<SpaProxyLaunchCommand>`) starts
-Vite instead. The Vite dev server outlives the debug session in the VS Code path and must be stopped
-separately.
-
-**Server request pipeline** ([Program.cs](YourElectionMap/YourElectionMap.Server/Program.cs)):
-controllers + OpenAPI (dev only, at `/openapi/v1.json`), static assets, then
-`MapFallbackToFile("/index.html")` — which is what makes an unproxied route return the SPA shell.
-`Program` is declared `public partial` at the bottom of the file **solely** so
+**`Program` is declared `public partial`** at the bottom of `Program.cs` solely so
 `WebApplicationFactory<Program>` can host the app in memory; do not remove it.
 
-**How a lookup is answered**, all in `YourElectionMap.Server/Districts/`. `CensusGeocoder` turns an
-address into a latitude and longitude; `DistrictData` — a singleton holding every state's file —
-answers which boundaries contain the point, box-checked first and then by counting ray crossings
-in `Geometry`, along with the source credit of the state it fell in.
-For a typed address, `GoogleVoterInfo` then asks Google for the next election, sending the
-geocoder's own spelling of the match (`CensusGeocoder` returns it with each point), which names the
-state; a location lookup has no address to send, so it gets no election. `DistrictsController`
-answers 200 with a lookup, 404 when nothing can be placed or found, 503 when the geocoder did not
-answer (`GeocoderUnavailableException`), and 400 for an unusable query; the client reads 404 and 400
-as no-match and anything else as an error, so an outage never reads as a bad address. Four things
-in there are worth knowing before changing them:
+**How a lookup is answered** (`YourElectionMap.Server/Districts/`). `CensusGeocoder` places the
+address; `DistrictData` finds the boundaries containing the point; for a typed address
+`GoogleVoterInfo` then asks for the next election, using the geocoder's spelling of the match,
+which names the state. `DistrictsController` answers 200, 404 when nothing can be placed or found,
+503 when the geocoder did not answer, and 400 for an unusable query; the client reads 404 and 400
+as no-match and anything else as an error, so an outage never reads as a bad address. Before
+changing it, know that:
 
-- **Everything is in degrees.** The files hold `[longitude, latitude]` rings, the point is tested
-  as the geocoder gave it, and boundaries go out as stored, because the result map is MapLibre,
-  which draws in degrees. Nothing is projected anywhere, not even by the tool: TIGER is already in
-  degrees. The lookup's `location` is the geocoder's own longitude and latitude.
-- **Containment counts crossings rather than winding.** The file stores a district as loose rings
-  and says nothing about which is an island and which a hole, so only the crossing count can tell.
-  For the same reason the boundary goes out through `Geometry.ToPolygons`, which sorts the rings
-  into GeoJSON polygons (outer ring, then its holes, wound counter-clockwise and clockwise) by how
-  many others contain each one; MapLibre fills by that structure, so without it holes would be
-  filled and islands left blank. Most districts are one ring; a few have islands.
-- **Boundaries are sent at the detail the file stores, not thinned.** That is roughly 15 feet. The
-  map zooms to street level, where a simplified line would put an address on the wrong side of the
-  street, and MapLibre simplifies for wider views itself. Each district's converted boundary is
-  worked out once and kept, and responses are gzip-compressed (`AddResponseCompression`): a Raleigh
-  lookup is about 55KB of coordinates, and the largest districts several times that.
-- **Google can never fail a lookup.** The election is extra to the districts, so `GoogleVoterInfo`
-  returns null — never throws — for no key, no election (which Google answers as an error status),
-  a refusal, its four-second timeout or an unreadable answer. Only the browser cancelling
-  propagates. When Google names the election but leaves out the contests, the candidate and measure
-  counts are null rather than 0, and the footer leaves those lines out. An election counts as past
-  once its day has ended in California's time zone, the last of the states covered.
+- **Everything is in degrees**, `[longitude, latitude]`, from the files to the wire. Nothing is
+  projected anywhere.
+- **Containment counts ray crossings rather than winding**, because the files store a district as
+  loose rings. `Geometry.ToPolygons` sorts them into GeoJSON polygons for the map, which fills by
+  that structure.
+- **Boundaries are sent at the detail the file stores** (about 15 feet), not thinned: the map zooms
+  to street level. Responses are gzip-compressed.
+- **Google can never fail a lookup.** `GoogleVoterInfo` returns null rather than throwing for no
+  key, no election, a refusal, a timeout or an unreadable answer; only the browser cancelling
+  propagates.
 
-**Server tests host the whole app in memory.** `DistrictsEndpointTests` uses its nested `OfflineApp`,
-a `WebApplicationFactory<Program>`, and reads the raw JSON, so routing, model binding and the names and
-formats on the wire are all covered — that JSON is the contract the client reads, so new endpoints
-deserve the same kind of test. A controller can also be instantiated directly where only its own
-logic is in question. Client tests are Vitest + Testing Library in `jsdom`, matching
-`src/**/*.{test,spec}.{ts,tsx}`, with `src/test/setup.ts` as the setup file.
-
-**No test reaches the internet.** `OfflineApp` replaces the geocoder's `HttpClient` handler in
-`ConfigureTestServices` with `FakeGeocoding`, which places any address containing one of a few
-known words ("Jones", "Tryon", "Sacramento", …) and fakes an outage for "Outage", and Google's
-with `FakeVoterInfo`, which has an election for Raleigh, is down for Durham and has none
-elsewhere; it sets a dummy `GoogleCivic:ApiKey` so Google is asked at all. The fake election's date
-is relative to today, so the suite does not start failing after a real election day. Everything
-else in those tests is real, including every district file. If you add a service that calls out, stub it
-the same way. On the client, `src/test/setup.ts` replaces `maplibre-gl` everywhere with
-`src/test/fakeMaplibre.ts` — jsdom has no WebGL, so the real map cannot even be constructed — and
-the fake records the style, view and pin it is given, which is what `DistrictMap.test.tsx` checks.
-
-**How the district data is checked.** The converter needs the TIGER layers, which are not in the
-repository, so it has no tests of its own: it refuses to write a file whose layers are in the
-wrong units or state, cut short, or missing a district, and
-`DistrictDataTests` checks the files it wrote. The strongest of those are
-`Covering_HasTheThreeLevelsAgreeAcrossNorthCarolina` and `…AcrossCalifornia`: each state's three
-plans were drawn separately but each is built from the same census blocks and covers the state
-exactly once, so a grid of points over the state has to find one district per level everywhere.
-A layer read wrongly or converted with the wrong units shows up there. Populations are checked
-to be absent, and `DistrictsEndpointTests` pins the three districts of a Raleigh address and of a
-Sacramento one.
+**Tests.** `DistrictsEndpointTests` hosts the whole app in memory (`OfflineApp`) and reads the raw
+JSON, which is the contract the client reads; new endpoints deserve the same kind of test. **No
+test reaches the internet:** `OfflineApp` swaps the geocoder's and Google's `HttpClient` handlers
+for `FakeGeocoding` and `FakeVoterInfo` (the fake election's date is relative to today). Everything
+else is real, including the district files. Stub any new outward call the same way. The converter
+has no tests of its own, since its input is not in the repository; `DistrictDataTests` checks its
+output, most strongly with the grid tests that every covered point finds one district per level.
+On the client, `src/test/setup.ts` replaces `maplibre-gl` with `src/test/fakeMaplibre.ts`, because
+jsdom has no WebGL.
 
 **Client structure.**
 
-- There is no router dependency. `src/routing/history.ts` wraps the History API, and `useRoute`
-  reads it through `useSyncExternalStore`. The URL decides what is looked up and which district is
-  shown, so change it only through `navigate()`.
-- `DistrictLookup` in `src/districts/types.ts` is the contract the result page renders, and the
-  twin of the server's records in `Districts/DistrictLookup.cs` — change the two together.
-- **The result map is MapLibre GL over OpenFreeMap's street tiles.** `DistrictMap` makes one map
-  for the life of the result page and never re-keys it; its whole look comes from `buildStyle` in
-  `src/map/style.ts` (streets and street names only, then the districts), so a new selection or
-  theme is one `setStyle`, which MapLibre diffs. Colours are read from the CSS tokens at runtime, the
-  hatch is drawn on demand (`src/map/hatch.ts`), and where it opens and what the scale bar says are
-  pure functions in `src/map/camera.ts`. It is loaded lazily from `ResultView`, because the library
-  is most of the bundle. The layers handed to it are memoized in `ResultView` — a new `layers` object
-  rebuilds the style, which on every render would diff every coordinate of three boundaries.
-- **The design spec's sizes are in survey units: one unit is 96 feet, so 55 make a mile.** That
-  is `MAP_UNITS_PER_MILE` in `src/map/frame.ts`. The result map uses it only to turn the spec's
-  design frames into miles (the least it opens on) and to size the pin; the SVG survey sheets on
-  Home and the waiting page are still drawn in those units. Nothing stored or sent is in them.
-- The result map can be dragged only so far from the lookup: `maxBoundsFor` in
-  `src/map/camera.ts` gives the box around its districts plus 2°, and `DistrictMap` moves the
-  limits when the lookup moves, so a search from Raleigh to Sacramento is not held in North
-  Carolina.
-- `src/components/surveyMapGeometry.ts` is the hand-drawn stand-in, and it is now only the
-  decoration behind the home card. `SurveyGround` leaves out its river, roads and mesh unless asked
-  for them with `standIn`, which only Home does.
-- `src/test/sampleLookup.ts` is a test fixture, and deliberately not what the server sends — it has
-  all six levels, a ward, a zone, populations and an election, which is the only thing exercising
-  the parts of the page the real three-level data has nothing to fill.
-- `src/districts/lookups.ts` is the whole data layer: it fetches a lookup, keeps every answer of
-  the visit keyed by the target's query, and holds the wording for the waiting, no-match and error
-  states. Home and the header go through `openLookup`, which looks the target up *before* changing
-  the URL, so the map page normally renders a result it already has. Tests drive it with
-  `src/test/fakeDistrictsApi.ts`.
-- The phone layout switches at 860px. That value is set in `PHONE_QUERY`
-  (`src/hooks/useMediaQuery.ts`) and again in every stylesheet's media query, so change them
-  together.
+- There is no router dependency: `src/routing/` wraps the History API, and the URL decides what is
+  looked up and which district is shown, so change it only through `navigate()`.
+- `DistrictLookup` in `src/districts/types.ts` is the twin of the server's
+  `Districts/DistrictLookup.cs` — change the two together.
+- `src/districts/lookups.ts` is the whole data layer. Home and the header go through
+  `openLookup`, which looks the target up *before* changing the URL.
+- `DistrictMap` makes one MapLibre map for the life of the result page; its whole look comes from
+  `buildStyle` in `src/map/style.ts`, so a new selection or theme is one `setStyle`. The layers
+  handed to it are memoized in `ResultView`: a new `layers` object rebuilds the style.
+- `src/test/sampleLookup.ts` deliberately has all six levels, a ward, a zone and an election: it is
+  the only thing exercising the parts of the page the real three-level data leaves empty.
+- The phone layout switches at 860px, set in `PHONE_QUERY` (`src/hooks/useMediaQuery.ts`) and
+  again in every stylesheet's media query; change them together. To test it, stub `matchMedia` as
+  `ResultView.test.tsx` does.
 - Sizes, colours and line weights come from the build spec, `design/canvas4/Main.dc.html`. The
   colour tokens live in `src/index.css`, where the dark set appears twice on purpose.
-- jsdom has no `matchMedia`, `ResizeObserver` or WebGL, so client tests render the desktop layout
-  with MapLibre faked (see above). To test the phone layout, stub `matchMedia` as
-  `ResultView.test.tsx` does. The map arrives lazily, so a test that needs it waits with `findBy…`.
-
-**Linting is oxlint, not ESLint** — configured in
-[YourElectionMap/yourelectionmap.client/.oxlintrc.json](YourElectionMap/yourelectionmap.client/.oxlintrc.json).

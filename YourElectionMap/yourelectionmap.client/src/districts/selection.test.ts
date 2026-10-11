@@ -3,7 +3,6 @@ import {
   layerCount,
   layerRole,
   mapLayers,
-  orderDistricts,
   resolveSelection,
 } from './selection'
 import type { District, DistrictLevel } from './types'
@@ -17,7 +16,6 @@ function district(id: string, level: DistrictLevel): District {
     number: '1',
     detail: '',
     area: null,
-    population: null,
     boundary: [],
   }
 }
@@ -35,17 +33,6 @@ function ids(layers: ReturnType<typeof mapLayers>) {
   return [layers.selected.id, layers.dashed?.id ?? null, layers.dotted?.id ?? null]
 }
 
-describe('orderDistricts', () => {
-  it('sorts broad to local', () => {
-    expect(orderDistricts([school, house, federal, county])).toEqual([
-      federal,
-      house,
-      county,
-      school,
-    ])
-  })
-})
-
 describe('resolveSelection', () => {
   it('honours a requested district the lookup has', () => {
     expect(resolveSelection(ALL, 'county')).toBe(county)
@@ -58,10 +45,6 @@ describe('resolveSelection', () => {
 
   it('falls back to the first district where there is no lower chamber', () => {
     expect(resolveSelection([federal, senate, county], null)).toBe(federal)
-  })
-
-  it('has nothing to select in an empty lookup', () => {
-    expect(resolveSelection([], null)).toBeUndefined()
   })
 })
 

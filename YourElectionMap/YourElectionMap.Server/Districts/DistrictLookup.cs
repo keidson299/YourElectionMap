@@ -34,10 +34,6 @@ namespace YourElectionMap.Server.Districts
     /// <param name="Number">"44".</param>
     /// <param name="Detail">The rail's second line: "Federal", "Greenlake County".</param>
     /// <param name="Area">The place named on the map chip, or null.</param>
-    /// <param name="Population">
-    /// Residents, or null where that is not known, which today is every district: TIGER
-    /// has no population.
-    /// </param>
     /// <param name="Boundary">
     /// The coordinates of a GeoJSON MultiPolygon: polygons, each an outer ring and
     /// then its holes, each ring closed [longitude, latitude] points. The page's map
@@ -51,7 +47,6 @@ namespace YourElectionMap.Server.Districts
         string Number,
         string Detail,
         string? Area,
-        int? Population,
         double[][][][] Boundary);
 
     /// <param name="Date">Election Day: "2026-11-03".</param>

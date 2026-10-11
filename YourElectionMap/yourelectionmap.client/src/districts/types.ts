@@ -1,7 +1,7 @@
 // The shape the result page renders, fetched from the districts API. The server's
 // twin of these types is Districts/DistrictLookup.cs; change the two together.
 
-/** Broad to local. The rail lists districts in this order and the map's neighbour rule reads it. */
+/** Broad to local, the order the server sends districts in, which the rail and the map's neighbour rule read. */
 export const DISTRICT_LEVELS = [
   'congressional',
   'state-upper',
@@ -13,11 +13,7 @@ export const DISTRICT_LEVELS = [
 
 export type DistrictLevel = (typeof DISTRICT_LEVELS)[number]
 
-/**
- * A point as [longitude, latitude], the order GeoJSON and the street map use.
- * The server answers "which district" in its own projected units, but everything
- * it sends the page is in degrees.
- */
+/** A point as [longitude, latitude], the order GeoJSON and the street map use. */
 export type LngLat = readonly [longitude: number, latitude: number]
 
 /** One closed ring: the last point repeats the first. */
@@ -39,7 +35,6 @@ export type District = {
   detail: string
   /** The place named on the map chip, where it is known. */
   area: string | null
-  population: number | null
   /**
    * A GeoJSON MultiPolygon's coordinates, so a district with islands or holes is
    * drawn as one. The server has already sorted which ring is which.

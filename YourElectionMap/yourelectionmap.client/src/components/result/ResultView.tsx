@@ -1,11 +1,7 @@
 import { Suspense, lazy, useMemo, useState } from 'react'
 import { DistrictRail } from './DistrictRail'
 import { maxBoundsFor } from '../../map/camera'
-import {
-  mapLayers,
-  orderDistricts,
-  resolveSelection,
-} from '../../districts/selection'
+import { mapLayers, resolveSelection } from '../../districts/selection'
 import type { DistrictLookup } from '../../districts/types'
 import { PHONE_QUERY, useMediaQuery } from '../../hooks/useMediaQuery'
 import './ResultView.css'
@@ -37,34 +33,13 @@ export function ResultView({
 
   // Kept stable between renders: the map rebuilds its drawing only when what
   // these say changes, not whenever the sheet opens or closes.
-  const districts = useMemo(
-    () => orderDistricts(lookup.districts),
-    [lookup.districts],
-  )
+  const { districts } = lookup
   const maxBounds = useMemo(() => maxBoundsFor(districts), [districts])
   const selected = resolveSelection(districts, requestedDistrict)
   const layers = useMemo(
-    () => (selected === undefined ? null : mapLayers(districts, selected)),
+    () => mapLayers(districts, selected),
     [districts, selected],
   )
-  const heading = (
-    <h1 className="visually-hidden" tabIndex={-1}>
-      Districts for {lookup.label}
-    </h1>
-  )
-
-  // A guard only: the data layer turns a lookup with no districts into the
-  // no-match state, which the map page shows instead of this view.
-  if (layers === null) {
-    return (
-      <main className="result result--empty">
-        {heading}
-        <p className="result__empty card">
-          No districts were found for this address.
-        </p>
-      </main>
-    )
-  }
 
   function handleSelect(districtId: string) {
     // Put the drawing back in view after a pick from the expanded sheet.
@@ -74,7 +49,9 @@ export function ResultView({
 
   return (
     <main className={sheetExpanded ? 'result result--expanded' : 'result'}>
-      {heading}
+      <h1 className="visually-hidden" tabIndex={-1}>
+        Districts for {lookup.label}
+      </h1>
 
       <DistrictRail
         districts={districts}

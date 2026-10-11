@@ -1,5 +1,5 @@
 // The URL is the app's source of truth for what is being looked up and which
-// district is on the map. Slice 3 reads the target to call the districts API.
+// district is on the map.
 
 export type Coordinates = {
   lat: number

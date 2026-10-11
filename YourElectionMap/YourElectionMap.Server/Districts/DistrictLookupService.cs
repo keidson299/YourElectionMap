@@ -64,11 +64,8 @@ namespace YourElectionMap.Server.Districts
         /// is no election for it: Google's voter lookup takes an address, and a point has
         /// none to give it.
         /// </summary>
-        public Task<DistrictLookup?> LookupLocationAsync(
-            double latitude,
-            double longitude,
-            CancellationToken cancellationToken) =>
-            Task.FromResult(At(latitude, longitude, "Your location"));
+        public DistrictLookup? LookupLocation(double latitude, double longitude) =>
+            At(latitude, longitude, "Your location");
 
         private DistrictLookup? At(double latitude, double longitude, string label)
         {

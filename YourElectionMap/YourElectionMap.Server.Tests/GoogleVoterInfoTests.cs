@@ -69,19 +69,18 @@ namespace YourElectionMap.Server.Tests
             Assert.Null(await voterInfo.GetAsync(Raleigh, default));
         }
 
-        [Fact]
-        public async Task GetAsync_ShowsNothingWhenTheCallItselfFails()
+        /// <summary>A DNS failure, as it looks from here, and a timeout.</summary>
+        public static TheoryData<Exception> CallFailures => new()
         {
-            var voterInfo = VoterInfo((_, _) => throw new HttpRequestException("no such host"));
+            new HttpRequestException("no such host"),
+            new TaskCanceledException("the client gave up waiting"),
+        };
 
-            Assert.Null(await voterInfo.GetAsync(Raleigh, default));
-        }
-
-        [Fact]
-        public async Task GetAsync_ShowsNothingWhenItRunsOutOfTime()
+        [Theory]
+        [MemberData(nameof(CallFailures))]
+        public async Task GetAsync_ShowsNothingWhenTheCallItselfFails(Exception failure)
         {
-            var voterInfo = VoterInfo(
-                (_, _) => throw new TaskCanceledException("the client gave up waiting"));
+            var voterInfo = VoterInfo((_, _) => throw failure);
 
             Assert.Null(await voterInfo.GetAsync(Raleigh, default));
         }

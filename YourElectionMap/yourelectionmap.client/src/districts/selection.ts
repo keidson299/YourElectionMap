@@ -1,23 +1,17 @@
-import { DISTRICT_LEVELS, type District, type DistrictLevel } from './types'
-
-/** Broad to local, keeping the given order within a level. */
-export function orderDistricts(districts: readonly District[]): District[] {
-  return [...districts].sort(
-    (a, b) => DISTRICT_LEVELS.indexOf(a.level) - DISTRICT_LEVELS.indexOf(b.level),
-  )
-}
+import type { District, DistrictLevel } from './types'
 
 /** Drawn at neighbourhood scale, and reliably available from the Census. */
 const DEFAULT_LEVEL: DistrictLevel = 'state-lower'
 
 /**
  * The district named in the URL when the lookup has it, otherwise the lower
- * state chamber, otherwise the first district. Undefined only for an empty list.
+ * state chamber, otherwise the first district. A lookup is never empty: the
+ * data layer reads one with no districts as no match.
  */
 export function resolveSelection(
   districts: readonly District[],
   requestedId: string | null,
-): District | undefined {
+): District {
   return (
     districts.find((district) => district.id === requestedId) ??
     districts.find((district) => district.level === DEFAULT_LEVEL) ??

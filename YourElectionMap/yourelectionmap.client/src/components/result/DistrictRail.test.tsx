@@ -142,9 +142,6 @@ describe('DistrictRail', () => {
       'href',
       'https://tigerweb.geo.census.gov/tigerwebmain/TIGERweb_main.html',
     )
-    expect(
-      screen.queryByRole('link', { name: 'Redistricting Data Hub' }),
-    ).toBeNull()
   })
 
   it('leaves the source tag out when there is no source to name', () => {

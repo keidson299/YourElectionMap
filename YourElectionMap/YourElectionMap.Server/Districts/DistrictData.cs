@@ -147,9 +147,6 @@ namespace YourElectionMap.Server.Districts
 
             public string Detail { get; init; } = "";
 
-            /// <summary>Residents at the 2020 census, or null in a file that has none.</summary>
-            public int? Population { get; init; }
-
             public double[] Bbox { get; init; } = [];
 
             public double[][] Rings { get; init; } = [];
@@ -162,11 +159,8 @@ namespace YourElectionMap.Server.Districts
                     "District",
                     Number,
                     Detail,
-                    // TIGER names no place and counts no one, so both are null; the map
-                    // chip leaves out what it is not given. A source that has them can
-                    // fill them in.
+                    // TIGER names no place; the map chip leaves out what it is not given.
                     Area: null,
-                    Population: Population,
                     // Worked out the first time the district is asked for and kept, since
                     // the data never changes while the app runs.
                     Boundary: _boundary ??= Boundary());

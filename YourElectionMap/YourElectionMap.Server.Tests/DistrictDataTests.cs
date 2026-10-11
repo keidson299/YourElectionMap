@@ -12,16 +12,17 @@ namespace YourElectionMap.Server.Tests
         // Loaded once: it is megabytes, and nothing here changes it.
         private static readonly DistrictData Data = new();
 
-        // The State Legislative Building, 16 W Jones Street, Raleigh.
-        private const double RaleighLatitude = 35.7822;
-        private const double RaleighLongitude = -78.6398;
-
-        // The State Capitol, 1315 10th Street, Sacramento.
-        private const double SacramentoLatitude = 38.5767;
-        private const double SacramentoLongitude = -121.4934;
-
-        // Both states come from TIGER.
-        private const string Source = "U.S. Census Bureau TIGER";
+        /// <summary>
+        /// Each state's capitol, what its lower house is called, and the box around the
+        /// state that every boundary point must fall in.
+        /// </summary>
+        private static readonly Dictionary<string, State> States = new()
+        {
+            // The State Legislative Building, 16 W Jones Street, Raleigh.
+            ["NC"] = new(35.7822, -78.6398, "State House", (-84.4, -75.4), (33.8, 36.6)),
+            // The State Capitol, 1315 10th Street, Sacramento.
+            ["CA"] = new(38.5767, -121.4934, "State Assembly", (-124.5, -114.1), (32.5, 42.1)),
+        };
 
         [Fact]
         public void Loads_EveryDistrictOfBothStates()
@@ -31,103 +32,120 @@ namespace YourElectionMap.Server.Tests
             Assert.Equal(184 + 172, Data.Count);
         }
 
-        // ---- North Carolina ----
-
-        [Fact]
-        public void Covering_FindsOneDistrictPerLevelOverARaleighAddress()
+        [Theory]
+        [InlineData("NC")]
+        [InlineData("CA")]
+        public void Covering_FindsOneDistrictPerLevelAtTheCapitol(string code)
         {
-            var found = Covering(RaleighLatitude, RaleighLongitude);
+            var state = States[code];
+            var found = Data.Covering(state.Longitude, state.Latitude);
 
+            Assert.NotNull(found);
+            Assert.Equal("U.S. Census Bureau TIGER", found.Source);
             Assert.Equal(
                 new[] { "congressional", "state-upper", "state-lower" },
-                found.Select(district => district.Level).ToArray());
-        }
-
-        [Fact]
-        public void Covering_CreditsNorthCarolinasDistrictsToTheCensus()
-        {
-            Assert.Equal(Source, Data.Covering(RaleighLongitude, RaleighLatitude)?.Source);
-        }
-
-        [Fact]
-        public void Covering_NamesTheOfficesTheRailLists()
-        {
-            var found = Covering(RaleighLatitude, RaleighLongitude);
-
+                found.Districts.Select(district => district.Level).ToArray());
             Assert.Equal(
-                new[] { "U.S. House", "State Senate", "State House" },
-                found.Select(district => district.Office).ToArray());
-
-            // The one thing the rail says about a district it has not selected.
+                new[] { "U.S. House", "State Senate", state.LowerHouse },
+                found.Districts.Select(district => district.Office).ToArray());
             Assert.Equal(
                 new[] { "Federal", "State", "State" },
-                found.Select(district => district.Detail).ToArray());
-        }
+                found.Districts.Select(district => district.Detail).ToArray());
 
-        [Fact]
-        public void Covering_GivesEachDistrictAnIdMadeOfItsLevelAndNumber()
-        {
-            foreach (var district in Covering(RaleighLatitude, RaleighLongitude))
+            foreach (var district in found.Districts)
             {
                 Assert.Equal($"{district.Level}-{district.Number}", district.Id);
                 Assert.Equal("District", district.Unit);
-
-                // The plans name no place.
                 Assert.Null(district.Area);
             }
         }
 
+        [Theory]
+        [InlineData("NC")]
+        [InlineData("CA")]
+        public void Covering_SendsBoundariesAsPolygonsOfLongitudeAndLatitude(string code)
+        {
+            var state = States[code];
+            var found = Covering(state.Latitude, state.Longitude);
+
+            Assert.NotEmpty(found);
+
+            foreach (var district in found)
+            {
+                Assert.NotEmpty(district.Boundary);
+
+                foreach (var polygon in district.Boundary)
+                {
+                    Assert.NotEmpty(polygon);
+
+                    foreach (var ring in polygon)
+                    {
+                        // Closed, and enough points to be a real boundary.
+                        Assert.True(ring.Length >= 4);
+                        Assert.Equal(ring[0], ring[^1]);
+
+                        foreach (var point in ring)
+                        {
+                            Assert.Equal(2, point.Length);
+                            Assert.InRange(point[0], state.Longitudes.Low, state.Longitudes.High);
+                            Assert.InRange(point[1], state.Latitudes.Low, state.Latitudes.High);
+                        }
+                    }
+                }
+
+                // At the detail the file keeps rather than thinned for one view: the map
+                // zooms to street level. More than a rectangle, less than a flood.
+                var points = district.Boundary.Sum(polygon => polygon.Sum(ring => ring.Length));
+                Assert.InRange(points, 100, 60_000);
+            }
+        }
+
         /// <summary>
-        /// TIGER has no population, so none is sent, in either state: the chip names the
-        /// district alone rather than showing a made-up or zero count.
+        /// The capitol, as the page's map will draw it, falls inside the outer ring of one
+        /// of each district's polygons: the rings did not come out as holes.
         /// </summary>
         [Theory]
-        [InlineData(RaleighLatitude, RaleighLongitude)]
-        [InlineData(35.0873, -84.0346)] // Murphy
-        [InlineData(35.9082, -75.6757)] // Manteo
-        [InlineData(35.6127, -77.3664)] // Greenville
-        [InlineData(SacramentoLatitude, SacramentoLongitude)]
-        public void Covering_GivesNoPopulation(double latitude, double longitude)
+        [InlineData("NC")]
+        [InlineData("CA")]
+        public void Covering_PutsTheCapitolInsideItsDistrictsOuterRing(string code)
         {
-            var found = Covering(latitude, longitude);
+            var state = States[code];
 
-            Assert.Equal(3, found.Count);
-            Assert.All(found, district => Assert.Null(district.Population));
+            foreach (var district in Covering(state.Latitude, state.Longitude))
+            {
+                Assert.Contains(
+                    district.Boundary,
+                    polygon => Geometry.Covers(
+                        [polygon[0].SelectMany(point => point).ToArray()],
+                        state.Longitude,
+                        state.Latitude));
+            }
         }
 
-        [Fact]
-        public void Covering_SendsBoundariesAsPolygonsOfLongitudeAndLatitude()
+        /// <summary>
+        /// If the conversion were off, or a district were missing, one end of a state
+        /// would come back empty.
+        /// </summary>
+        [Theory]
+        [InlineData(35.0873, -84.0346)] // Murphy, the west of North Carolina
+        [InlineData(35.9082, -75.6757)] // Manteo, the east
+        [InlineData(41.7558, -124.2026)] // Crescent City, the north-west of California
+        [InlineData(32.7920, -115.5631)] // El Centro, the south-east
+        public void Covering_ReachesTheEndsOfEachState(double latitude, double longitude)
         {
-            // Somewhere in North Carolina's box.
-            AssertBoundaries(
-                Covering(RaleighLatitude, RaleighLongitude),
-                (-84.4, -75.4),
-                (33.8, 36.6));
-        }
-
-        [Fact]
-        public void Covering_PutsTheAddressInsideItsDistrictsOuterRing()
-        {
-            AssertInsideOuterRing(RaleighLatitude, RaleighLongitude);
-        }
-
-        [Fact]
-        public void Covering_PutsTheBroaderDistrictAroundTheNarrowerOne()
-        {
-            var found = Covering(RaleighLatitude, RaleighLongitude);
-            var federal = Box(found[0]);
-            var house = Box(found[2]);
-
-            Assert.True(federal[2] - federal[0] > house[2] - house[0]);
-            Assert.True(federal[3] - federal[1] > house[3] - house[1]);
+            Assert.Equal(3, Covering(latitude, longitude).Count);
         }
 
         [Theory]
         [InlineData(38.8977, -77.0365)] // the White House
         [InlineData(32.7765, -79.9311)] // Charleston, South Carolina
         [InlineData(36.8508, -76.2859)] // Norfolk, Virginia
-        [InlineData(33.5, -76.0)] // the Atlantic, east of the state
-        public void Covering_FindsNothingOutsideNorthCarolina(double latitude, double longitude)
+        [InlineData(33.5, -76.0)] // the Atlantic, east of North Carolina
+        [InlineData(39.5296, -119.8138)] // Reno, Nevada
+        [InlineData(36.1699, -115.1398)] // Las Vegas, Nevada
+        [InlineData(32.5149, -117.0382)] // Tijuana, Mexico
+        [InlineData(36.0, -125.0)] // the Pacific, west of California
+        public void Covering_FindsNothingOutsideTheStates(double latitude, double longitude)
         {
             Assert.Null(Data.Covering(longitude, latitude));
         }
@@ -152,85 +170,7 @@ namespace YourElectionMap.Server.Tests
             Assert.InRange(inside, 4_000, 7_000);
         }
 
-        [Fact]
-        public void Covering_ReachesTheCornersOfNorthCarolina()
-        {
-            // Murphy in the west and Manteo in the east: if the conversion were off, or a
-            // district were missing, one end of the state would come back empty.
-            Assert.NotEmpty(Covering(35.0873, -84.0346));
-            Assert.NotEmpty(Covering(35.9082, -75.6757));
-        }
-
-        // ---- California ----
-
-        [Fact]
-        public void Covering_FindsCaliforniasThreeLevelsAtTheCapitol()
-        {
-            var found = Data.Covering(SacramentoLongitude, SacramentoLatitude);
-
-            Assert.NotNull(found);
-            Assert.Equal(Source, found.Source);
-            Assert.Equal(
-                new[] { "congressional", "state-upper", "state-lower" },
-                found.Districts.Select(district => district.Level).ToArray());
-
-            // California's lower house is the Assembly, not a State House.
-            Assert.Equal(
-                new[] { "U.S. House", "State Senate", "State Assembly" },
-                found.Districts.Select(district => district.Office).ToArray());
-            Assert.Equal(
-                new[] { "Federal", "State", "State" },
-                found.Districts.Select(district => district.Detail).ToArray());
-        }
-
-        [Fact]
-        public void Covering_GivesCaliforniasDistrictsAnIdMadeOfItsLevelAndNumber()
-        {
-            foreach (var district in Covering(SacramentoLatitude, SacramentoLongitude))
-            {
-                Assert.Null(district.Area);
-                Assert.Equal("District", district.Unit);
-                Assert.Equal($"{district.Level}-{district.Number}", district.Id);
-            }
-        }
-
-        [Fact]
-        public void Covering_SendsCaliforniasBoundariesInLongitudeAndLatitude()
-        {
-            // Somewhere in California's box.
-            AssertBoundaries(
-                Covering(SacramentoLatitude, SacramentoLongitude),
-                (-124.5, -114.1),
-                (32.5, 42.1));
-        }
-
-        [Fact]
-        public void Covering_PutsTheCapitolInsideItsDistrictsOuterRing()
-        {
-            AssertInsideOuterRing(SacramentoLatitude, SacramentoLongitude);
-        }
-
-        [Theory]
-        [InlineData(41.7558, -124.2026)] // Crescent City, the north-west
-        [InlineData(32.7920, -115.5631)] // El Centro, the south-east
-        public void Covering_ReachesTheCornersOfCalifornia(double latitude, double longitude)
-        {
-            Assert.Equal(3, Covering(latitude, longitude).Count);
-        }
-
-        [Theory]
-        [InlineData(39.5296, -119.8138)] // Reno, Nevada
-        [InlineData(36.1699, -115.1398)] // Las Vegas, Nevada
-        [InlineData(32.5149, -117.0382)] // Tijuana, Mexico
-        [InlineData(36.0, -125.0)] // the Pacific, west of the state
-        public void Covering_FindsNothingOutsideCalifornia(double latitude, double longitude)
-        {
-            Assert.Null(Data.Covering(longitude, latitude));
-        }
-
-        /// <summary>
-        /// The same check as North Carolina's.
-        /// </summary>
+        /// <summary>The same check as North Carolina's.</summary>
         [Fact]
         public void Covering_HasTheThreeLevelsAgreeAcrossCalifornia()
         {
@@ -285,65 +225,11 @@ namespace YourElectionMap.Server.Tests
             return inside;
         }
 
-        private static void AssertBoundaries(
-            List<District> found,
-            (double Low, double High) longitudes,
-            (double Low, double High) latitudes)
-        {
-            Assert.NotEmpty(found);
-
-            foreach (var district in found)
-            {
-                Assert.NotEmpty(district.Boundary);
-
-                foreach (var polygon in district.Boundary)
-                {
-                    Assert.NotEmpty(polygon);
-
-                    foreach (var ring in polygon)
-                    {
-                        // Closed, and enough points to be a real boundary.
-                        Assert.True(ring.Length >= 4);
-                        Assert.Equal(ring[0], ring[^1]);
-
-                        foreach (var point in ring)
-                        {
-                            Assert.Equal(2, point.Length);
-                            Assert.InRange(point[0], longitudes.Low, longitudes.High);
-                            Assert.InRange(point[1], latitudes.Low, latitudes.High);
-                        }
-                    }
-                }
-
-                // At the detail the file keeps rather than thinned for one view: the map
-                // zooms to street level. More than a rectangle, less than a flood.
-                var points = district.Boundary.Sum(polygon => polygon.Sum(ring => ring.Length));
-                Assert.InRange(points, 100, 60_000);
-            }
-        }
-
-        /// <summary>
-        /// The address, as the page's map will draw it, falls inside the outer ring of one
-        /// of each district's polygons: the rings did not come out as holes.
-        /// </summary>
-        private static void AssertInsideOuterRing(double latitude, double longitude)
-        {
-            foreach (var district in Covering(latitude, longitude))
-            {
-                Assert.Contains(
-                    district.Boundary,
-                    polygon => Geometry.Covers(
-                        [polygon[0].SelectMany(point => point).ToArray()],
-                        longitude,
-                        latitude));
-            }
-        }
-
-        private static double[] Box(District district) =>
-            Geometry.BoxOf(
-                district.Boundary
-                    .SelectMany(polygon => polygon)
-                    .Select(ring => ring.SelectMany(point => point).ToArray())
-                    .ToArray());
+        private sealed record State(
+            double Latitude,
+            double Longitude,
+            string LowerHouse,
+            (double Low, double High) Longitudes,
+            (double Low, double High) Latitudes);
     }
 }

@@ -1,6 +1,6 @@
 # Election Map Website — Design Plan V5
 
-_As of 2026-10-07. This replaces [V4](ElectionMapMainDesignPlanV4.md) and, before it, [V3](ElectionMapMainDesignPlanV3.md), [V2](ElectionMapMainDesignPlanV2.md) and [V1](ElectionMapMainDesignPlanV1.md); all four stay as the record of what was intended when they were written. The districts are drawn over a real street map: the boundaries alone showed the shape of a district but not where it falls, and seeing which side of which street the line runs down is the point of the site._
+_As of 2026-10-07. This replaces V1 to V4, which are in the repository's git history as the record of what was intended when they were written. The districts are drawn over a real street map: the boundaries alone showed the shape of a district but not where it falls, and seeing which side of which street the line runs down is the point of the site._
 
 ## Purpose
 
@@ -141,7 +141,7 @@ The front end is built with React 19 and TypeScript, bundled by Vite. React was 
 - **No router.** There are two routes, so a small wrapper over the browser's History API is enough.
 - **One map library, loaded only when needed.** MapLibre GL draws the result map. It is most of the app's weight, so it loads with the first result rather than with Home. The map's whole look is built in code from the design tokens rather than fetched from the tile provider, so the provider is one setting to change.
 - **No UI library.** Styling is plain CSS. Home's decorative board and the waiting sheet are still hand-written SVG.
-- **Design tokens.** Every size, colour and line weight comes from the build spec, [canvas4/Main.dc.html](canvas4/Main.dc.html). Colours are CSS custom properties with a matching dark set. The type is Fraunces for display and Inter for the interface, loaded from Google Fonts. The folders `canvas` to `canvas3` are the design rounds that led to the spec, and [canvas3/Notes.dc.html](canvas3/Notes.dc.html) records the decisions made along the way.
+- **Design tokens.** Every size, colour and line weight comes from the build spec, [canvas4/Main.dc.html](canvas4/Main.dc.html). Colours are CSS custom properties with a matching dark set. The type is Fraunces for display and Inter for the interface, loaded from Google Fonts. The design rounds that led to the spec, `canvas` to `canvas3`, are in the git history.
 - **Tests and linting.** Vitest with Testing Library for tests, and oxlint for linting. The tests run without WebGL, so they replace MapLibre with a fake that records what the page tells it.
 
 ## The lookup contract
@@ -152,7 +152,7 @@ The result page renders one shape, whatever produced it. The server sends it as 
 | --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | label     | The address as the page names it: the street line as typed, such as "16 W Jones St", or "Your location"                                                                                                                         |
 | location  | The address as longitude and latitude                                                                                                                                                                                            |
-| districts | Each district covering the address: a stable id; its level; its office ("State House"); its unit and number ("District 44", "Ward 2"); a short detail line; the area it covers and its population, where known; and its boundary |
+| districts | Each district covering the address: a stable id; its level; its office ("State House"); its unit and number ("District 44", "Ward 2"); a short detail line; the area it covers, where known; and its boundary |
 | election  | The next election's date and its candidate and measure counts, or nothing when there is no election information. Either count can be missing on its own, when the election data names the election but not the ballot           |
 | source    | What the boundaries were drawn from, for the rail to name                                                                                                                                                                        |
 

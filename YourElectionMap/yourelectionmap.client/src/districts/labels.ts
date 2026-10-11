@@ -52,19 +52,3 @@ export function formatElectionDate(isoDate: string): string {
   const date = new Date(`${isoDate.slice(0, 10)}T00:00:00Z`)
   return Number.isNaN(date.getTime()) ? isoDate : ELECTION_DATE.format(date)
 }
-
-const WHOLE_NUMBER = new Intl.NumberFormat('en-US')
-
-/** 'Greenlake County · 71,400 residents', or whichever half is known. */
-export function districtMeta(district: District): string | null {
-  const parts = [
-    district.area,
-    district.population === null
-      ? null
-      : `${WHOLE_NUMBER.format(district.population)} ${
-          district.population === 1 ? 'resident' : 'residents'
-        }`,
-  ].filter((part) => part !== null)
-
-  return parts.length === 0 ? null : parts.join(' · ')
-}

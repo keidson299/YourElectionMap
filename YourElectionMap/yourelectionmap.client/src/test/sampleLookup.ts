@@ -3,8 +3,8 @@ import type { LookupTarget } from '../routing/routes'
 
 // An invented fixture, so component tests can render a result without a fetch.
 // Unlike the server's three levels, it has all six on purpose: it is the only
-// thing exercising a ward, a zone, an area, a population and the election
-// footer. DistrictsEndpointTests pins what the server really sends.
+// thing exercising a ward, a zone, an area and the election footer.
+// DistrictsEndpointTests pins what the server really sends.
 //
 // The shapes are written in the stand-in drawing's units, as the spec draws them,
 // and placed on the globe by `at`: the spec's address lands on downtown Raleigh,
@@ -45,7 +45,6 @@ const SAMPLE_DISTRICTS: readonly District[] = [
     number: '7',
     detail: 'Federal',
     area: null,
-    population: 761200,
     boundary: sheet([640, 250], [1560, 270], [1540, 985], [680, 960]),
   },
   {
@@ -56,7 +55,6 @@ const SAMPLE_DISTRICTS: readonly District[] = [
     number: '22',
     detail: 'State',
     area: null,
-    population: 142800,
     boundary: sheet([800, 360], [1420, 390], [1400, 880], [830, 850]),
   },
   {
@@ -67,7 +65,6 @@ const SAMPLE_DISTRICTS: readonly District[] = [
     number: '44',
     detail: 'State',
     area: 'Greenlake County',
-    population: 71400,
     boundary: sheet([930, 495], [1310, 520], [1270, 735], [1000, 765]),
   },
   {
@@ -78,7 +75,6 @@ const SAMPLE_DISTRICTS: readonly District[] = [
     number: '3',
     detail: 'Greenlake County',
     area: 'Greenlake County',
-    population: 58900,
     boundary: sheet([700, 300], [1520, 330], [1480, 930], [740, 900]),
   },
   {
@@ -89,7 +85,6 @@ const SAMPLE_DISTRICTS: readonly District[] = [
     number: '2',
     detail: 'City of Springfield',
     area: 'City of Springfield',
-    population: 24600,
     boundary: sheet([1030, 540], [1250, 555], [1235, 720], [1050, 735]),
   },
   {
@@ -100,7 +95,6 @@ const SAMPLE_DISTRICTS: readonly District[] = [
     number: '5',
     detail: 'Springfield Unified',
     area: 'Springfield Unified',
-    population: 31200,
     boundary: sheet([965, 455], [1345, 478], [1305, 800], [1010, 825]),
   },
 ]

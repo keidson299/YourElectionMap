@@ -22,7 +22,6 @@ import {
   openingBounds,
   scaleBarAt,
 } from '../../map/camera'
-import { DESIGN } from '../../map/frame'
 import { drawHatch } from '../../map/hatch'
 import {
   buildStyle,
@@ -61,10 +60,13 @@ type DistrictMapProps = {
 
 type View = { zoom: number; latitude: number }
 
-/** The pin, its ring and its crosshair arms, in survey units at the design frame. */
+/**
+ * The pin's dot, ring and crosshair arms in the spec's own units, and how many
+ * CSS pixels across it is drawn, as at the spec's design frame.
+ */
 const PIN = {
-  desktop: { dot: 7, ring: 21, arm: 40 },
-  phone: { dot: 6, ring: 16, arm: 32 },
+  desktop: { dot: 7, ring: 21, arm: 40, pixels: 134 },
+  phone: { dot: 6, ring: 16, arm: 32, pixels: 62 },
 }
 
 /** How long a refit takes when the selection changes. */
@@ -274,9 +276,7 @@ export function DistrictMap({
  * size they have at the design frame, whatever the zoom.
  */
 function Pin({ size }: { size: 'desktop' | 'phone' }) {
-  const { dot, ring, arm } = PIN[size]
-  const design = DESIGN[size]
-  const pixels = (2 * arm * design.map.width) / design.span.width
+  const { dot, ring, arm, pixels } = PIN[size]
 
   return (
     <svg

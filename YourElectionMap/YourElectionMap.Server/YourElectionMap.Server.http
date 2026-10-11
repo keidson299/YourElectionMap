@@ -12,7 +12,7 @@ Accept: application/json
 GET {{YourElectionMap.Server_HostAddress}}/api/districts?address=nowhere%20at%20all
 Accept: application/json
 
-### No match again: placed perfectly well, and not in North Carolina
+### No match again: placed perfectly well, and in neither state the site covers
 GET {{YourElectionMap.Server_HostAddress}}/api/districts?address=1600%20Pennsylvania%20Ave,%20Washington%20DC
 Accept: application/json
 
