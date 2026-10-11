@@ -12,6 +12,11 @@ holds its rings in longitude and latitude, to six decimal places, thinned to 15 
 | `or-districts.json` | Oregon | 41 | `Tiger\or` | 2026-10-11 |
 | `sc-districts.json` | South Carolina | 45 | `Tiger\sc` | 2026-10-11 |
 | `wa-districts.json` | Washington | 53 | `Tiger\wa` | 2026-10-11 |
+| `az-districts.json` | Arizona | 04 | `Tiger\az` | 2026-10-11 |
+| `id-districts.json` | Idaho | 16 | `Tiger\id` | 2026-10-11 |
+| `mt-districts.json` | Montana | 30 | `Tiger\mt` | 2026-10-11 |
+| `ut-districts.json` | Utah | 49 | `Tiger\ut` | 2026-10-11 |
+| `wy-districts.json` | Wyoming | 56 | `Tiger\wy` | 2026-10-11 |
 
 ## The source
 
@@ -50,18 +55,29 @@ map before it. Saved as `Tiger\ca\cd-119.geojson`, it places 34% of a 0.02° gri
 in different districts from layer 0, which is how it was confirmed that layer 0 holds the new
 map. The tool does not read it.
 
-### Washington
+### Washington, Arizona and Idaho
 
-The Legislature has 49 districts, each electing one senator and two representatives. TIGER
-holds them in both legislative layers, "Legislative (Senate) District 22" and "Legislative
-(House) District 22", so the file has 49 State Senate and 49 State House districts with the same
-outlines.
+Each Legislature has one set of districts, 49 in Washington, 30 in Arizona and 35 in Idaho, each
+electing one senator and two representatives. TIGER holds them in both legislative layers
+("Legislative (Senate) District 22" and "Legislative (House) District 22" in Washington), so each
+file has its State House districts twice over, with the same outlines as the State Senate's.
+
+### Utah
+
+The 120th Congress's districts are the map the state court chose in November 2025, used from
+the 2026 elections. Layer 0 holds it: its District 1 lies wholly inside Salt Lake County, which
+no district of the 2021 map did.
+
+### Wyoming
+
+Wyoming has one seat in the House, which TIGER names "Congressional District (at Large)", with
+no number. The tool numbers it 1, so the page shows "U.S. House · District 1".
 
 ## What the files hold
 
 - **One feature per district**, named "Congressional District 7", "State Senate District 8",
   "State House District 38" or "Assembly District 6". A few are MultiPolygons, for islands. The
-  tool takes the number from the end of `NAME`.
+  tool takes the number from the end of `NAME`, apart from Wyoming's at-large district.
 - **`GEOID`**, which starts with the state's FIPS code.
 - **No population.** TIGERweb's `POP100` field is empty for these layers, so the files have none
   and the map chip names the district alone.
@@ -70,7 +86,9 @@ outlines.
 
 In every state the three layers cover the state exactly once each: on a 0.02° grid, every point
 is in one district of each level, give or take a point on a district line. No point is in two
-states, where Washington meets Oregon or South Carolina meets North Carolina.
+states where they meet. Several borders run along round degrees, such as 37°N between Utah and
+Arizona, so a grid line exactly on one finds points on the line itself in neither state; the
+tests' boxes start a few hundredths off them.
 
 ## Credit
 
@@ -84,7 +102,7 @@ result page.
 From `YourElectionMap/`, once per state:
 
 ```powershell
-foreach ($state in 'ca', 'nc', 'or', 'sc', 'wa') {
+foreach ($state in 'az', 'ca', 'id', 'mt', 'nc', 'or', 'sc', 'ut', 'wa', 'wy') {
   dotnet run --project YourElectionMap.Tools -- tiger $state `
     "D:\VisualStudio\GitProjects\YourElectionMap\Docs\Tiger\$state" `
     "YourElectionMap.Server\Districts\Data\$state-districts.json"
@@ -96,7 +114,8 @@ It prints a line per district — points in, points kept — and refuses to writ
 - the state is not one `Tiger.cs` knows, or the folder or one of its three layers is missing;
 - a layer says it was cut short (`exceededTransferLimit`);
 - a feature's `GEOID` is not in the state;
-- a feature's `NAME` does not end in a district number;
+- a feature's `NAME` does not end in a district number, unless it is a state's one
+  at-large seat;
 - a feature is not a Polygon or MultiPolygon, or has no shape at all;
 - a layer's districts are not exactly 1 to N;
 - a coordinate is not a longitude and latitude, as a layer fetched without `outSR=4326` would be.

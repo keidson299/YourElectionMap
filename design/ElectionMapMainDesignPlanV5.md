@@ -6,7 +6,7 @@ _As of 2026-10-11. This replaces V1 to V4, which are in the repository's git his
 
 This website serves as a way for people to see exactly which election maps they are within. This stretches from federal election maps, through state maps, all the way down to municipal boundaries for elections like school board or city council members.
 
-The site models six kinds of district, listed broad to local: U.S. House, State Senate, State House, County Commission, City Council and School Board. An address can fall in fewer than six, and the site never assumes it falls in all of them. **Today it has data for the first three**, and only in five states, California, North Carolina, Oregon, South Carolina and Washington; the page is built so that this is a matter of how many rows the rail has, not a special case.
+The site models six kinds of district, listed broad to local: U.S. House, State Senate, State House, County Commission, City Council and School Board. An address can fall in fewer than six, and the site never assumes it falls in all of them. **Today it has data for the first three**, and only in ten states, Arizona, California, Idaho, Montana, North Carolina, Oregon, South Carolina, Utah, Washington and Wyoming; the page is built so that this is a matter of how many rows the rail has, not a special case.
 
 Three principles hold throughout:
 
@@ -88,7 +88,7 @@ At the foot of the rail, under "Also for this address", sit the next election's 
 
 Voting places, which slice 7 first set out to include, wait for the election detail view, where there is room to say which place is for which day.
 
-In the corner of the rail, the rail names the data the boundaries were drawn from: "U.S. Census Bureau TIGER", in every state. Districts are redrawn, and North Carolina's and California's congressional districts were redrawn in 2025, so the page says which maps it is showing.
+In the corner of the rail, the rail names the data the boundaries were drawn from: "U.S. Census Bureau TIGER", in every state. Districts are redrawn, and North Carolina's, California's and Utah's congressional districts were redrawn in 2025, so the page says which maps it is showing.
 
 ### Map
 
@@ -190,6 +190,7 @@ Because districts are found from the point itself, an address in an unincorporat
 - **North Carolina, `nc-districts.json` (about five megabytes):** the General Assembly's 2025 congressional plan (CCM-2, enacted 21 October 2025) and its 2023 State Senate and State House plans (Session Laws 2023-146 and 2023-149). Until slice 9 these came from the enacted plans' own shapefiles, retrieved through the Redistricting Data Hub.
 - **California, `ca-districts.json` (about seven megabytes):** the map California's voters approved in November 2025, and the State Senate and Assembly districts.
 - **Oregon, `or-districts.json`, South Carolina, `sc-districts.json`, and Washington, `wa-districts.json` (three to five megabytes each):** their current plans. Washington elects a senator and two representatives from each of its 49 legislative districts, so its State House districts are its State Senate districts.
+- **Arizona, Idaho, Montana, Utah and Wyoming (`az`, `id`, `mt`, `ut` and `wy-districts.json`, two to five megabytes each):** their current plans, with Utah's court-ordered congressional map of November 2025. Arizona and Idaho elect their House two to a Senate district, as Washington does. Wyoming's one House seat is at large, and the page calls it District 1.
 
 TIGER carries no population.
 

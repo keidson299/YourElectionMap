@@ -75,6 +75,11 @@ namespace YourElectionMap.Server.Tests
         [InlineData("900 Court St NE, Salem OR", 6, 11, 21, "State House")]
         [InlineData("1100 Gervais St, Columbia SC", 6, 26, 72, "State House")]
         [InlineData("416 Sid Snyder Ave SW, Olympia WA", 10, 22, 22, "State House")]
+        [InlineData("1700 W Washington St, Phoenix AZ", 3, 11, 11, "State House")]
+        [InlineData("700 W Jefferson St, Boise ID", 2, 19, 19, "State House")]
+        [InlineData("1301 E 6th Ave, Helena MT", 2, 41, 82, "State House")]
+        [InlineData("350 N State St, Salt Lake City UT", 1, 8, 22, "State House")]
+        [InlineData("200 W 24th St, Cheyenne WY", 1, 8, 11, "State House")]
         public async Task Get_PlacesEachOtherCapitolInItsStatesDistricts(
             string address,
             int congressional,

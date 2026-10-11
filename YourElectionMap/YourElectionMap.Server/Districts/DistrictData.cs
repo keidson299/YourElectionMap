@@ -41,7 +41,7 @@ namespace YourElectionMap.Server.Districts
             Array.Sort(_states, (left, right) => string.CompareOrdinal(left.State, right.State));
         }
 
-        /// <summary>The states loaded, by postal code: "CA", "NC", "OR".</summary>
+        /// <summary>The states loaded, by postal code: "AZ", "CA", "ID".</summary>
         public IReadOnlyList<string> States => Array.ConvertAll(_states, state => state.State);
 
         public int Count => _states.Sum(state => state.Districts.Length);

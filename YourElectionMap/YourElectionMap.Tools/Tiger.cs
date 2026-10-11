@@ -25,12 +25,36 @@ namespace YourElectionMap.Tools
         /// <summary>The states this knows: FIPS code, then each layer's office and count.</summary>
         private static readonly Dictionary<string, State> States = new(StringComparer.OrdinalIgnoreCase)
         {
+            // Thirty districts, each electing a senator and two representatives: TIGER
+            // has them in both layers.
+            ["AZ"] = new(
+                "04",
+                [
+                    new("cd.geojson", "congressional", "U.S. House", "Federal", 9),
+                    new("sldu.geojson", "state-upper", "State Senate", "State", 30),
+                    new("sldl.geojson", "state-lower", "State House", "State", 30),
+                ]),
             ["CA"] = new(
                 "06",
                 [
                     new("cd.geojson", "congressional", "U.S. House", "Federal", 52),
                     new("sldu.geojson", "state-upper", "State Senate", "State", 40),
                     new("sldl.geojson", "state-lower", "State Assembly", "State", 80),
+                ]),
+            // Thirty-five districts, as in Arizona.
+            ["ID"] = new(
+                "16",
+                [
+                    new("cd.geojson", "congressional", "U.S. House", "Federal", 2),
+                    new("sldu.geojson", "state-upper", "State Senate", "State", 35),
+                    new("sldl.geojson", "state-lower", "State House", "State", 35),
+                ]),
+            ["MT"] = new(
+                "30",
+                [
+                    new("cd.geojson", "congressional", "U.S. House", "Federal", 2),
+                    new("sldu.geojson", "state-upper", "State Senate", "State", 50),
+                    new("sldl.geojson", "state-lower", "State House", "State", 100),
                 ]),
             ["NC"] = new(
                 "37",
@@ -53,6 +77,14 @@ namespace YourElectionMap.Tools
                     new("sldu.geojson", "state-upper", "State Senate", "State", 46),
                     new("sldl.geojson", "state-lower", "State House", "State", 124),
                 ]),
+            // The court-ordered map of November 2025: TIGER has it in layer 0.
+            ["UT"] = new(
+                "49",
+                [
+                    new("cd.geojson", "congressional", "U.S. House", "Federal", 4),
+                    new("sldu.geojson", "state-upper", "State Senate", "State", 29),
+                    new("sldl.geojson", "state-lower", "State House", "State", 75),
+                ]),
             // One set of 49 districts, each electing a senator and two representatives:
             // TIGER has it in both layers.
             ["WA"] = new(
@@ -61,6 +93,14 @@ namespace YourElectionMap.Tools
                     new("cd.geojson", "congressional", "U.S. House", "Federal", 10),
                     new("sldu.geojson", "state-upper", "State Senate", "State", 49),
                     new("sldl.geojson", "state-lower", "State House", "State", 49),
+                ]),
+            // One seat in the House, elected at large: numbered 1 here.
+            ["WY"] = new(
+                "56",
+                [
+                    new("cd.geojson", "congressional", "U.S. House", "Federal", 1),
+                    new("sldu.geojson", "state-upper", "State Senate", "State", 31),
+                    new("sldl.geojson", "state-lower", "State House", "State", 62),
                 ]),
         };
 
@@ -151,16 +191,25 @@ namespace YourElectionMap.Tools
                     $"{layer.File}: \"{name}\" has GEOID {geoid}, not in state {fips}.");
             }
 
-            // "Congressional District 7", "Assembly District 7".
+            // "Congressional District 7", "Assembly District 7", or a state's one seat,
+            // "Congressional District (at Large)".
             var match = TrailingNumber().Match(name);
+            string number;
 
-            if (!match.Success)
+            if (match.Success)
+            {
+                number = int.Parse(match.Value, CultureInfo.InvariantCulture)
+                    .ToString(CultureInfo.InvariantCulture);
+            }
+            else if (layer.Count == 1 && name.EndsWith("(at Large)", StringComparison.Ordinal))
+            {
+                number = "1";
+            }
+            else
             {
                 throw new InvalidDataException($"{layer.File}: no district number in \"{name}\".");
             }
 
-            var number = int.Parse(match.Value, CultureInfo.InvariantCulture)
-                .ToString(CultureInfo.InvariantCulture);
             var parts = Rings(feature.GetProperty("geometry"), layer.File, name);
 
             if (parts.Count == 0)

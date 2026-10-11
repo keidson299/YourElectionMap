@@ -6,8 +6,8 @@ An ASP.NET Core 9 API (`YourElectionMap.Server`) serving a React 19 + Vite SPA
 (`yourelectionmap.client`), with an xUnit test project (`YourElectionMap.Server.Tests`) and a
 console project (`YourElectionMap.Tools`) that builds the district data.
 
-The data is real and covers **California, North Carolina, Oregon, South Carolina and
-Washington**: each state's US House, State Senate and State House or Assembly districts, all from
+The data is real and covers **Arizona, California, Idaho, Montana, North Carolina, Oregon,
+South Carolina, Utah, Washington and Wyoming**: each state's US House, State Senate and State House or Assembly districts, all from
 the Census Bureau's TIGERweb, drawn with [MapLibre GL](https://maplibre.org/) over a street map from
 [OpenFreeMap](https://openfreemap.org/), with the next election at the address — its date and how
 many candidates and ballot measures are on the ballot — from Google's voter lookup. Four things
@@ -33,7 +33,7 @@ outside the repository. See [DATA-SOURCE.md](YourElectionMap/YourElectionMap.Too
 for the download query and the folder layout the tool expects. From `YourElectionMap/`:
 
 ```powershell
-# Once for each state: CA, NC, OR, SC and WA.
+# Once for each state: AZ, CA, ID, MT, NC, OR, SC, UT, WA and WY.
 dotnet run --project YourElectionMap.Tools -- tiger <state> `
   "<folder holding the state's cd.geojson, sldu.geojson and sldl.geojson>" `
   YourElectionMap.Server\Districts\Data\<state>-districts.json

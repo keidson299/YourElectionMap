@@ -37,16 +37,30 @@ namespace YourElectionMap.Server.Tests
             ["SC"] = new(34.0004, -81.0330, "State House", (-83.4, -78.45), (31.95, 35.25)),
             // The Legislative Building, 416 Sid Snyder Avenue SW, Olympia.
             ["WA"] = new(47.0358, -122.9048, "State House", (-124.9, -116.9), (45.5, 49.1)),
+            // The rest have straight borders along round degrees, so their boxes start a few
+            // hundredths off them: a grid row on 37°N would be on the Utah–Arizona line.
+            // The State Capitol, 1700 W Washington Street, Phoenix.
+            ["AZ"] = new(33.4481, -112.0970, "State House", (-114.83, -109.0), (31.31, 37.05)),
+            // The State Capitol, 700 W Jefferson Street, Boise.
+            ["ID"] = new(43.6177, -116.1996, "State House", (-117.23, -111.0), (41.97, 49.05)),
+            // The State Capitol, 1301 E 6th Avenue, Helena.
+            ["MT"] = new(46.5857, -112.0184, "State House", (-116.07, -104.0), (44.37, 49.05)),
+            // The State Capitol, 350 N State Street, Salt Lake City.
+            ["UT"] = new(40.7774, -111.8882, "State House", (-114.07, -109.0), (36.97, 42.05)),
+            // The State Capitol, 200 W 24th Street, Cheyenne.
+            ["WY"] = new(41.1403, -104.8202, "State House", (-111.07, -104.0), (40.97, 45.05)),
         };
 
         [Fact]
         public void Loads_EveryDistrictOfEveryState()
         {
             // North Carolina 14 + 50 + 120, California 52 + 40 + 80, Oregon 6 + 30 + 60,
-            // South Carolina 7 + 46 + 124, and Washington 10 + 49 + 49: its House is
-            // elected two to a Senate district.
-            Assert.Equal(["CA", "NC", "OR", "SC", "WA"], Data.States);
-            Assert.Equal(184 + 172 + 96 + 177 + 108, Data.Count);
+            // South Carolina 7 + 46 + 124, Washington 10 + 49 + 49, Arizona 9 + 30 + 30,
+            // Idaho 2 + 35 + 35, Montana 2 + 50 + 100, Utah 4 + 29 + 75, and Wyoming
+            // 1 + 31 + 62. Washington, Arizona and Idaho elect their House two to a
+            // Senate district.
+            Assert.Equal(["AZ", "CA", "ID", "MT", "NC", "OR", "SC", "UT", "WA", "WY"], Data.States);
+            Assert.Equal(184 + 172 + 96 + 177 + 108 + 69 + 72 + 152 + 108 + 94, Data.Count);
         }
 
         [Theory]
@@ -55,6 +69,11 @@ namespace YourElectionMap.Server.Tests
         [InlineData("OR")]
         [InlineData("SC")]
         [InlineData("WA")]
+        [InlineData("AZ")]
+        [InlineData("ID")]
+        [InlineData("MT")]
+        [InlineData("UT")]
+        [InlineData("WY")]
         public void Covering_FindsOneDistrictPerLevelAtTheCapitol(string code)
         {
             var state = States[code];
@@ -86,6 +105,11 @@ namespace YourElectionMap.Server.Tests
         [InlineData("OR")]
         [InlineData("SC")]
         [InlineData("WA")]
+        [InlineData("AZ")]
+        [InlineData("ID")]
+        [InlineData("MT")]
+        [InlineData("UT")]
+        [InlineData("WY")]
         public void Covering_SendsBoundariesAsPolygonsOfLongitudeAndLatitude(string code)
         {
             var state = States[code];
@@ -117,9 +141,10 @@ namespace YourElectionMap.Server.Tests
                 }
 
                 // At the detail the file keeps rather than thinned for one view: the map
-                // zooms to street level. More than a rectangle, less than a flood.
+                // zooms to street level. More than a rectangle, less than a flood: a town
+                // district drawn along a street grid, like Cheyenne's, can be under a hundred.
                 var points = district.Boundary.Sum(polygon => polygon.Sum(ring => ring.Length));
-                Assert.InRange(points, 100, 60_000);
+                Assert.InRange(points, 20, 60_000);
             }
         }
 
@@ -133,6 +158,11 @@ namespace YourElectionMap.Server.Tests
         [InlineData("OR")]
         [InlineData("SC")]
         [InlineData("WA")]
+        [InlineData("AZ")]
+        [InlineData("ID")]
+        [InlineData("MT")]
+        [InlineData("UT")]
+        [InlineData("WY")]
         public void Covering_PutsTheCapitolInsideItsDistrictsOuterRing(string code)
         {
             var state = States[code];
@@ -163,6 +193,17 @@ namespace YourElectionMap.Server.Tests
         [InlineData(33.8730, -78.6142)] // Little River, the north-east
         [InlineData(48.3681, -124.6250)] // Neah Bay, the north-west of Washington
         [InlineData(46.4163, -117.0457)] // Clarkston, the south-east
+        [InlineData(32.6927, -114.6277)] // Yuma, the south-west of Arizona
+        [InlineData(36.9147, -111.4558)] // Page, the north
+        [InlineData(48.6913, -116.3163)] // Bonners Ferry, the north of Idaho
+        [InlineData(42.3221, -111.2980)] // Montpelier, the south-east
+        [InlineData(46.4165, -117.0177)] // Lewiston, across the river from Clarkston
+        [InlineData(48.3883, -115.5560)] // Libby, the north-west of Montana
+        [InlineData(47.7167, -104.1563)] // Sidney, the east
+        [InlineData(37.0965, -113.5684)] // St. George, the south-west of Utah
+        [InlineData(40.4555, -109.5287)] // Vernal, the east
+        [InlineData(43.4799, -110.7624)] // Jackson, the west of Wyoming
+        [InlineData(42.0625, -104.1844)] // Torrington, the east
         public void Covering_ReachesTheEndsOfEachState(double latitude, double longitude)
         {
             Assert.Equal(3, Covering(latitude, longitude).Count);
@@ -179,9 +220,15 @@ namespace YourElectionMap.Server.Tests
         [InlineData(32.5149, -117.0382)] // Tijuana, Mexico
         [InlineData(36.0, -125.0)] // the Pacific, west of California
         [InlineData(44.0, -125.5)] // the Pacific, west of Oregon
-        [InlineData(43.6150, -116.2023)] // Boise, Idaho
-        [InlineData(46.4165, -117.0177)] // Lewiston, Idaho, across the river from Clarkston
         [InlineData(49.2827, -123.1207)] // Vancouver, British Columbia
+        [InlineData(35.0844, -106.6504)] // Albuquerque, New Mexico
+        [InlineData(31.3086, -110.9422)] // Nogales, Sonora
+        [InlineData(40.7391, -114.0733)] // West Wendover, Nevada, across the line from Utah
+        [InlineData(39.0639, -108.5506)] // Grand Junction, Colorado
+        [InlineData(40.5853, -105.0844)] // Fort Collins, Colorado
+        [InlineData(44.0805, -103.2310)] // Rapid City, South Dakota
+        [InlineData(48.1470, -103.6180)] // Williston, North Dakota
+        [InlineData(49.6956, -112.8451)] // Lethbridge, Alberta
         public void Covering_FindsNothingOutsideTheStates(double latitude, double longitude)
         {
             Assert.Null(Data.Covering(longitude, latitude));
@@ -202,6 +249,11 @@ namespace YourElectionMap.Server.Tests
         [InlineData("OR", 0.05, 9_000, 14_000)]
         [InlineData("SC", 0.05, 2_500, 4_500)]
         [InlineData("WA", 0.05, 7_000, 11_000)]
+        [InlineData("AZ", 0.05, 9_500, 13_500)]
+        [InlineData("ID", 0.05, 8_000, 11_500)]
+        [InlineData("MT", 0.05, 15_000, 21_000)]
+        [InlineData("UT", 0.05, 7_500, 11_000)]
+        [InlineData("WY", 0.05, 9_500, 13_000)]
         public void Covering_HasTheThreeLevelsAgreeAcrossTheState(
             string code,
             double step,

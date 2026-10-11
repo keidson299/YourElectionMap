@@ -146,9 +146,9 @@ describe('openLookup', () => {
     expect(currentUrl()).toBe('/')
     expect(notice).toEqual({
       text:
-        'We could not find districts for that address in California,'
-        + ' North Carolina, Oregon, South Carolina or Washington. Check it,'
-        + ' or try adding your city or ZIP code.',
+        'We could not find districts for that address in Arizona, California,'
+        + ' Idaho, Montana, North Carolina, Oregon, South Carolina, Utah,'
+        + ' Washington or Wyoming. Check it, or try adding your city or ZIP code.',
       field: true,
     })
   })

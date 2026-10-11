@@ -30,6 +30,16 @@ namespace YourElectionMap.Server.Tests
             ("Gervais", [new(34.0004, -81.0330, "1100 GERVAIS ST, COLUMBIA, SC, 29201")]),
             // The Washington Legislative Building, Olympia.
             ("Olympia", [new(47.0358, -122.9048, "416 SID SNYDER AVE SW, OLYMPIA, WA, 98504")]),
+            // The Arizona State Capitol, Phoenix.
+            ("Phoenix", [new(33.4481, -112.0970, "1700 W WASHINGTON ST, PHOENIX, AZ, 85007")]),
+            // The Idaho State Capitol, Boise.
+            ("Boise", [new(43.6177, -116.1996, "700 W JEFFERSON ST, BOISE, ID, 83702")]),
+            // The Montana State Capitol, Helena.
+            ("Helena", [new(46.5857, -112.0184, "1301 E 6TH AVE, HELENA, MT, 59601")]),
+            // The Utah State Capitol, Salt Lake City.
+            ("Salt", [new(40.7774, -111.8882, "350 N STATE ST, SALT LAKE CITY, UT, 84103")]),
+            // The Wyoming State Capitol, Cheyenne.
+            ("Cheyenne", [new(41.1403, -104.8202, "200 W 24TH ST, CHEYENNE, WY, 82001")]),
             // The White House, which is in no state the site covers.
             ("Pennsylvania", [new(38.8977, -77.0365, "1600 PENNSYLVANIA AVE NW, WASHINGTON, DC, 20500")]),
             // A town name with no state: Greenville MS first, then Greenville NC.

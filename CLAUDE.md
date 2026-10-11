@@ -118,8 +118,8 @@ server's one endpoint, `GET /api/districts`. The current plan is
 [design/ElectionMapMainDesignPlanV5.md](design/ElectionMapMainDesignPlanV5.md); code comments
 refer to its numbered slices.
 
-**The data is real and covers five states**, California, North Carolina, Oregon, South Carolina
-and Washington: each state's US House, State Senate and State House/Assembly districts, from the Census Bureau's TIGERweb layers. An address is placed
+**The data is real and covers ten states**, Arizona, California, Idaho, Montana, North Carolina,
+Oregon, South Carolina, Utah, Washington and Wyoming: each state's US House, State Senate and State House/Assembly districts, from the Census Bureau's TIGERweb layers. An address is placed
 by the US Census geocoder and looked up in one file per state in `Districts/Data/`; the next
 election at the address comes from Google's voter lookup. Those are the server's only two calls out.
 The browser fetches the street tiles and the map's label fonts from OpenFreeMap (`TILE_SOURCE` in
@@ -165,7 +165,7 @@ dotnet publish YourElectionMap.Server/YourElectionMap.Server.csproj         # al
 
 # Builds each state's district file from its TIGERweb layers. Needed once per clone and again
 # when a plan changes.
-foreach ($state in 'ca', 'nc', 'or', 'sc', 'wa') {
+foreach ($state in 'az', 'ca', 'id', 'mt', 'nc', 'or', 'sc', 'ut', 'wa', 'wy') {
   dotnet run --project YourElectionMap.Tools -- tiger $state `
     "D:\VisualStudio\GitProjects\YourElectionMap\Docs\Tiger\$state" `
     "YourElectionMap.Server\Districts\Data\$state-districts.json"
