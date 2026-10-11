@@ -18,6 +18,7 @@ npm test             # vitest run
 npm run test:watch   # vitest in watch mode
 npm run lint         # oxlint, configured in .oxlintrc.json
 npm run build        # tsc -b && vite build
+npm run preview      # serves the built dist/ with vite preview
 ```
 
 Run these from a path with an uppercase drive letter (`D:\...`). From `d:\...`, Vitest loads its
@@ -28,7 +29,7 @@ modules twice and every suite fails in `src/test/setup.ts` before a test runs.
 | Folder | What is in it |
 | --- | --- |
 | `pages/` | `HomePage` and `MapPage` |
-| `components/` | The address form, header, theme toggle and Home's decorative map; `result/` holds the rail, the map and what sits over it |
+| `components/` | The address form, header, theme toggle, Home's decorative map, the empty survey sheet behind the waiting and no-match cards (`SurveyGround`), and `DataCredit`, the required Census Bureau credit; `result/` holds the rail, the map and what sits over it |
 | `districts/` | `types.ts`, the lookup contract shared with the server's `DistrictLookup.cs`; `lookups.ts`, the whole data layer; selection and labels |
 | `map/` | The MapLibre style, the hatch, and `camera.ts`: where the map opens, how far it can be dragged, and the scale bar |
 | `routing/` | A small wrapper over the History API; the URL decides what is looked up and shown |

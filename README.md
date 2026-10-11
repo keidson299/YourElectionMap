@@ -10,10 +10,10 @@ The data is real and covers **North Carolina and California**: North Carolina's 
 50 State Senate and 120 State House districts, and California's 52 US House, 40 State Senate and
 80 Assembly districts, all from the Census Bureau's TIGERweb, drawn with [MapLibre GL](https://maplibre.org/) over a street map from
 [OpenFreeMap](https://openfreemap.org/), with the next election at the address — its date and how
-many candidates and ballot measures are on the ballot — from Google's voter lookup. Three things
+many candidates and ballot measures are on the ballot — from Google's voter lookup. Four things
 reach out to the internet: the server places addresses with the US Census geocoder and asks the
 Google Civic Information API for the election, and the visitor's browser fetches the street map's
-tiles from OpenFreeMap. There is no county, city or school board data yet. The plan is
+tiles from OpenFreeMap and the page's fonts from Google Fonts. There is no county, city or school board data yet. The plan is
 [design/ElectionMapMainDesignPlanV5.md](design/ElectionMapMainDesignPlanV5.md).
 
 ## Developing in VS Code
@@ -73,7 +73,8 @@ port 52462 and there is no CORS setup to maintain. New server routes need to be 
 Other launch configurations: **Server: ASP.NET Core** (API alone — useful with
 `YourElectionMap.Server.http` or the OpenAPI doc at `/openapi/v1.json`), **Client: Vite +
 Edge/Chrome** (SPA alone), **Client: debug tests (Vitest)**, and **Server: attach to process**.
-The requests in `YourElectionMap.Server.http` go to the real Census geocoder.
+The requests in `YourElectionMap.Server.http` go to the real Census geocoder, and to Google's
+voter lookup when an API key is set.
 
 The Vite dev server runs as a VS Code background task, so it keeps running after the debug
 session stops. Stop it from the terminal panel, or with *Tasks: Terminate Task*.

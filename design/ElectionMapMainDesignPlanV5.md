@@ -1,6 +1,6 @@
 # Election Map Website — Design Plan V5
 
-_As of 2026-10-07. This replaces V1 to V4, which are in the repository's git history as the record of what was intended when they were written. The districts are drawn over a real street map: the boundaries alone showed the shape of a district but not where it falls, and seeing which side of which street the line runs down is the point of the site._
+_As of 2026-10-11. This replaces V1 to V4, which are in the repository's git history as the record of what was intended when they were written. The districts are drawn over a real street map: the boundaries alone showed the shape of a district but not where it falls, and seeing which side of which street the line runs down is the point of the site._
 
 ## Purpose
 
@@ -25,7 +25,7 @@ The work is split into numbered slices, and comments in the code refer to them b
 | 3. Districts API          | A server endpoint returns the lookup and the page fetches it; designed loading, error and no-districts states                          | Done    |
 | 4. Real North Carolina    | Real districts and real boundaries for a real address: geocoding, and the state's US House, State Senate and State House districts     | Done    |
 | 5. Street map             | The result map becomes a real, draggable street map with the districts drawn over it                                                    | Done    |
-| 6. Enacted district maps  | The three levels built from the General Assembly's own plans, including the 2025 congressional map, with each district's population    | Done    |
+| 6. Enacted district maps  | The three levels built from the General Assembly's own plans, including the 2025 congressional map, with each district's population (dropped in slice 9: TIGER has none) | Done    |
 | 7. Election information   | The next election's date and the number of candidates and ballot measures, from Google's voter lookup, which brings the rail's footer back | Done    |
 | 8. California             | California's US House, State Senate and Assembly districts from the Census Bureau's TIGER data, the first state not from its own enacted plans | Done    |
 | 9. One source             | North Carolina's districts from TIGER too, the same as California's, which retires the enacted-shapefile converter and its projection  | Done    |

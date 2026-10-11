@@ -83,8 +83,11 @@ dotnet run --project YourElectionMap.Tools -- tiger CA `
 
 It prints a line per district — points in, points kept — and refuses to write the file if:
 
+- the state is not one `Tiger.cs` knows, or the folder or one of its three layers is missing;
 - a layer says it was cut short (`exceededTransferLimit`);
 - a feature's `GEOID` is not in the state;
+- a feature's `NAME` does not end in a district number;
+- a feature is not a Polygon or MultiPolygon, or has no shape at all;
 - a layer's districts are not exactly 1 to N;
 - a coordinate is not a longitude and latitude, as a layer fetched without `outSR=4326` would be.
 

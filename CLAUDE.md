@@ -122,8 +122,9 @@ refer to its numbered slices.
 and State House/Assembly districts, from the Census Bureau's TIGERweb layers. An address is placed
 by the US Census geocoder and looked up in one file per state in `Districts/Data/`; the next
 election at the address comes from Google's voter lookup. Those are the server's only two calls out.
-The browser fetches the street tiles and fonts from OpenFreeMap (`TILE_SOURCE` in
-`src/map/style.ts`). There is no County Commission, City Council or School Board data yet, so the
+The browser fetches the street tiles and the map's label fonts from OpenFreeMap (`TILE_SOURCE` in
+`src/map/style.ts`), and the page's own fonts, Fraunces and Inter, from Google Fonts
+(`index.html`). There is no County Commission, City Council or School Board data yet, so the
 rail lists three districts. An address anywhere else is a 404.
 
 **Google needs an API key, and nothing breaks without one.** The server reads
@@ -138,8 +139,9 @@ does it, on Home and under the result page's district list, and tests check both
 it, and any new page that offers or draws the map needs it too.
 
 **The `*-districts.json` files are generated and git-ignored.** A fresh clone has no
-`Districts/Data/` folder; without both states' files the server stops at startup (`Program.cs`
-loads `DistrictData` eagerly) and `DistrictDataTests` and `DistrictsEndpointTests` fail. They are
+`Districts/Data/` folder; with no file at all the server stops at startup (`Program.cs` loads
+`DistrictData` eagerly), and without both states' files `DistrictDataTests` and
+`DistrictsEndpointTests` fail. They are
 built by `YourElectionMap.Tools` from TIGERweb GeoJSON kept outside the repository (see
 `YourElectionMap.Tools/DATA-SOURCE.md`), and reach `bin/` through the Web SDK's default `**/*.json`
 content glob. A file not in degrees is refused at startup: rebuild it.
@@ -225,7 +227,8 @@ changing it, know that:
   loose rings. `Geometry.ToPolygons` sorts them into GeoJSON polygons for the map, which fills by
   that structure.
 - **Boundaries are sent at the detail the file stores** (about 15 feet), not thinned: the map zooms
-  to street level. Responses are gzip-compressed.
+  to street level. Responses are compressed (Brotli or gzip, the
+  framework's defaults).
 - **Google can never fail a lookup.** `GoogleVoterInfo` returns null rather than throwing for no
   key, no election, a refusal, a timeout or an unreadable answer; only the browser cancelling
   propagates.
