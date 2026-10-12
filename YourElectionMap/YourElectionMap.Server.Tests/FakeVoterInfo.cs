@@ -16,13 +16,19 @@ namespace YourElectionMap.Server.Tests
         public static readonly ConcurrentQueue<string> Asked = new();
 
         /// <summary>
-        /// The handler the endpoint tests put in place of the real one. Raleigh has an
-        /// election with five candidates and one measure, Durham finds Google down, and
-        /// anywhere else has no election.
+        /// The handler the endpoint tests put in place of the real one. The election list
+        /// has a nationwide election in 30 days. Raleigh has five candidates and one
+        /// measure in it, Durham finds Google down, and anywhere else has no election.
         /// </summary>
         public static HttpMessageHandler Handler() =>
             new FakeGeocoding.StubHandler((request, _) =>
             {
+                if (IsElectionList(request))
+                {
+                    return Task.FromResult(FakeGeocoding.Reply(Elections(
+                        ("9000", DaysFromToday(30), "ocd-division/country:us"))));
+                }
+
                 var asked = Uri.UnescapeDataString(request.RequestUri?.Query ?? "");
                 Asked.Enqueue(asked);
 
@@ -38,6 +44,25 @@ namespace YourElectionMap.Server.Tests
 
                 return Task.FromResult(FakeGeocoding.Reply(NoElection, HttpStatusCode.BadRequest));
             });
+
+        public static bool IsElectionList(HttpRequestMessage request) =>
+            request.RequestUri?.AbsolutePath.EndsWith("/elections", StringComparison.Ordinal) == true;
+
+        /// <summary>
+        /// Google's election list, shaped as it really comes: with the "VIP Test Election",
+        /// which is always listed and always in the future, ahead of the ones given.
+        /// </summary>
+        public static string Elections(params (string Id, string ElectionDay, string Division)[] elections)
+        {
+            var listed = elections
+                .Prepend((Id: "2000", ElectionDay: "2031-12-06", Division: "ocd-division/country:us"))
+                .Select(election =>
+                    $$"""{ "id": "{{election.Id}}", "name": "An election", "electionDay": "{{election.ElectionDay}}", "ocdDivisionId": "{{election.Division}}" }""");
+
+            return $$"""
+                { "kind": "civicinfo#electionsQueryResponse", "elections": [ {{string.Join(", ", listed)}} ] }
+                """;
+        }
 
         /// <summary>
         /// Relative to today, so the suite does not start failing once a real election

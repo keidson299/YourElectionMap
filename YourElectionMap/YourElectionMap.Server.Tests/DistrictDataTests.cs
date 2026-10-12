@@ -51,6 +51,19 @@ namespace YourElectionMap.Server.Tests
             ["WY"] = new(41.1403, -104.8202, "State House", (-111.07, -104.0), (40.97, 45.05)),
         };
 
+        /// <summary>
+        /// The states whose files have the county, city and school layers, with the FIPS
+        /// code that begins each of those rows' Census code. The rest have the three
+        /// legislative levels only, until their local layers are fetched.
+        /// </summary>
+        private static readonly Dictionary<string, string> WithLocalLevels = new()
+        {
+            ["CA"] = "06",
+            ["NC"] = "37",
+        };
+
+        private static readonly string[] Legislative = ["congressional", "state-upper", "state-lower"];
+
         [Fact]
         public void Loads_EveryDistrictOfEveryState()
         {
@@ -59,8 +72,15 @@ namespace YourElectionMap.Server.Tests
             // Idaho 2 + 35 + 35, Montana 2 + 50 + 100, Utah 4 + 29 + 75, and Wyoming
             // 1 + 31 + 62. Washington, Arizona and Idaho elect their House two to a
             // Senate district.
+            //
+            // Then the local rows: North Carolina's 100 counties, 552 cities and towns and
+            // 118 school districts, all unified; California's 58 counties, 483 cities and
+            // towns, and 345 unified, 517 elementary and 112 high school districts.
             Assert.Equal(["AZ", "CA", "ID", "MT", "NC", "OR", "SC", "UT", "WA", "WY"], Data.States);
-            Assert.Equal(184 + 172 + 96 + 177 + 108 + 69 + 72 + 152 + 108 + 94, Data.Count);
+            Assert.Equal(
+                184 + 172 + 96 + 177 + 108 + 69 + 72 + 152 + 108 + 94
+                    + (100 + 552 + 118) + (58 + 483 + 345 + 517 + 112),
+                Data.Count);
         }
 
         [Theory]
@@ -81,21 +101,38 @@ namespace YourElectionMap.Server.Tests
 
             Assert.NotNull(found);
             Assert.Equal("U.S. Census Bureau TIGER", found.Source);
-            Assert.Equal(
-                new[] { "congressional", "state-upper", "state-lower" },
-                found.Districts.Select(district => district.Level).ToArray());
+
+            var legislative = found.Districts.Take(3).ToArray();
+            var local = found.Districts.Skip(3).ToArray();
+
+            Assert.Equal(Legislative, legislative.Select(district => district.Level));
             Assert.Equal(
                 new[] { "U.S. House", "State Senate", state.LowerHouse },
-                found.Districts.Select(district => district.Office).ToArray());
+                legislative.Select(district => district.Office));
             Assert.Equal(
                 new[] { "Federal", "State", "State" },
-                found.Districts.Select(district => district.Detail).ToArray());
+                legislative.Select(district => district.Detail));
 
-            foreach (var district in found.Districts)
+            // The capitol is in a city and a unified school district, so it has one row
+            // per local level, the county first.
+            Assert.Equal(
+                WithLocalLevels.ContainsKey(code) ? ["county", "city", "school"] : [],
+                local.Select(district => district.Level));
+
+            var county = local.FirstOrDefault()?.Office;
+
+            foreach (var district in legislative)
             {
                 Assert.Equal($"{district.Level}-{district.Number}", district.Id);
                 Assert.Equal("District", district.Unit);
-                Assert.Null(district.Area);
+                Assert.Equal(county, district.Area);
+            }
+
+            foreach (var district in local)
+            {
+                Assert.StartsWith($"{district.Level}-{WithLocalLevels[code]}", district.Id);
+                Assert.Null(district.Unit);
+                Assert.Null(district.Number);
             }
         }
 
@@ -206,7 +243,10 @@ namespace YourElectionMap.Server.Tests
         [InlineData(42.0625, -104.1844)] // Torrington, the east
         public void Covering_ReachesTheEndsOfEachState(double latitude, double longitude)
         {
-            Assert.Equal(3, Covering(latitude, longitude).Count);
+            var found = Covering(latitude, longitude);
+
+            Assert.NotEmpty(found);
+            Assert.Null(Disagreement(found, local: found.Any(district => district.Level == "county")));
         }
 
         [Theory]
@@ -241,7 +281,9 @@ namespace YourElectionMap.Server.Tests
         /// other two have to as well — and never twice. A plan read wrongly, a district
         /// missing, or a conversion that put one layer off by a few feet along the coast
         /// would have to show up here. So would two states' files overlapping, where a
-        /// border runs through the grid.
+        /// border runs through the grid. The counties are built from the same blocks, so
+        /// they hold to the same rule; cities and school districts do as far as
+        /// <see cref="Disagreement"/> says.
         /// </summary>
         [Theory]
         [InlineData("NC", 0.05, 4_000, 7_000)]
@@ -254,7 +296,7 @@ namespace YourElectionMap.Server.Tests
         [InlineData("MT", 0.05, 15_000, 21_000)]
         [InlineData("UT", 0.05, 7_500, 11_000)]
         [InlineData("WY", 0.05, 9_500, 13_000)]
-        public void Covering_HasTheThreeLevelsAgreeAcrossTheState(
+        public void Covering_HasTheLevelsAgreeAcrossTheState(
             string code,
             double step,
             int fewest,
@@ -293,11 +335,10 @@ namespace YourElectionMap.Server.Tests
 
                     inside++;
 
-                    var levels = found.Districts.Select(district => district.Level).ToArray();
-
-                    if (!levels.SequenceEqual(["congressional", "state-upper", "state-lower"]))
+                    if (Disagreement(found.Districts, WithLocalLevels.ContainsKey(code)) is { } wrong)
                     {
-                        disagreed.Add($"({longitude:0.00}, {latitude:0.00}): {string.Join(", ", levels)}");
+                        var ids = found.Districts.Select(district => district.Id);
+                        disagreed.Add($"({longitude:0.00}, {latitude:0.00}): {wrong}: {string.Join(", ", ids)}");
                     }
 
                     foreach (var (other, data) in Alone)
@@ -313,6 +354,46 @@ namespace YourElectionMap.Server.Tests
             Assert.Empty(disagreed);
 
             return inside;
+        }
+
+        /// <summary>
+        /// What is wrong with the districts covering one point, or null. One district per
+        /// legislative level, first; and where the file has the local levels, one county, at
+        /// most one city (unincorporated land has none), and either a unified school
+        /// district, a high school district and the elementary one inside it, one of those
+        /// two alone, or none, where TIGER defines no district.
+        /// </summary>
+        private static string? Disagreement(List<District> found, bool local)
+        {
+            var levels = found.Select(district => district.Level).ToArray();
+
+            if (!levels.Take(3).SequenceEqual(Legislative))
+            {
+                return "not one district per legislative level";
+            }
+
+            if (!local)
+            {
+                return levels.Length == 3 ? null : "local rows in a state without them";
+            }
+
+            if (levels.Count(level => level == "county") != 1 || levels.Count(level => level == "city") > 1)
+            {
+                return "not one county and at most one city";
+            }
+
+            var schools = found
+                .Where(district => district.Level == "school")
+                .Select(district => district.Detail)
+                .ToArray();
+
+            return schools is []
+                or ["School district"]
+                or ["High school district"]
+                or ["Elementary school district"]
+                or ["High school district", "Elementary school district"]
+                ? null
+                : "school districts that overlap";
         }
 
         private sealed record State(

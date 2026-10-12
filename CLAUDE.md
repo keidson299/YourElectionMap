@@ -119,13 +119,19 @@ server's one endpoint, `GET /api/districts`. The current plan is
 refer to its numbered slices.
 
 **The data is real and covers ten states**, Arizona, California, Idaho, Montana, North Carolina,
-Oregon, South Carolina, Utah, Washington and Wyoming: each state's US House, State Senate and State House/Assembly districts, from the Census Bureau's TIGERweb layers. An address is placed
+Oregon, South Carolina, Utah, Washington and Wyoming: each state's US House, State Senate and State House/Assembly districts, from the Census Bureau's TIGERweb layers. California and North
+Carolina also have their **local rows**: the county, the city or town, and the school district (in
+California, sometimes a high school and an elementary district), each a whole government named
+rather than numbered ("Wake County", "Raleigh city"). The other states get theirs when their local
+layers are downloaded. An address is placed
 by the US Census geocoder and looked up in one file per state in `Districts/Data/`; the next
-election at the address comes from Google's voter lookup. Those are the server's only two calls out.
+election at the address comes from Google's Civic Information API. Those are the server's only two calls out.
 The browser fetches the street tiles and the map's label fonts from OpenFreeMap (`TILE_SOURCE` in
 `src/map/style.ts`), and the page's own fonts, Fraunces and Inter, from Google Fonts
-(`index.html`). There is no County Commission, City Council or School Board data yet, so the
-rail lists three districts. An address anywhere else is a 404.
+(`index.html`). There is no County Commission, City Council or School Board district data yet,
+so the rail lists three rows in most states, and in California and North Carolina up to six
+(seven where a California address has both a high school and an elementary district). An address
+outside the ten states is a 404.
 
 **Google needs an API key, and nothing breaks without one.** The server reads
 `GoogleCivic:ApiKey` — user secrets in development, the environment variable `GoogleCivic__ApiKey`
@@ -213,9 +219,12 @@ background task that outlives the debug session; from Visual Studio, `SpaProxy` 
 `WebApplicationFactory<Program>` can host the app in memory; do not remove it.
 
 **How a lookup is answered** (`YourElectionMap.Server/Districts/`). `CensusGeocoder` places the
-address; `DistrictData` finds the boundaries containing the point; for a typed address
-`GoogleVoterInfo` then asks for the next election, using the geocoder's spelling of the match,
-which names the state. `DistrictsController` answers 200, 404 when nothing can be placed or found,
+address; `DistrictData` finds the boundaries containing the point, and names the county, where
+the file has counties, as every other row's `area`, for the map chip; for a typed address
+`GoogleVoterInfo` then reads Google's election list, picks the soonest coming election that is
+nationwide or in the address's state (read from the geocoder's spelling of the match), and asks
+the voter lookup about the address for that election by ID. Asked without an ID, Google answers
+"Election unknown" even weeks before a general election. `DistrictsController` answers 200, 404 when nothing can be placed or found,
 503 when the geocoder did not answer, and 400 for an unusable query; the client reads 404 and 400
 as no-match and anything else as an error, so an outage never reads as a bad address. Before
 changing it, know that:
@@ -229,8 +238,11 @@ changing it, know that:
   to street level. Responses are compressed (Brotli or gzip, the
   framework's defaults).
 - **Google can never fail a lookup.** `GoogleVoterInfo` returns null rather than throwing for no
-  key, no election, a refusal, a timeout or an unreadable answer; only the browser cancelling
-  propagates.
+  key, no election, a refusal, a timeout (four seconds for both calls together) or an unreadable
+  answer; only the browser cancelling propagates.
+- **A county, city or school row has no unit or number** (both null on the wire); its `office` is
+  its name and its id is its level and Census GEOID, `county-37183`. Rows sort broad to local,
+  then by number, with an elementary school district after the high school district over it.
 
 **Tests.** `DistrictsEndpointTests` hosts the whole app in memory (`OfflineApp`) and reads the raw
 JSON, which is the contract the client reads; new endpoints deserve the same kind of test. **No
@@ -238,7 +250,10 @@ test reaches the internet:** `OfflineApp` swaps the geocoder's and Google's `Htt
 for `FakeGeocoding` and `FakeVoterInfo` (the fake election's date is relative to today). Everything
 else is real, including the district files. Stub any new outward call the same way. The converter
 has no tests of its own, since its input is not in the repository; `DistrictDataTests` checks its
-output, most strongly with the grid tests that every covered point finds one district per level.
+output, most strongly with the grid tests that every covered point finds one district per
+legislative level and, in the states with local rows (`WithLocalLevels`), one county, at most one
+city and a school district combination that does not overlap. `LocalDistrictsTests` covers the
+local rows' sorting and naming on a small file it writes itself.
 On the client, `src/test/setup.ts` replaces `maplibre-gl` with `src/test/fakeMaplibre.ts`, because
 jsdom has no WebGL.
 
@@ -254,7 +269,8 @@ jsdom has no WebGL.
   `buildStyle` in `src/map/style.ts`, so a new selection or theme is one `setStyle`. The layers
   handed to it are memoized in `ResultView`: a new `layers` object rebuilds the style.
 - `src/test/sampleLookup.ts` deliberately has all six levels, a ward, a zone and an election: it is
-  the only thing exercising the parts of the page the real three-level data leaves empty.
+  the only thing exercising wards and zones, which no real data has. Named rows (no unit or
+  number) are tested in `labels.test.ts` and `DistrictRail.test.tsx`.
 - The phone layout switches at 860px, set in `PHONE_QUERY` (`src/hooks/useMediaQuery.ts`) and
   again in every stylesheet's media query; change them together. To test it, stub `matchMedia` as
   `ResultView.test.tsx` does.

@@ -9,8 +9,9 @@ namespace YourElectionMap.Tools
     /// A state's districts from the Census Bureau's TIGERweb Legislative layers, the one
     /// source of every boundary on the site, saved as GeoJSON in
     /// longitude and latitude: <c>cd.geojson</c>, <c>sldu.geojson</c> and
-    /// <c>sldl.geojson</c> in the folder given. DATA-SOURCE.md has the query that fetches
-    /// them. TIGER carries no population, so the file has none.
+    /// <c>sldl.geojson</c> in the folder given, and, where the folder has them, the
+    /// county, city and school district layers (<see cref="LocalLayers"/>). DATA-SOURCE.md
+    /// has the query that fetches them. TIGER carries no population, so the file has none.
     /// </summary>
     public static partial class Tiger
     {
@@ -104,6 +105,23 @@ namespace YourElectionMap.Tools
                 ]),
         };
 
+        /// <summary>
+        /// The local layers, the same for every state: governments with a name rather
+        /// than numbered districts. TIGER has the county, the city or town and the school
+        /// district, not the commission, council or trustee districts inside them. Each
+        /// is optional: a state folder without the file builds without that layer, and a
+        /// state with no elementary or secondary districts has nothing in those files.
+        /// </summary>
+        private static readonly NamedLayer[] LocalLayers =
+        [
+            // The detail is the rail's second line under the name.
+            new("county.geojson", "county", "County"),
+            new("place.geojson", "city", "City or town"),
+            new("unsd.geojson", "school", "School district"),
+            new("elsd.geojson", "school", "Elementary school district"),
+            new("scsd.geojson", "school", "High school district"),
+        ];
+
         public static Built Build(string state, string source)
         {
             if (!States.TryGetValue(state, out var known))
@@ -116,17 +134,40 @@ namespace YourElectionMap.Tools
 
             foreach (var layer in known.Layers)
             {
-                districts.AddRange(Build(layer, known.Fips, Path.Combine(source, layer.File)));
+                var built = Features(Path.Combine(source, layer.File), layer.File, required: true)
+                    .Select(feature => Build(layer, known.Fips, feature))
+                    .ToList();
+
+                CheckAndSort(built, layer);
+                districts.AddRange(built);
+            }
+
+            foreach (var layer in LocalLayers)
+            {
+                var built = Features(Path.Combine(source, layer.File), layer.File, required: false)
+                    .Select(feature => Build(layer, known.Fips, feature))
+                    .OfType<BuiltDistrict>()
+                    .ToList();
+
+                CheckAndSort(built, layer);
+                districts.AddRange(built);
             }
 
             return new Built(state.ToUpperInvariant(), Source, districts);
         }
 
-        private static List<BuiltDistrict> Build(Layer layer, string fips, string path)
+        /// <summary>A layer's features, or none for a local layer the folder does not have.</summary>
+        private static List<JsonElement> Features(string path, string name, bool required)
         {
             if (!File.Exists(path))
             {
-                throw new InvalidDataException($"No such file: {path}.");
+                if (required)
+                {
+                    throw new InvalidDataException($"No such file: {path}.");
+                }
+
+                Console.WriteLine($"{name}: not in the folder, skipped");
+                return [];
             }
 
             using var file = File.OpenRead(path);
@@ -137,19 +178,13 @@ namespace YourElectionMap.Tools
             if (root.TryGetProperty("exceededTransferLimit", out var exceeded)
                 && exceeded.ValueKind == JsonValueKind.True)
             {
-                throw new InvalidDataException($"{layer.File} was cut short by the server.");
+                throw new InvalidDataException($"{name} was cut short by the server.");
             }
 
-            var built = new List<BuiltDistrict>();
-
-            foreach (var feature in root.GetProperty("features").EnumerateArray())
-            {
-                built.Add(Build(layer, fips, feature));
-            }
-
-            CheckAndSort(built, layer);
-
-            return built;
+            // Cloned, so the features outlive the document.
+            return root.GetProperty("features").EnumerateArray()
+                .Select(feature => feature.Clone())
+                .ToList();
         }
 
         /// <summary>
@@ -228,6 +263,86 @@ namespace YourElectionMap.Tools
         }
 
         /// <summary>
+        /// Each GEOID once, sorted by it so two runs write the same bytes. Prints a line
+        /// per government as it goes.
+        /// </summary>
+        private static void CheckAndSort(List<BuiltDistrict> built, NamedLayer layer)
+        {
+            var repeated = built.GroupBy(district => district.Id).FirstOrDefault(ids => ids.Count() > 1);
+
+            if (repeated is not null)
+            {
+                throw new InvalidDataException($"{layer.File}: {repeated.Key} is in it more than once.");
+            }
+
+            built.Sort((left, right) => string.CompareOrdinal(left.Id, right.Id));
+
+            foreach (var district in built)
+            {
+                Console.WriteLine(
+                    $"  {district.Id,-18} {district.RawPoints,8:N0} points -> "
+                    + $"{district.Rings.Sum(ring => ring.Length / 2),6:N0}  {district.Office}");
+            }
+
+            Console.WriteLine($"{layer.File}: {built.Count} {layer.Level} areas");
+        }
+
+        /// <summary>
+        /// A county, city or school district, named by TIGER's <c>NAME</c> ("Wake County")
+        /// and identified by its GEOID, which is stable and URL-safe: "county-37183". It
+        /// has no number. Null for the school layers' "not defined" areas, where TIGER
+        /// fills land no district of that kind covers.
+        /// </summary>
+        private static BuiltDistrict? Build(NamedLayer layer, string fips, JsonElement feature)
+        {
+            var properties = feature.GetProperty("properties");
+            var name = Field(properties, "NAME", layer.File);
+            var geoid = Field(properties, "GEOID", layer.File);
+
+            if (!geoid.StartsWith(fips, StringComparison.Ordinal) || !geoid.All(char.IsAsciiDigit))
+            {
+                throw new InvalidDataException(
+                    $"{layer.File}: \"{name}\" has GEOID {geoid}, not in state {fips}.");
+            }
+
+            if (name.Contains("Not Defined", StringComparison.OrdinalIgnoreCase))
+            {
+                Console.WriteLine($"  {geoid,-18} skipped: \"{name}\"");
+                return null;
+            }
+
+            // Written into the file as it is, between quotes.
+            if (name.Contains('"') || name.Contains('\\'))
+            {
+                throw new InvalidDataException($"{layer.File}: \"{name}\" needs escaping.");
+            }
+
+            var parts = Rings(feature.GetProperty("geometry"), layer.File, name);
+
+            if (parts.Count == 0)
+            {
+                throw new InvalidDataException($"{layer.File}: \"{name}\" has no shape.");
+            }
+
+            return new BuiltDistrict(
+                $"{layer.Level}-{geoid}",
+                layer.Level,
+                name,
+                Number: "",
+                layer.Detail,
+                parts.Sum(part => part.Length / 2),
+                parts.Select(part => Geometry.Thin(part, ToleranceDegrees)).ToList());
+        }
+
+        private static string Field(JsonElement properties, string name, string file) =>
+            properties.TryGetProperty(name, out var value)
+                && value.ValueKind == JsonValueKind.String
+                && value.GetString() is { Length: > 0 } text
+                ? text
+                : throw new InvalidDataException(
+                    $"{file}: a feature has no {name}. Fetch it with outFields=NAME,GEOID.");
+
+        /// <summary>
         /// Every ring of a Polygon or MultiPolygon, loose: the server works out which is
         /// a hole by counting.
         /// </summary>
@@ -285,5 +400,7 @@ namespace YourElectionMap.Tools
             string Office,
             string Detail,
             int Count);
+
+        private sealed record NamedLayer(string File, string Level, string Detail);
     }
 }

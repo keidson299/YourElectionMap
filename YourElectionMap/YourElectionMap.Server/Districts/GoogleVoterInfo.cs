@@ -13,11 +13,24 @@ namespace YourElectionMap.Server.Districts
     /// null, which hides the rail's footer. Google is sent the address and nothing else,
     /// from the server, so it never sees the visitor; nothing is logged or kept.
     /// </para>
+    /// <para>
+    /// Google answers an address asked about without an election ID with "Election
+    /// unknown", even with a general election weeks away, so the election list is read
+    /// first and the next election covering the address's state is asked about by ID.
+    /// </para>
     /// </summary>
     public sealed class GoogleVoterInfo
     {
+        private const string ElectionsEndpoint =
+            "https://www.googleapis.com/civicinfo/v2/elections";
+
         private const string Endpoint =
             "https://www.googleapis.com/civicinfo/v2/voterinfo?address=";
+
+        /// <summary>Google's "VIP Test Election", always listed and always in the future.</summary>
+        private const string TestElectionId = "2000";
+
+        private const string Nationwide = "ocd-division/country:us";
 
         /// <summary>
         /// Where "today" is decided: the westernmost time zone the site covers, the Pacific
@@ -27,6 +40,12 @@ namespace YourElectionMap.Server.Districts
         private static readonly TimeZoneInfo LastToClose =
             TimeZoneInfo.FindSystemTimeZoneById("America/Los_Angeles");
 
+        /// <summary>
+        /// Both calls together. They run after the geocoder's eight seconds, and the client
+        /// gives up on the whole lookup at fifteen.
+        /// </summary>
+        private static readonly TimeSpan Budget = TimeSpan.FromSeconds(4);
+
         private readonly HttpClient _client;
         private readonly string? _apiKey;
 
@@ -34,10 +53,6 @@ namespace YourElectionMap.Server.Districts
         {
             _client = client;
             _apiKey = configuration["GoogleCivic:ApiKey"];
-
-            // Runs after the geocoder's eight seconds, and the client gives up on the
-            // whole lookup at fifteen.
-            _client.Timeout = TimeSpan.FromSeconds(4);
         }
 
         /// <summary>
@@ -53,31 +68,30 @@ namespace YourElectionMap.Server.Districts
                 return null;
             }
 
+            using var budget = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            budget.CancelAfter(Budget);
+
+            var today = DateOnly.FromDateTime(
+                TimeZoneInfo.ConvertTime(DateTimeOffset.UtcNow, LastToClose).DateTime);
+
             try
             {
-                using var request = new HttpRequestMessage(
-                    HttpMethod.Get,
-                    Endpoint + Uri.EscapeDataString(address));
+                using var elections = await GetJsonAsync(ElectionsEndpoint, budget.Token);
+                var electionId = elections is null
+                    ? null
+                    : NextElectionId(elections.RootElement, State(address), today);
 
-                // In a header rather than the URL, so the key is in no logged request line.
-                request.Headers.Add("X-Goog-Api-Key", _apiKey);
-
-                using var response = await _client.SendAsync(request, cancellationToken);
-
-                // Google answers an address with no election as an error, so this is the
-                // usual way of hearing "nothing to show", not only an outage.
-                if (!response.IsSuccessStatusCode)
+                if (electionId is null)
                 {
                     return null;
                 }
 
-                await using var body = await response.Content.ReadAsStreamAsync(cancellationToken);
-                using var json = await JsonDocument.ParseAsync(body, default, cancellationToken);
+                using var voterInfo = await GetJsonAsync(
+                    Endpoint + Uri.EscapeDataString(address)
+                        + "&electionId=" + Uri.EscapeDataString(electionId),
+                    budget.Token);
 
-                var today = DateOnly.FromDateTime(
-                    TimeZoneInfo.ConvertTime(DateTimeOffset.UtcNow, LastToClose).DateTime);
-
-                return Summary(json.RootElement, today);
+                return voterInfo is null ? null : Summary(voterInfo.RootElement, today);
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
@@ -85,10 +99,96 @@ namespace YourElectionMap.Server.Districts
                 throw;
             }
             catch (Exception failure) when (
-                failure is HttpRequestException or TaskCanceledException or JsonException)
+                failure is HttpRequestException or OperationCanceledException or JsonException)
             {
                 return null;
             }
+        }
+
+        /// <summary>
+        /// The parsed answer, or null for any status but success. Google answers an
+        /// address with no election as an error, so that is the usual way of hearing
+        /// "nothing to show", not only an outage.
+        /// </summary>
+        private async Task<JsonDocument?> GetJsonAsync(string url, CancellationToken cancellationToken)
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Get, url);
+
+            // In a header rather than the URL, so the key is in no logged request line.
+            request.Headers.Add("X-Goog-Api-Key", _apiKey);
+
+            using var response = await _client.SendAsync(request, cancellationToken);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                return null;
+            }
+
+            await using var body = await response.Content.ReadAsStreamAsync(cancellationToken);
+            return await JsonDocument.ParseAsync(body, default, cancellationToken);
+        }
+
+        /// <summary>
+        /// The soonest election in Google's list that has not passed and covers the
+        /// whole country or the address's state, leaving out Google's test election.
+        /// An election for one county of the state still counts: Google then has
+        /// nothing for an address outside it, which reads as no election.
+        /// </summary>
+        private static string? NextElectionId(JsonElement root, string? state, DateOnly today)
+        {
+            if (root.ValueKind != JsonValueKind.Object
+                || !root.TryGetProperty("elections", out var elections)
+                || elections.ValueKind != JsonValueKind.Array)
+            {
+                return null;
+            }
+
+            var statewide = state is null ? null : $"{Nationwide}/state:{state.ToLowerInvariant()}";
+            (string Id, DateOnly Day)? next = null;
+
+            foreach (var election in elections.EnumerateArray())
+            {
+                if (election.ValueKind != JsonValueKind.Object
+                    || Text(election, "id") is not { } id
+                    || id == TestElectionId
+                    || Text(election, "electionDay") is not { } dayText
+                    || !DateOnly.TryParseExact(dayText, "yyyy-MM-dd", out var day)
+                    || day < today
+                    || Text(election, "ocdDivisionId") is not { } division)
+                {
+                    continue;
+                }
+
+                var covers = division == Nationwide
+                    || (statewide is not null
+                        && (division == statewide || division.StartsWith(statewide + "/", StringComparison.Ordinal)));
+
+                if (covers && (next is null || day < next.Value.Day))
+                {
+                    next = (id, day);
+                }
+            }
+
+            return next?.Id;
+        }
+
+        private static string? Text(JsonElement element, string name) =>
+            element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String
+                ? value.GetString()
+                : null;
+
+        /// <summary>
+        /// The state in the geocoder's spelling of an address, "16 W JONES ST, RALEIGH, NC,
+        /// 27601": the part before the ZIP code. Null if it is not there to read, which
+        /// leaves only nationwide elections.
+        /// </summary>
+        private static string? State(string address)
+        {
+            var parts = address.Split(',', StringSplitOptions.TrimEntries);
+
+            return parts.Length >= 2 && parts[^2].Length == 2 && parts[^2].All(char.IsAsciiLetter)
+                ? parts[^2]
+                : null;
         }
 
         /// <summary>

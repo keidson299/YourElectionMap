@@ -59,15 +59,40 @@ namespace YourElectionMap.Server.Tests
             // that a change to the converter or the data file cannot quietly start
             // answering with the wrong districts.
             Assert.Equal(
-                new[] { "congressional-2", "state-upper-14", "state-lower-38" },
+                new[]
+                {
+                    "congressional-2", "state-upper-14", "state-lower-38",
+                    "county-37183", "city-3755000", "school-3704720",
+                },
                 Each(districts, "id"));
             Assert.Equal(
-                new[] { "congressional", "state-upper", "state-lower" },
+                new[] { "congressional", "state-upper", "state-lower", "county", "city", "school" },
                 Each(districts, "level"));
             Assert.Equal(
-                new[] { "U.S. House", "State Senate", "State House" },
+                new[]
+                {
+                    "U.S. House", "State Senate", "State House",
+                    "Wake County", "Raleigh city", "Wake County Schools",
+                },
                 Each(districts, "office"));
-            Assert.Equal(new[] { "Federal", "State", "State" }, Each(districts, "detail"));
+            Assert.Equal(
+                new[] { "Federal", "State", "State", "County", "City or town", "School district" },
+                Each(districts, "detail"));
+
+            // The county is named on every other district's map chip.
+            Assert.Equal(
+                new[] { "Wake County", "Wake County", "Wake County", null, "Wake County", "Wake County" },
+                Each(districts, "area"));
+        }
+
+        [Fact]
+        public async Task Get_ListsCaliforniasCountyCityAndSchoolDistrict()
+        {
+            var lookup = await LookupAsync(AddressQuery(SacramentoAddress));
+
+            Assert.Equal(
+                new[] { "county-06067", "city-0664000", "school-0633840" },
+                Each(lookup.GetProperty("districts"), "id").Skip(3));
         }
 
         [Theory]
@@ -87,16 +112,17 @@ namespace YourElectionMap.Server.Tests
             int lower,
             string lowerHouse)
         {
-            // Pinned the same way as Raleigh.
+            // Pinned the same way as Raleigh. California's local rows follow; the other
+            // states have none yet.
             var lookup = await LookupAsync(AddressQuery(address));
             var districts = lookup.GetProperty("districts");
 
             Assert.Equal(
                 new[] { $"congressional-{congressional}", $"state-upper-{upper}", $"state-lower-{lower}" },
-                Each(districts, "id"));
+                Each(districts, "id").Take(3));
             Assert.Equal(
                 new[] { "U.S. House", "State Senate", lowerHouse },
-                Each(districts, "office"));
+                Each(districts, "office").Take(3));
         }
 
         [Fact]
@@ -150,11 +176,13 @@ namespace YourElectionMap.Server.Tests
         public async Task Get_SendsNullRatherThanOmittingWhatIsNotKnown()
         {
             var lookup = await LookupAsync(AddressQuery(RaleighAddress));
-            var first = lookup.GetProperty("districts")[0];
+            var county = lookup.GetProperty("districts")[3];
 
-            // The plans name no place, and the chip leaves out what it is not given.
-            Assert.Equal(JsonValueKind.Null, first.GetProperty("area").ValueKind);
-            Assert.Equal("District", first.GetProperty("unit").GetString());
+            // A county is named, not numbered, and is no other place's part.
+            Assert.Equal("county", county.GetProperty("level").GetString());
+            Assert.Equal(JsonValueKind.Null, county.GetProperty("unit").ValueKind);
+            Assert.Equal(JsonValueKind.Null, county.GetProperty("number").ValueKind);
+            Assert.Equal(JsonValueKind.Null, county.GetProperty("area").ValueKind);
         }
 
         [Theory]
@@ -173,7 +201,7 @@ namespace YourElectionMap.Server.Tests
             var lookup = await LookupAsync("lat=35.7822&lon=-78.6398");
 
             Assert.Equal("Your location", lookup.GetProperty("label").GetString());
-            Assert.Equal(3, lookup.GetProperty("districts").GetArrayLength());
+            Assert.Equal(6, lookup.GetProperty("districts").GetArrayLength());
 
             // Google's voter lookup takes an address, and a point has none.
             Assert.Equal(JsonValueKind.Null, lookup.GetProperty("election").ValueKind);
@@ -214,7 +242,7 @@ namespace YourElectionMap.Server.Tests
 
             Assert.Equal(-77.3664, location[0], 0.0001);
             Assert.Equal(35.6127, location[1], 0.0001);
-            Assert.Equal(3, lookup.GetProperty("districts").GetArrayLength());
+            Assert.Equal(6, lookup.GetProperty("districts").GetArrayLength());
         }
 
         [Fact]
@@ -244,10 +272,11 @@ namespace YourElectionMap.Server.Tests
         [InlineData(SacramentoAddress)] // Google has no election for it either
         public async Task Get_StillAnswersWhenGoogleHasNoElectionToGive(string address)
         {
-            // The districts do not depend on the election, so they come back without it.
+            // The districts do not depend on the election, so they come back without it:
+            // three legislative, then the county, the city and the school district.
             var lookup = await LookupAsync(AddressQuery(address));
 
-            Assert.Equal(3, lookup.GetProperty("districts").GetArrayLength());
+            Assert.Equal(6, lookup.GetProperty("districts").GetArrayLength());
             Assert.Equal(JsonValueKind.Null, lookup.GetProperty("election").ValueKind);
         }
 

@@ -69,11 +69,26 @@ namespace YourElectionMap.Server.Districts
                 // States do not overlap, so the first to cover the point is the only one.
                 if (found.Count > 0)
                 {
-                    return new Found(state.Source, found);
+                    return new Found(state.Source, WithCounty(found));
                 }
             }
 
             return null;
+        }
+
+        /// <summary>
+        /// The county the point is in, named on the map chip of every other district:
+        /// "State House · District 38" over "Wake County". Left as it was where the
+        /// file has no counties.
+        /// </summary>
+        private static List<District> WithCounty(List<District> found)
+        {
+            var county = found.Find(district => district.Level == "county")?.Office;
+
+            return county is null
+                ? found
+                : found.ConvertAll(district =>
+                    district.Level == "county" ? district : district with { Area = county });
         }
 
         private static Document Load(string path)
@@ -91,7 +106,9 @@ namespace YourElectionMap.Server.Districts
             }
 
             // Broad to local, which is the order the rail lists them in, so the lookup
-            // never has to sort. Within a level, by number.
+            // never has to sort. Within a level, by number; an elementary school
+            // district after the secondary one covering it; then by id, so the order
+            // never depends on the sort.
             Array.Sort(document.Districts, Compare);
 
             return document;
@@ -109,8 +126,19 @@ namespace YourElectionMap.Server.Districts
             var leftNumber = int.TryParse(left.Number, out var l) ? l : int.MaxValue;
             var rightNumber = int.TryParse(right.Number, out var r) ? r : int.MaxValue;
 
-            return leftNumber - rightNumber;
+            if (leftNumber != rightNumber)
+            {
+                return leftNumber.CompareTo(rightNumber);
+            }
+
+            var byGrades = Elementary(left) - Elementary(right);
+
+            return byGrades != 0 ? byGrades : string.CompareOrdinal(left.Id, right.Id);
         }
+
+        /// <summary>1 for the converter's "Elementary school district", the more local of two.</summary>
+        private static int Elementary(Stored district) =>
+            district.Detail.StartsWith("Elementary", StringComparison.Ordinal) ? 1 : 0;
 
         /// <summary>
         /// The client's DISTRICT_LEVELS order. A level this does not know sorts last
@@ -156,10 +184,12 @@ namespace YourElectionMap.Server.Districts
                     Id,
                     Level,
                     Office,
-                    "District",
-                    Number,
+                    // A county, city or school district is stored with no number: it is
+                    // named, "Wake County", not numbered.
+                    Unit: Number.Length == 0 ? null : "District",
+                    Number: Number.Length == 0 ? null : Number,
                     Detail,
-                    // TIGER names no place; the map chip leaves out what it is not given.
+                    // Filled from the county by Covering, where the file has counties.
                     Area: null,
                     // Worked out the first time the district is asked for and kept, since
                     // the data never changes while the app runs.

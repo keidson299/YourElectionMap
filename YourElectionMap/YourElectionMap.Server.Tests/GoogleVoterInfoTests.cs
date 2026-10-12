@@ -117,10 +117,9 @@ namespace YourElectionMap.Server.Tests
         }
 
         [Fact]
-        public async Task GetAsync_SendsTheKeyAsAHeaderAndTheAddressInTheQuery()
+        public async Task GetAsync_SendsTheKeyAsAHeaderAndTheAddressAndElectionInTheQuery()
         {
-            var handler = new FakeGeocoding.StubHandler(
-                (_, _) => Task.FromResult(FakeGeocoding.Reply("{}")));
+            var handler = Handler((_, _) => Task.FromResult(FakeGeocoding.Reply("{}")));
 
             await new GoogleVoterInfo(new HttpClient(handler), Settings("test-key"))
                 .GetAsync(Raleigh, default);
@@ -133,11 +132,83 @@ namespace YourElectionMap.Server.Tests
             // Never in the URL, which is what request logs print.
             Assert.DoesNotContain("test-key", handler.LastRequest.RequestUri!.ToString());
             Assert.Contains("address=16%20W%20JONES%20ST%2C%20RALEIGH%2C%20NC%2C%2027601", handler.LastQuery);
+            Assert.Contains("electionId=9000", handler.LastQuery);
+        }
+
+        [Fact]
+        public async Task GetAsync_AsksAboutTheSoonestElectionCoveringTheAddressesState()
+        {
+            // Past, another state's, a county's in this state, then nationwide: the
+            // county's is soonest of the ones that can cover the address.
+            var elections = FakeVoterInfo.Elections(
+                ("1", FakeVoterInfo.DaysFromToday(-5), "ocd-division/country:us"),
+                ("2", FakeVoterInfo.DaysFromToday(5), "ocd-division/country:us/state:ca"),
+                ("3", FakeVoterInfo.DaysFromToday(20), "ocd-division/country:us/state:nc/county:wake"),
+                ("4", FakeVoterInfo.DaysFromToday(30), "ocd-division/country:us"));
+            var handler = Handler((_, _) => Task.FromResult(FakeGeocoding.Reply("{}")), elections);
+
+            await new GoogleVoterInfo(new HttpClient(handler), Settings("test-key"))
+                .GetAsync(Raleigh, default);
+
+            Assert.Contains("electionId=3", handler.LastQuery);
+        }
+
+        [Fact]
+        public async Task GetAsync_AsksNoMoreWhenNoElectionIsComing()
+        {
+            // Google's test election is always listed and always in the future.
+            var elections = FakeVoterInfo.Elections(
+                ("2", FakeVoterInfo.DaysFromToday(5), "ocd-division/country:us/state:ca"));
+            var voterInfoAsked = false;
+            var handler = Handler(
+                (_, _) =>
+                {
+                    voterInfoAsked = true;
+                    return Task.FromResult(FakeGeocoding.Reply(FakeVoterInfo.Election(FakeVoterInfo.DaysFromToday(5))));
+                },
+                elections);
+
+            var election = await new GoogleVoterInfo(new HttpClient(handler), Settings("test-key"))
+                .GetAsync(Raleigh, default);
+
+            Assert.Null(election);
+            Assert.False(voterInfoAsked);
+        }
+
+        [Theory]
+        [InlineData(HttpStatusCode.Forbidden, "{}")]
+        [InlineData(HttpStatusCode.OK, "<html>down for maintenance</html>")]
+        [InlineData(HttpStatusCode.OK, "{ \"elections\": {} }")]
+        public async Task GetAsync_ShowsNothingWhenTheElectionListCannotBeRead(
+            HttpStatusCode status,
+            string body)
+        {
+            var handler = new FakeGeocoding.StubHandler((request, _) => Task.FromResult(
+                FakeVoterInfo.IsElectionList(request)
+                    ? FakeGeocoding.Reply(body, status)
+                    : FakeGeocoding.Reply(FakeVoterInfo.Election(FakeVoterInfo.DaysFromToday(30)))));
+
+            var election = await new GoogleVoterInfo(new HttpClient(handler), Settings("test-key"))
+                .GetAsync(Raleigh, default);
+
+            Assert.Null(election);
         }
 
         private static GoogleVoterInfo VoterInfo(
             Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> reply) =>
-            new(new HttpClient(new FakeGeocoding.StubHandler(reply)), Settings("test-key"));
+            new(new HttpClient(Handler(reply)), Settings("test-key"));
+
+        /// <summary>
+        /// Answers the election list with <paramref name="elections"/>, by default a
+        /// nationwide election in 30 days, and the voter lookup however the test says.
+        /// </summary>
+        private static FakeGeocoding.StubHandler Handler(
+            Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> reply,
+            string? elections = null) =>
+            new((request, token) => FakeVoterInfo.IsElectionList(request)
+                ? Task.FromResult(FakeGeocoding.Reply(elections ?? FakeVoterInfo.Elections(
+                    ("9000", FakeVoterInfo.DaysFromToday(30), "ocd-division/country:us"))))
+                : reply(request, token));
 
         private static IConfiguration Settings(string? apiKey) =>
             new ConfigurationBuilder()

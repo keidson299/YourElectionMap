@@ -27,13 +27,19 @@ namespace YourElectionMap.Server.Districts
         ElectionSummary? Election,
         string? Source);
 
-    /// <param name="Id">URL-safe and stable, because the page URL carries it: "state-lower-44".</param>
+    /// <param name="Id">
+    /// URL-safe and stable, because the page URL carries it: "state-lower-44", or for a
+    /// county, city or school district its Census code, "county-37183".
+    /// </param>
     /// <param name="Level">One of the client's DISTRICT_LEVELS: "state-lower".</param>
-    /// <param name="Office">"State House".</param>
-    /// <param name="Unit">"District", "Ward" or "Zone".</param>
-    /// <param name="Number">"44".</param>
-    /// <param name="Detail">The rail's second line: "Federal", "Greenlake County".</param>
-    /// <param name="Area">The place named on the map chip, or null.</param>
+    /// <param name="Office">"State House", or a whole government's name: "Wake County".</param>
+    /// <param name="Unit">
+    /// "District", "Ward" or "Zone"; null for a county, city or school district, which
+    /// has a name rather than a number.
+    /// </param>
+    /// <param name="Number">"44", or null on the same terms as the unit.</param>
+    /// <param name="Detail">The rail's second line: "Federal", "County", "Elementary".</param>
+    /// <param name="Area">The place named on the map chip, the address's county, or null.</param>
     /// <param name="Boundary">
     /// The coordinates of a GeoJSON MultiPolygon: polygons, each an outer ring and
     /// then its holes, each ring closed [longitude, latitude] points. The page's map
@@ -43,8 +49,8 @@ namespace YourElectionMap.Server.Districts
         string Id,
         string Level,
         string Office,
-        string Unit,
-        string Number,
+        string? Unit,
+        string? Number,
         string Detail,
         string? Area,
         double[][][][] Boundary);

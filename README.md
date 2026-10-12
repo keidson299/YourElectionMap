@@ -7,13 +7,15 @@ An ASP.NET Core 9 API (`YourElectionMap.Server`) serving a React 19 + Vite SPA
 console project (`YourElectionMap.Tools`) that builds the district data.
 
 The data is real and covers **Arizona, California, Idaho, Montana, North Carolina, Oregon,
-South Carolina, Utah, Washington and Wyoming**: each state's US House, State Senate and State House or Assembly districts, all from
+South Carolina, Utah, Washington and Wyoming**: each state's US House, State Senate and State House or Assembly districts, and in
+California and North Carolina the county, city or town and school district too, all from
 the Census Bureau's TIGERweb, drawn with [MapLibre GL](https://maplibre.org/) over a street map from
 [OpenFreeMap](https://openfreemap.org/), with the next election at the address — its date and how
 many candidates and ballot measures are on the ballot — from Google's voter lookup. Four things
 reach out to the internet: the server places addresses with the US Census geocoder and asks the
 Google Civic Information API for the election, and the visitor's browser fetches the street map's
-tiles from OpenFreeMap and the page's fonts from Google Fonts. There is no county, city or school board data yet. The plan is
+tiles from OpenFreeMap and the page's fonts from Google Fonts. There are no county commission,
+city council or school board districts yet: the local rows are the governments as a whole. The plan is
 [design/ElectionMapMainDesignPlanV5.md](design/ElectionMapMainDesignPlanV5.md).
 
 ## Developing in VS Code
@@ -39,10 +41,15 @@ dotnet run --project YourElectionMap.Tools -- tiger <state> `
   YourElectionMap.Server\Districts\Data\<state>-districts.json
 ```
 
+The folder can also hold the state's county, city and school district layers (`county`,
+`place`, `unsd`, `scsd` and `elsd.geojson`); the tool adds each one it finds and skips any it
+does not.
+
 **Add a Google Civic Information API key (optional).** Without one the site works, but the
 election footer under the district list stays hidden. In the Google Cloud console, create a
 project, enable the *Google Civic Information API*, and create an API key restricted to that API
-(the free quota is 25,000 lookups a day). Then, from `YourElectionMap/`:
+(the free quota is 25,000 requests a day, and each address looked up uses two: the election
+list, then the voter lookup). Then, from `YourElectionMap/`:
 
 ```powershell
 dotnet user-secrets set "GoogleCivic:ApiKey" "<your key>" --project YourElectionMap.Server

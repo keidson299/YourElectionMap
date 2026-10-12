@@ -44,6 +44,21 @@ describe('districtName', () => {
       ),
     ).toBe('School Board Zone 5')
   })
+
+  it('names a county, city or school district by its name alone in every form', () => {
+    const county = district({
+      id: 'county-37183',
+      level: 'county',
+      office: 'Wake County',
+      unit: null,
+      number: null,
+      detail: 'County',
+    })
+
+    expect(districtName(county)).toBe('Wake County')
+    expect(districtName(county, 'short')).toBe('Wake County')
+    expect(districtName(county, 'legend')).toBe('Wake County')
+  })
 })
 
 describe('counts', () => {

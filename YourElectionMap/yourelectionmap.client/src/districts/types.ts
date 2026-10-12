@@ -23,14 +23,15 @@ export type Ring = readonly LngLat[]
 export type Polygon = readonly Ring[]
 
 export type District = {
-  /** URL-safe and stable, e.g. 'state-lower-44'. */
+  /** URL-safe and stable, e.g. 'state-lower-44', or 'county-37183' for a county. */
   id: string
   level: DistrictLevel
-  /** 'State House' */
+  /** 'State House', or a whole government's name: 'Wake County'. */
   office: string
-  unit: 'District' | 'Ward' | 'Zone'
-  /** '44' */
-  number: string
+  /** Null for a county, city or school district, which is named, not numbered. */
+  unit: 'District' | 'Ward' | 'Zone' | null
+  /** '44', or null on the same terms as the unit. */
+  number: string | null
   /** The rail's second line: 'Federal', 'State'. */
   detail: string
   /** The place named on the map chip, where it is known. */

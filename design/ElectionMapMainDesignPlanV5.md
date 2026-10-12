@@ -6,7 +6,7 @@ _As of 2026-10-11. This replaces V1 to V4, which are in the repository's git his
 
 This website serves as a way for people to see exactly which election maps they are within. This stretches from federal election maps, through state maps, all the way down to municipal boundaries for elections like school board or city council members.
 
-The site models six kinds of district, listed broad to local: U.S. House, State Senate, State House, County Commission, City Council and School Board. An address can fall in fewer than six, and the site never assumes it falls in all of them. **Today it has data for the first three**, and only in ten states, Arizona, California, Idaho, Montana, North Carolina, Oregon, South Carolina, Utah, Washington and Wyoming; the page is built so that this is a matter of how many rows the rail has, not a special case.
+The site models six kinds of district, listed broad to local: U.S. House, State Senate, State House, County Commission, City Council and School Board. An address can fall in fewer than six, and the site never assumes it falls in all of them. **Today it has data for the first three**, and only in ten states, Arizona, California, Idaho, Montana, North Carolina, Oregon, South Carolina, Utah, Washington and Wyoming. For the local three it has, in California and North Carolina, the governments themselves rather than their electoral districts: the county, the city or town, and the school district, each named rather than numbered. The page is built so that all of this is a matter of how many rows the rail has, not a special case.
 
 Three principles hold throughout:
 
@@ -29,10 +29,11 @@ The work is split into numbered slices, and comments in the code refer to them b
 | 7. Election information   | The next election's date and the number of candidates and ballot measures, from Google's voter lookup, which brings the rail's footer back | Done    |
 | 8. California             | California's US House, State Senate and Assembly districts from the Census Bureau's TIGER data, the first state not from its own enacted plans | Done    |
 | 9. One source             | North Carolina's districts from TIGER too, the same as California's, which retires the enacted-shapefile converter and its projection  | Done    |
-| 10. The other three levels | County Commission, City Council and School Board, and the county's name on the map chip                                                | Next    |
-| Later                     | More states, by the same TIGER pipeline as California; the election detail view, with voting places                                      | Planned |
+| 10. Local governments     | The county, city or town and school district covering the address, by name, from TIGER, with the county's name on the map chip; California and North Carolina first. The election is now asked for by ID from Google's election list | Done    |
+| Next                      | The local layers for the other eight states                                                                                              | Next    |
+| Later                     | More states, by the same TIGER pipeline; County Commission, City Council and School Board districts inside the local governments; the election detail view, with voting places | Planned |
 
-**Deployment is the last step, not a slice.** It comes once the slices that should be live are done. With the general election on 3 November 2026 and the current maps and election information in place, it can come now, ahead of slice 10.
+**Deployment is the last step, not a slice.** It comes once the slices that should be live are done. With the general election on 3 November 2026 and the current maps and election information in place, it can come now.
 
 Two changes from V4's order. Slice 5 is new: the street map had been left out of every plan so far, and the site does not do its job without it. And election information came before the other three levels, because its data can come ready-made from an outside service (see **Outside data**), while local district boundaries have no statewide source.
 
@@ -78,11 +79,11 @@ On a desktop the page has three parts:
 - **Rail** (400px wide, on the left): headed "N districts cover you", it lists every district covering the address, broad to local. The rows work as one radio group: one Tab stop, and arrow keys to move between rows.
 - **Map**: the rest of the width.
 
-Unless the URL names a district, the State House district is selected first, because it is the most local boundary the data has and it is drawn at something like neighbourhood scale. If there is no State House district, the first district is selected.
+Unless the URL names a district, the State House district is selected first, because every covered address has one and it is drawn at something like neighbourhood scale. A city or school district can be more local, but many addresses have neither, and a county is often broader than a congressional district. If there is no State House district, the first district is selected.
 
 The selected row is the boundary drawn solid and hatched on the map. Its neighbours in the list, one on each side where there are two, are drawn for context: the broader one dashed, the more local one dotted. Line style, not colour alone, tells the three apart, so the map still reads in greyscale print and for colour-blind visitors.
 
-With three nested levels rather than six, those context boundaries are often much larger than the selection and run off the edge of the view. That is left as it is: a line leaving the frame is a true thing to draw, and the legend names what each one is.
+Neighbours in the list can differ a great deal in size — a State Senate district beside a State House district, a county beside a city — so those context boundaries are often much larger than the selection and run off the edge of the view. That is left as it is: a line leaving the frame is a true thing to draw, and the legend names what each one is.
 
 At the foot of the rail, under "Also for this address", sit the next election's date, the number of candidates on the ballot, and the number of ballot measures. They come from Google's voter lookup (see **Outside data**). The footer is left out when there is no election to show: Google has none for the address, did not answer, or the lookup was by location, which gives Google no address to ask about. Google's answer can name the election without the ballot — it leaves the contests out when two elections share a day — and then the footer gives the date alone rather than claim "0 candidates".
 
@@ -104,7 +105,7 @@ The tile provider requires a credit, which sits in the map's corner as a small e
 
 Over the map sit:
 
-- a "Showing" chip naming the selected district; TIGER has no population, so the chip shows none, and the area it covers, such as its county, joins it in slice 10
+- a "Showing" chip naming the selected district, and under it on a desktop the address's county, where the state's file has counties ("State House · District 38" over "Wake County"); the county's own chip names it alone. TIGER has no population, so the chip shows none
 - a legend keying the three line styles
 - a scale bar
 - the address's label beside its pin
@@ -152,7 +153,7 @@ The result page renders one shape, whatever produced it. The server sends it as 
 | --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | label     | The address as the page names it: the street line as typed, such as "16 W Jones St", or "Your location"                                                                                                                         |
 | location  | The address as longitude and latitude                                                                                                                                                                                            |
-| districts | Each district covering the address: a stable id; its level; its office ("State House"); its unit and number ("District 44", "Ward 2"); a short detail line; the area it covers, where known; and its boundary |
+| districts | Each district covering the address: a stable id; its level; its office ("State House"), or for a county, city or school district its name ("Wake County"); its unit and number ("District 44", "Ward 2"), both empty for a named row; a short detail line ("Federal", "County"); the address's county for the map chip, where known; and its boundary |
 | election  | The next election's date and its candidate and measure counts, or nothing when there is no election information. Either count can be missing on its own, when the election data names the election but not the ballot           |
 | source    | What the boundaries were drawn from, for the rail to name                                                                                                                                                                        |
 
@@ -171,7 +172,7 @@ Its tests host the whole app in memory and call it over HTTP, reading the raw JS
 1. Resolves the input to a point. An address is geocoded; coordinates are used as given. An address with no state can match in several places, so each match is tried in the geocoder's order and the first one inside a state the site covers wins.
 2. Finds every district whose boundary contains the point, broad to local, in longitude and latitude, the coordinates the district files hold.
 3. Names what that state's boundaries were drawn from.
-4. For a typed address, asks Google's voter lookup for the next election there, sending the geocoder's spelling of the match it used, which names the state.
+4. For a typed address, reads Google's list of coming elections, picks the soonest that is nationwide or in the address's state, and asks Google's voter lookup about the address for that election, sending the geocoder's spelling of the match it used, which names the state.
 5. Returns the lookup, with each boundary as GeoJSON polygons, the election summary if there is one, and the source of the boundaries named. A browser that accepts compressed responses gets one: boundaries at full detail are tens of kilobytes of coordinates, and more for the largest districts.
 
 It answers in one of four ways:
@@ -183,16 +184,18 @@ It answers in one of four ways:
 
 The client reads 404 and 400 as no-match and every other failure, a 503 included, as an error, so that a server or geocoder it cannot reach never reads as an address that does not exist.
 
-Because districts are found from the point itself, an address in an unincorporated area will simply have no city district once there is city data, which the page already handles.
+Because districts are found from the point itself, an address in an unincorporated area simply has no city row, and one where the Census defines no school district has no school row, which the page already handles.
 
-**Data.** Every boundary comes from the Census Bureau's TIGERweb Legislative layers: the 120th Congress's US House districts and the 2026 state legislative districts. There is one file per state, each built by hand with a console project, `YourElectionMap.Tools`, and read by the server at startup:
+**Data.** Every boundary comes from the Census Bureau's TIGERweb: its Legislative layers for the 120th Congress's US House districts and the 2026 state legislative districts, and its county, incorporated place and school district layers for the local rows. There is one file per state, each built by hand with a console project, `YourElectionMap.Tools`, and read by the server at startup:
 
-- **North Carolina, `nc-districts.json` (about five megabytes):** the General Assembly's 2025 congressional plan (CCM-2, enacted 21 October 2025) and its 2023 State Senate and State House plans (Session Laws 2023-146 and 2023-149). Until slice 9 these came from the enacted plans' own shapefiles, retrieved through the Redistricting Data Hub.
-- **California, `ca-districts.json` (about seven megabytes):** the map California's voters approved in November 2025, and the State Senate and Assembly districts.
+- **North Carolina, `nc-districts.json` (about fifteen megabytes):** the General Assembly's 2025 congressional plan (CCM-2, enacted 21 October 2025) and its 2023 State Senate and State House plans (Session Laws 2023-146 and 2023-149), and its 100 counties, 552 cities and towns and 118 school districts, all of them county or city systems serving every grade. Until slice 9 the districts came from the enacted plans' own shapefiles, retrieved through the Redistricting Data Hub.
+- **California, `ca-districts.json` (about nineteen megabytes):** the map California's voters approved in November 2025, the State Senate and Assembly districts, and its 58 counties, 483 cities and towns, and 974 school districts. Where California has no unified district, an address has a high school district and an elementary district inside it, and the rail lists both, high school first.
 - **Oregon, `or-districts.json`, South Carolina, `sc-districts.json`, and Washington, `wa-districts.json` (three to five megabytes each):** their current plans. Washington elects a senator and two representatives from each of its 49 legislative districts, so its State House districts are its State Senate districts.
 - **Arizona, Idaho, Montana, Utah and Wyoming (`az`, `id`, `mt`, `ut` and `wy-districts.json`, two to five megabytes each):** their current plans, with Utah's court-ordered congressional map of November 2025. Arizona and Idaho elect their House two to a Senate district, as Washington does. Wyoming's one House seat is at large, and the page calls it District 1.
 
-TIGER carries no population.
+The other eight states' files have no local rows yet. TIGER carries no population.
+
+The local rows are the governments as a whole, not the districts their boards are elected from: a voter in Wake County votes for its commission, but from one of its commission districts, which TIGER does not hold. A row is named as the Census names it ("Wake County", "Raleigh city", "Wake County Schools") and identified by its Census code, which is stable across vintages and safe in the page's URL. A city's name carries its legal kind, so a few read oddly ("Crescent City city"); the Census also has the bare name, should that be preferred.
 
 The sources are not in the repository and not read at runtime. The files are generated rather than checked in — they are git-ignored — so a fresh copy of the repository needs the sources and a run of the tool for each state before the server will start or its data tests pass; [DATA-SOURCE.md](../YourElectionMap/YourElectionMap.Tools/DATA-SOURCE.md) records where they came from. Every file holds its boundaries in longitude and latitude, thinned to fifteen feet. Three things about that are worth stating as design decisions rather than implementation detail:
 
@@ -202,7 +205,7 @@ The sources are not in the repository and not read at runtime. The files are gen
 
 An address is placed by the **US Census geocoder** (`geocoding.geo.census.gov`, free and keyless). It is one of the two calls the server makes out to the internet. A geocoder that answers with no match is "could not place it", the same 404 as an address that does not exist. A geocoder that is down, gives up after eight seconds, or answers with something that is not JSON is a different matter: that says nothing about the address, so it is a 503 and the page offers to try again.
 
-The other call is **Google's voter lookup** (`www.googleapis.com/civicinfo/v2/voterinfo`), for the election. It needs an API key, which the server reads from its configuration (`GoogleCivic:ApiKey`: user secrets in development, an environment variable when deployed) and sends in a request header rather than the URL. The election is extra to the districts, so this call can never fail a lookup: no key, no election, a refusal, a timeout after four seconds or an answer that cannot be read all mean the lookup goes out without an election and the footer is left out. A fresh copy of the repository has no key and runs that way. An election is shown until its day has ended in every state the site covers, which is the Pacific time zone.
+The other call is **Google's Civic Information API**, for the election, in two requests. The first reads its list of elections (`civicinfo/v2/elections`), which sends nothing about the visitor, and picks the soonest that has not passed and is either nationwide or in the address's state, leaving out Google's permanent "VIP Test Election". The second asks the voter lookup (`civicinfo/v2/voterinfo`) about the address for that election by its ID: asked without one, Google answers "Election unknown", even weeks before a general election. An election for one county of the state counts too, so for an address outside that county Google answers with nothing, and the footer is left out until that election has passed. Both need an API key, which the server reads from its configuration (`GoogleCivic:ApiKey`: user secrets in development, an environment variable when deployed) and sends in a request header rather than the URL. The election is extra to the districts, so these calls can never fail a lookup: no key, no coming election, a refusal, four seconds passing across the two requests, or an answer that cannot be read all mean the lookup goes out without an election and the footer is left out. A fresh copy of the repository has no key and runs that way. An election is shown until its day has ended in every state the site covers, which is the Pacific time zone.
 
 **Hosting.** The server and the built front end ship together as one Linux container; the project already has a Dockerfile. The host is still to be chosen, on cost. Because the district files are not in the repository, the image carries them only when they have been generated into the build context first; an image built from a fresh clone has no districts and the server will not start.
 
@@ -211,9 +214,9 @@ The other call is **Google's voter lookup** (`www.googleapis.com/civicinfo/v2/vo
 Building every data source locally widens the project too far, so outside services are now an accepted way to fill a gap. Each one is weighed on cost, on whether it needs an account or key, and on what it sees of a visit. These were checked on 2026-10-07:
 
 - **Street map tiles: OpenFreeMap.** Free, with no key, no account, no cookies and no limit on use, and a credit required. It offers no service guarantee, so the provider is one setting to change; Stadia Maps' free plan is the fallback.
-- **Election information (slice 7, in use): the Google Civic Information API's voter information lookup.** Free with an API key, up to 25,000 lookups a day. For an address in a supported election, it returns early voting and drop-off locations and the contests and candidates on that ballot. The data comes through the Voting Information Project from state and local election officials. The State Board of Elections' own candidate lists and polling-place files are the fallback and the cross-check. Google's separate representatives lookup was shut down in April 2025, so who holds each seat would come from elsewhere, such as Open States.
+- **Election information (slice 7, in use): the Google Civic Information API's election list and voter information lookup.** Free with an API key, up to 25,000 lookups a day; each address lookup on the site uses two, one of each. For an address in a supported election, it returns early voting and drop-off locations and the contests and candidates on that ballot. The data comes through the Voting Information Project from state and local election officials. The State Board of Elections' own candidate lists and polling-place files are the fallback and the cross-check. Google's separate representatives lookup was shut down in April 2025, so who holds each seat would come from elsewhere, such as Open States.
 - **District boundaries (in use for every state since slice 9): Census TIGERweb.** Free, keyless and public domain. Its Legislative service holds every state's US House and state legislative districts, with the current plans as of its January 2026 vintage, in longitude and latitude. It is downloaded once per state and converted, not called per lookup. It has no population. The site credits the U.S. Census Bureau for its map data, linked to TIGERweb.
-- **Local jurisdictions (slice 10).** The Census geocoder already called can also name an address's county, city and school district, and Census TIGERweb can return their outlines. County commission, city council and school board electoral districts have no statewide source: counties publish their own (Wake and Mecklenburg among them), so they would come county by county, or from a paid national service such as Cicero or BallotReady.
+- **Local jurisdictions (slice 10, in use in California and North Carolina): Census TIGERweb.** Its county, incorporated place and school district layers give each local government's outline, downloaded and converted the same way as the legislative ones. County commission, city council and school board electoral districts have no statewide source: counties publish their own (Wake and Mecklenburg among them), so they would come county by county, or from a paid national service such as Cicero or BallotReady.
 
 ## Privacy
 

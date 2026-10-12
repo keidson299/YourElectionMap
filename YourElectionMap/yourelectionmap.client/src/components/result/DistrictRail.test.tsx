@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { DistrictRail } from './DistrictRail'
 import { sampleLookup } from '../../test/sampleLookup'
 import { mapLayers, resolveSelection } from '../../districts/selection'
-import type { ElectionSummary } from '../../districts/types'
+import type { District, ElectionSummary } from '../../districts/types'
 
 const lookup = sampleLookup({ address: '1420 Maple Street, Springfield' })
 
@@ -148,5 +148,52 @@ describe('DistrictRail', () => {
     renderRail({ source: null })
 
     expect(document.querySelector('.source-tag')).toBeNull()
+  })
+})
+
+describe('DistrictRail with the TIGER local rows', () => {
+  // As the server sends them: a county and two school districts by name, with
+  // no unit or number, after the numbered legislative row.
+  const named = (id: string, office: string, detail: string): District => ({
+    id,
+    level: id.startsWith('county') ? 'county' : 'school',
+    office,
+    unit: null,
+    number: null,
+    detail,
+    area: null,
+    boundary: [],
+  })
+  const districts: readonly District[] = [
+    lookup.districts[2],
+    named('county-06001', 'Greenlake County', 'County'),
+    named('school-0600001', 'Valley Union High', 'High school district'),
+    named('school-0600002', 'Lakeside Elementary', 'Elementary school district'),
+  ]
+
+  it('names each by its name and describes it by its kind', () => {
+    render(
+      <DistrictRail
+        districts={districts}
+        layers={mapLayers(districts, districts[0])}
+        election={null}
+        source="U.S. Census Bureau TIGER"
+        compact={false}
+        sheetExpanded={false}
+        onToggleSheet={() => {}}
+        onSelect={() => {}}
+      />,
+    )
+
+    expect(screen.getAllByRole('radio')).toHaveLength(4)
+    expect(
+      screen.getByRole('radio', { name: 'Greenlake County' }),
+    ).toHaveAccessibleDescription('County')
+    expect(
+      screen.getByRole('radio', { name: 'Valley Union High' }),
+    ).toHaveAccessibleDescription('High school district')
+    expect(
+      screen.getByRole('radio', { name: 'Lakeside Elementary' }),
+    ).toHaveAccessibleDescription('Elementary school district')
   })
 })
