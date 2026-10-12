@@ -35,10 +35,11 @@ namespace YourElectionMap.Server.Tests
             ["OR"] = new(44.9385, -123.0301, "State House", (-124.75, -116.4), (41.95, 46.35)),
             // The State House, 1100 Gervais Street, Columbia.
             ["SC"] = new(34.0004, -81.0330, "State House", (-83.4, -78.45), (31.95, 35.25)),
-            // The Legislative Building, 416 Sid Snyder Avenue SW, Olympia.
-            ["WA"] = new(47.0358, -122.9048, "State House", (-124.9, -116.9), (45.5, 49.1)),
             // The rest have straight borders along round degrees, so their boxes start a few
-            // hundredths off them: a grid row on 37°N would be on the Utah–Arizona line.
+            // hundredths off them: a grid row on 37°N would be on the Utah–Arizona line, and
+            // one on 49°N finds a Washington school district on the Canadian line itself.
+            // The Legislative Building, 416 Sid Snyder Avenue SW, Olympia.
+            ["WA"] = new(47.0358, -122.9048, "State House", (-124.9, -116.9), (45.52, 49.1)),
             // The State Capitol, 1700 W Washington Street, Phoenix.
             ["AZ"] = new(33.4481, -112.0970, "State House", (-114.83, -109.0), (31.31, 37.05)),
             // The State Capitol, 700 W Jefferson Street, Boise.
@@ -60,6 +61,9 @@ namespace YourElectionMap.Server.Tests
         {
             ["CA"] = "06",
             ["NC"] = "37",
+            ["OR"] = "41",
+            ["SC"] = "45",
+            ["WA"] = "53",
         };
 
         private static readonly string[] Legislative = ["congressional", "state-upper", "state-lower"];
@@ -75,11 +79,16 @@ namespace YourElectionMap.Server.Tests
             //
             // Then the local rows: North Carolina's 100 counties, 552 cities and towns and
             // 118 school districts, all unified; California's 58 counties, 483 cities and
-            // towns, and 345 unified, 517 elementary and 112 high school districts.
+            // towns, and 345 unified, 517 elementary and 112 high school districts; Oregon's
+            // 36 counties, 241 cities and towns, and 187 unified, 9 elementary and 1 high
+            // school district; South Carolina's 46 counties, 271 cities and towns and 72
+            // school districts, and Washington's 39 counties, 281 cities and towns and 295
+            // school districts, all unified.
             Assert.Equal(["AZ", "CA", "ID", "MT", "NC", "OR", "SC", "UT", "WA", "WY"], Data.States);
             Assert.Equal(
                 184 + 172 + 96 + 177 + 108 + 69 + 72 + 152 + 108 + 94
-                    + (100 + 552 + 118) + (58 + 483 + 345 + 517 + 112),
+                    + (100 + 552 + 118) + (58 + 483 + 345 + 517 + 112)
+                    + (36 + 241 + 187 + 9 + 1) + (46 + 271 + 72) + (39 + 281 + 295),
                 Data.Count);
         }
 

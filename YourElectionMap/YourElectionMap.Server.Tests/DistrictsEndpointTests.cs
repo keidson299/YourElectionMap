@@ -85,13 +85,21 @@ namespace YourElectionMap.Server.Tests
                 Each(districts, "area"));
         }
 
-        [Fact]
-        public async Task Get_ListsCaliforniasCountyCityAndSchoolDistrict()
+        [Theory]
+        [InlineData(SacramentoAddress, "county-06067", "city-0664000", "school-0633840")]
+        [InlineData("900 Court St NE, Salem OR", "county-41047", "city-4164900", "school-4110820")]
+        [InlineData("1100 Gervais St, Columbia SC", "county-45079", "city-4516000", "school-4503360")]
+        [InlineData("416 Sid Snyder Ave SW, Olympia WA", "county-53067", "city-5351300", "school-5306180")]
+        public async Task Get_ListsTheCapitolsCountyCityAndSchoolDistrict(
+            string address,
+            string county,
+            string city,
+            string school)
         {
-            var lookup = await LookupAsync(AddressQuery(SacramentoAddress));
+            var lookup = await LookupAsync(AddressQuery(address));
 
             Assert.Equal(
-                new[] { "county-06067", "city-0664000", "school-0633840" },
+                new[] { county, city, school },
                 Each(lookup.GetProperty("districts"), "id").Skip(3));
         }
 
@@ -112,8 +120,8 @@ namespace YourElectionMap.Server.Tests
             int lower,
             string lowerHouse)
         {
-            // Pinned the same way as Raleigh. California's local rows follow; the other
-            // states have none yet.
+            // Pinned the same way as Raleigh. In California, Oregon, South Carolina and
+            // Washington the local rows follow; the other states have none yet.
             var lookup = await LookupAsync(AddressQuery(address));
             var districts = lookup.GetProperty("districts");
 

@@ -8,7 +8,8 @@ console project (`YourElectionMap.Tools`) that builds the district data.
 
 The data is real and covers **Arizona, California, Idaho, Montana, North Carolina, Oregon,
 South Carolina, Utah, Washington and Wyoming**: each state's US House, State Senate and State House or Assembly districts, and in
-California and North Carolina the county, city or town and school district too, all from
+California, North Carolina, Oregon, South Carolina and Washington the county, city or town and
+school district too, all from
 the Census Bureau's TIGERweb, drawn with [MapLibre GL](https://maplibre.org/) over a street map from
 [OpenFreeMap](https://openfreemap.org/), with the next election at the address — its date and how
 many candidates and ballot measures are on the ballot — from Google's voter lookup. Four things

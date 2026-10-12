@@ -20,9 +20,10 @@ holds its rings in longitude and latitude, to six decimal places, thinned to 15 
 | `ut-districts.json` | Utah | 49 | `Tiger\ut` | 2026-10-11 |
 | `wy-districts.json` | Wyoming | 56 | `Tiger\wy` | 2026-10-11 |
 
-Only California's and North Carolina's folders hold the local layers so far, downloaded on the
-same day. The other eight states' files have the three legislative levels and no county, city or
-school rows until theirs are downloaded and the tool is run again.
+Only the folders of California, North Carolina, Oregon, South Carolina and Washington hold the
+local layers so far, downloaded on the same day. The other five states' files have the three
+legislative levels and no county, city or school rows until theirs are downloaded and the tool is
+run again.
 
 ## The source
 
@@ -54,7 +55,7 @@ https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/<service>/MapServe
 ```
 
 A state with no high school or elementary districts gets a file with no features in it, which
-is fine: North Carolina's school districts are all unified.
+is fine: the school districts of North Carolina, South Carolina and Washington are all unified.
 
 A layer too big for one answer comes back with `"exceededTransferLimit": true`. Fetch it in
 pages with `resultOffset` and `resultRecordCount`, and join the features into one file.
@@ -81,6 +82,12 @@ high school district over one or more elementary districts. A few of the high sc
 are a unified district's high school grades serving its neighbours, named for it with "(9-12)"
 on the end, "Bishop Unified School District (9-12)". One unified "district" is TIGER's
 "School District Not Defined", the land no district covers; the tool leaves it out.
+
+### Oregon
+
+Oregon's school districts are unified but for one corner of the south-east, where Harney County
+Union High School District 1J sits over nine elementary districts. Oregon's school layer has a "School
+District Not Defined" too, which the tool leaves out as it does California's.
 
 ### Washington, Arizona and Idaho
 
@@ -121,14 +128,16 @@ no number. The tool numbers it 1, so the page shows "U.S. House · District 1".
 In every state the three layers cover the state exactly once each: on a 0.02° grid, every point
 is in one district of each level, give or take a point on a district line. No point is in two
 states where they meet. Several borders run along round degrees, such as 37°N between Utah and
-Arizona, so a grid line exactly on one finds points on the line itself in neither state; the
-tests' boxes start a few hundredths off them.
+Arizona, so a grid line exactly on one finds points on the line itself in neither state, or,
+on 49°N, in a Washington school district and no legislative district; the tests' boxes start a
+few hundredths off them.
 
 The counties are built from the same census blocks, so they cover the state once as well: on the
-grid, every point in California and North Carolina is in exactly one county. No point is in two
-cities. Each point's school rows are one unified district, a high school district and the
-elementary district inside it, one of those two alone, or none: 47 points of 4,310 on a 0.1°
-grid over California, where TIGER defines no district, and none in North Carolina.
+grid, every point in the five states with local layers is in exactly one county. No point is in
+two cities. Each point's school rows are one unified district, a high school district and the
+elementary district inside it, one of those two alone, or none where TIGER defines no district:
+47 points of 4,310 on a 0.1° grid over California, 2 of 11,458 on a 0.05° grid over Oregon, and
+none in North Carolina, South Carolina or Washington.
 
 ## Credit
 
@@ -167,7 +176,7 @@ file if:
 
 Two runs of the same layers produce the same bytes apart from the date in the header. With the
 local layers, California's file is about 19 MB and North Carolina's about 15 MB, against 7 and
-6 without them.
+6 without them; South Carolina's is about 11 MB, and Oregon's and Washington's about 7 MB.
 
 Another state needs its FIPS code, office names and district counts added to the table in
 `Tiger.cs`, and its three legislative layers downloaded into a folder of its own, with its five
