@@ -32,8 +32,9 @@ import {
 } from '../../map/style'
 import './DistrictMap.css'
 
-// The result map: real streets, the selected district solid and hatched over
-// them, its two neighbours dashed and dotted, and the address pin. It opens
+// The result map: real streets, towns and water, the selected district solid
+// and hatched over them, its two neighbours dashed and dotted, and the address
+// pin. It opens
 // centred on the address, fitted to the selected boundary, and refits whenever
 // the selection changes; in between, the visitor can drag and zoom freely.
 //

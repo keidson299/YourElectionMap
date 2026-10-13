@@ -2,10 +2,11 @@ import type { MapOptions } from 'maplibre-gl'
 import type { MapLayers } from '../districts/selection'
 import type { District } from '../districts/types'
 
-// The result map's whole look, built here rather than fetched: streets and
-// their names from OpenFreeMap's tiles, and nothing else of theirs, under the
-// districts drawn the way the spec draws them. Rebuilt whenever the selection
-// or the theme changes; MapLibre works out what actually changed.
+// The result map's whole look, built here rather than fetched: from
+// OpenFreeMap's tiles, the streets and what a visitor finds their bearings by
+// (towns, water, parks, highway numbers), under the districts drawn the way
+// the spec draws them. Rebuilt whenever the selection or the theme changes;
+// MapLibre works out what actually changed.
 
 export type StyleSpecification = Exclude<MapOptions['style'], string | undefined>
 type LayerSpecification = StyleSpecification['layers'][number]
@@ -27,6 +28,10 @@ export type MapColors = {
   road: string
   roadMajor: string
   label: string
+  placeLabel: string
+  water: string
+  waterLabel: string
+  park: string
   accent: string
   accentTint: string
 }
@@ -36,6 +41,10 @@ const TOKENS: Record<keyof MapColors, string> = {
   road: '--road',
   roadMajor: '--district',
   label: '--ink-soft',
+  placeLabel: '--ink',
+  water: '--water',
+  waterLabel: '--water-ink',
+  park: '--park',
   accent: '--accent',
   accentTint: '--accent-tint',
 }
@@ -134,6 +143,7 @@ export function buildStyle({
         type: 'background',
         paint: { 'background-color': colors.paper },
       },
+      ...groundLayers(colors),
       ...streetLayers(colors),
       {
         id: 'selected-fill',
@@ -149,24 +159,7 @@ export function buildStyle({
           'fill-pattern': hatchId(lines.hatchSpacing, colors.accent),
         },
       },
-      {
-        id: 'street-names',
-        type: 'symbol',
-        source: 'streets',
-        'source-layer': 'transportation_name',
-        minzoom: 13,
-        layout: {
-          'symbol-placement': 'line',
-          'text-field': ['get', 'name'],
-          'text-font': [TILE_SOURCE.font],
-          'text-size': ['interpolate', ['linear'], ['zoom'], 13, 10.5, 17, 13],
-        },
-        paint: {
-          'text-color': colors.label,
-          'text-halo-color': colors.paper,
-          'text-halo-width': 1.5,
-        },
-      },
+      ...labelLayers(colors),
       {
         id: 'dashed-line',
         type: 'line',
@@ -230,6 +223,225 @@ function districtSource(
     },
   }
 }
+
+/**
+ * What lies under the streets: parks and other public land, a town's parks,
+ * golf courses and greens, and water. All of it pale, so the hatched district
+ * stays the strongest thing on the map.
+ */
+function groundLayers(colors: MapColors): LayerSpecification[] {
+  return [
+    {
+      id: 'parks',
+      type: 'fill',
+      source: 'streets',
+      'source-layer': 'park',
+      paint: { 'fill-color': colors.park },
+    },
+    {
+      id: 'green-space',
+      type: 'fill',
+      source: 'streets',
+      'source-layer': 'landcover',
+      filter: [
+        'in',
+        ['get', 'subclass'],
+        ['literal', ['park', 'garden', 'golf_course', 'recreation_ground', 'village_green']],
+      ],
+      paint: { 'fill-color': colors.park },
+    },
+    {
+      id: 'water',
+      type: 'fill',
+      source: 'streets',
+      'source-layer': 'water',
+      filter: ['!=', ['get', 'class'], 'swimming_pool'],
+      paint: { 'fill-color': colors.water },
+    },
+    {
+      id: 'waterways',
+      type: 'line',
+      source: 'streets',
+      'source-layer': 'waterway',
+      filter: ['in', ['get', 'class'], ['literal', ['river', 'canal']]],
+      layout: { 'line-join': 'round', 'line-cap': 'round' },
+      paint: {
+        'line-color': colors.waterLabel,
+        'line-opacity': 0.35,
+        'line-width': ['interpolate', ['exponential', 1.4], ['zoom'], 8, 0.6, 12, 1.4, 17, 4],
+      },
+    },
+  ]
+}
+
+/**
+ * The map's names. MapLibre places the labels of higher layers first, so these
+ * run from least to most wanted: water and parks, then streets, highway
+ * numbers, neighbourhoods, and towns, which win any collision.
+ */
+function labelLayers(colors: MapColors): LayerSpecification[] {
+  const halo = {
+    'text-halo-color': colors.paper,
+    'text-halo-width': 1.5,
+  }
+
+  return [
+    {
+      id: 'water-names',
+      type: 'symbol',
+      source: 'streets',
+      'source-layer': 'water_name',
+      layout: {
+        'text-field': ['get', 'name'],
+        'text-font': [TILE_SOURCE.font],
+        'text-size': ['interpolate', ['linear'], ['zoom'], 8, 10.5, 15, 13],
+        'text-letter-spacing': 0.05,
+        'text-max-width': 8,
+      },
+      paint: { 'text-color': colors.waterLabel, ...halo },
+    },
+    {
+      id: 'river-names',
+      type: 'symbol',
+      source: 'streets',
+      'source-layer': 'waterway',
+      minzoom: 11,
+      filter: ['==', ['get', 'class'], 'river'],
+      layout: {
+        'symbol-placement': 'line',
+        'text-field': ['get', 'name'],
+        'text-font': [TILE_SOURCE.font],
+        'text-size': ['interpolate', ['linear'], ['zoom'], 11, 10.5, 17, 13],
+        'text-letter-spacing': 0.05,
+      },
+      paint: { 'text-color': colors.waterLabel, ...halo },
+    },
+    {
+      // The park layer's named points, one per park, rather than its shapes.
+      id: 'park-names',
+      type: 'symbol',
+      source: 'streets',
+      'source-layer': 'park',
+      minzoom: 9,
+      filter: ['==', ['geometry-type'], 'Point'],
+      layout: {
+        'text-field': ['get', 'name'],
+        'text-font': [TILE_SOURCE.font],
+        'text-size': ['interpolate', ['linear'], ['zoom'], 9, 10.5, 15, 12.5],
+        'text-max-width': 8,
+        'symbol-sort-key': ['get', 'rank'],
+      },
+      paint: { 'text-color': colors.label, ...halo },
+    },
+    {
+      id: 'street-names',
+      type: 'symbol',
+      source: 'streets',
+      'source-layer': 'transportation_name',
+      minzoom: 13,
+      layout: {
+        'symbol-placement': 'line',
+        'text-field': ['get', 'name'],
+        'text-font': [TILE_SOURCE.font],
+        'text-size': ['interpolate', ['linear'], ['zoom'], 13, 10.5, 17, 13],
+      },
+      paint: { 'text-color': colors.label, ...halo },
+    },
+    {
+      id: 'highway-numbers',
+      type: 'symbol',
+      source: 'streets',
+      'source-layer': 'transportation_name',
+      filter: [
+        'all',
+        ['has', 'ref'],
+        ['in', ['get', 'class'], ['literal', ['motorway', 'trunk', 'primary']]],
+      ],
+      layout: {
+        'symbol-placement': 'line',
+        'symbol-spacing': 400,
+        // As people say it: "I-5", "US 93". Where the tiles give a bare number
+        // the network names the kind of road; a ref that already says it
+        // ("I 5"), and a state route, are shown as they are.
+        'text-field': [
+          'case',
+          [
+            'all',
+            ['in', ['slice', ['get', 'ref'], 0, 1], ['literal', DIGITS]],
+            ['==', ['get', 'network'], 'us-interstate'],
+          ],
+          ['concat', 'I-', ['get', 'ref']],
+          [
+            'all',
+            ['in', ['slice', ['get', 'ref'], 0, 1], ['literal', DIGITS]],
+            ['==', ['get', 'network'], 'us-highway'],
+          ],
+          ['concat', 'US ', ['get', 'ref']],
+          ['get', 'ref'],
+        ],
+        'text-font': [TILE_SOURCE.font],
+        'text-size': ['interpolate', ['linear'], ['zoom'], 6, 10, 14, 12],
+        'text-letter-spacing': 0.05,
+      },
+      paint: {
+        'text-color': colors.placeLabel,
+        'text-halo-color': colors.roadMajor,
+        'text-halo-width': 2.5,
+      },
+    },
+    {
+      id: 'neighbourhood-names',
+      type: 'symbol',
+      source: 'streets',
+      'source-layer': 'place',
+      minzoom: 10,
+      filter: [
+        'in',
+        ['get', 'class'],
+        ['literal', ['village', 'hamlet', 'suburb', 'quarter', 'neighbourhood']],
+      ],
+      layout: {
+        'text-field': ['get', 'name'],
+        'text-font': [TILE_SOURCE.font],
+        'text-size': ['interpolate', ['linear'], ['zoom'], 10, 10.5, 15, 13],
+        'text-max-width': 8,
+        'symbol-sort-key': ['get', 'rank'],
+      },
+      paint: { 'text-color': colors.label, ...halo },
+    },
+    {
+      id: 'town-names',
+      type: 'symbol',
+      source: 'streets',
+      'source-layer': 'place',
+      filter: ['in', ['get', 'class'], ['literal', ['city', 'town']]],
+      layout: {
+        'text-field': ['get', 'name'],
+        'text-font': [TILE_SOURCE.font],
+        'text-size': [
+          'interpolate',
+          ['linear'],
+          ['zoom'],
+          6,
+          ['match', ['get', 'class'], 'city', 12.5, 10.5],
+          12,
+          ['match', ['get', 'class'], 'city', 16, 13.5],
+        ],
+        'text-transform': 'uppercase',
+        'text-letter-spacing': 0.1,
+        'text-max-width': 8,
+        'symbol-sort-key': ['get', 'rank'],
+      },
+      paint: {
+        'text-color': colors.placeLabel,
+        'text-halo-color': colors.paper,
+        'text-halo-width': 2,
+      },
+    },
+  ]
+}
+
+const DIGITS = [...'0123456789']
 
 /**
  * The streets, in three weights by the class OpenMapTiles gives them. The tiles

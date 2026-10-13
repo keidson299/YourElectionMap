@@ -116,9 +116,9 @@ describe('DistrictMap', () => {
     })
   })
 
-  // OpenFreeMap's tiles carry buildings, water, land use and more; only the
-  // streets and their names are drawn.
-  it('draws streets from the tile provider and nothing else of theirs', () => {
+  // OpenFreeMap's tiles carry buildings, points of interest and more; only the
+  // streets and the landmarks a visitor finds their bearings by are drawn.
+  it('draws streets and landmarks from the tile provider and nothing else of theirs', () => {
     const { style } = renderMap()
     const streets = style().sources.streets
 
@@ -128,10 +128,36 @@ describe('DistrictMap', () => {
       (layer) => 'source' in layer && layer.source === 'streets',
     )
 
-    expect(fromTiles.length).toBeGreaterThan(0)
     expect(
       new Set(fromTiles.map((layer) => layer['source-layer' as keyof typeof layer])),
-    ).toEqual(new Set(['transportation', 'transportation_name']))
+    ).toEqual(
+      new Set([
+        'transportation',
+        'transportation_name',
+        'place',
+        'water',
+        'waterway',
+        'water_name',
+        'park',
+        'landcover',
+      ]),
+    )
+  })
+
+  // The district is the point of the map: the ground lies under the streets,
+  // and every name under the district lines, so none of them hides a boundary.
+  it('keeps the ground under the streets and the names under the districts', () => {
+    const { style } = renderMap()
+    const layers = style().layers
+    const at = (id: string) => layers.findIndex((layer) => layer.id === id)
+    const names = layers.flatMap((layer, index) =>
+      layer.type === 'symbol' ? [index] : [],
+    )
+
+    expect(at('parks')).toBeLessThan(at('streets-minor'))
+    expect(at('water')).toBeLessThan(at('streets-minor'))
+    expect(Math.min(...names)).toBeGreaterThan(at('selected-hatch'))
+    expect(Math.max(...names)).toBeLessThan(at('dashed-line'))
   })
 
   it('opens centred on the address and wide enough for the district', () => {

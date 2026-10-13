@@ -27,6 +27,9 @@
   --district: #c9ba9c;
   --water: #e4eae1;
   --road: #dcd0b6;
+  /* Not in the spec: the street map's parks and its water names. */
+  --park: #ebe9d2;
+  --water-ink: #6f857a;
 
   /* Accent */
   --accent: #b4552b;
@@ -72,6 +75,8 @@
     --district: #4a3d2c;
     --water: #1a2018;
     --road: #3a3020;
+    --park: #1e1d12;
+    --water-ink: #7e9384;
 
     --accent: #e08a5a;
     --accent-tint: rgb(224 138 90 / 0.18);
@@ -103,6 +108,8 @@
   --district: #4a3d2c;
   --water: #1a2018;
   --road: #3a3020;
+  --park: #1e1d12;
+  --water-ink: #7e9384;
 
   --accent: #e08a5a;
   --accent-tint: rgb(224 138 90 / 0.18);
