@@ -9,7 +9,7 @@ namespace YourElectionMap.Server.Controllers
     /// <list type="bullet">
     /// <item>200 with a <see cref="DistrictLookup"/>, holding at least one district;</item>
     /// <item>404 when the place could not be found or has no districts;</item>
-    /// <item>400 when the query itself is wrong, which only a bug can cause;</item>
+    /// <item>400 when the query itself is wrong, which only a hand-edited URL can send;</item>
     /// <item>503 when the geocoder did not answer, so the page can offer to try again.</item>
     /// </list>
     /// The address arrives in the query string, as it does in the page URL, and is not

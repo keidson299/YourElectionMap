@@ -15,8 +15,9 @@ builder.Services.AddHttpClient<GoogleVoterInfo>();
 builder.Services.AddScoped<DistrictLookupService>();
 
 // Boundaries go out at full detail, tens of kilobytes of coordinates for a lookup and
-// a few hundred for the largest, which compress to about a third. Safe over HTTPS here: what makes that risky
-// is a secret in the same response as text an attacker chose, and these hold no secrets.
+// a few hundred for the largest, which compress to about a third. Safe over HTTPS
+// here: what makes that risky is a secret in the same response as text an attacker
+// chose, and these hold no secrets.
 builder.Services.AddResponseCompression(options => options.EnableForHttps = true);
 
 var app = builder.Build();

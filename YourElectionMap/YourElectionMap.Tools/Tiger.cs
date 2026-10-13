@@ -6,8 +6,7 @@ using YourElectionMap.Server.Districts;
 namespace YourElectionMap.Tools
 {
     /// <summary>
-    /// A state's districts from the Census Bureau's TIGERweb Legislative layers, the one
-    /// source of every boundary on the site, saved as GeoJSON in
+    /// A state's districts from the Census Bureau's TIGERweb layers, saved as GeoJSON in
     /// longitude and latitude: <c>cd.geojson</c>, <c>sldu.geojson</c> and
     /// <c>sldl.geojson</c> in the folder given, and, where the folder has them, the
     /// county, city and school district layers (<see cref="LocalLayers"/>). DATA-SOURCE.md

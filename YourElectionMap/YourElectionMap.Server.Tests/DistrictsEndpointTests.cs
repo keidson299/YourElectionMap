@@ -39,8 +39,8 @@ namespace YourElectionMap.Server.Tests
 
             Assert.Equal("U.S. Census Bureau TIGER", lookup.GetProperty("source").GetString());
 
-            // The stub's election: a date the client reads as "2026-11-03", and the counts
-            // the rail's footer states.
+            // The stub's election: a date in the "2026-11-03" form the client reads, and
+            // the counts the rail's footer states.
             var election = lookup.GetProperty("election");
 
             Assert.Equal(FakeVoterInfo.DaysFromToday(30), election.GetProperty("date").GetString());

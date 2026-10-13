@@ -58,25 +58,10 @@ namespace YourElectionMap.Server.Tests
         [Fact]
         public void Loads_EveryDistrictOfEveryState()
         {
-            // North Carolina 14 + 50 + 120, California 52 + 40 + 80, Oregon 6 + 30 + 60,
-            // South Carolina 7 + 46 + 124, Washington 10 + 49 + 49, Arizona 9 + 30 + 30,
-            // Idaho 2 + 35 + 35, Montana 2 + 50 + 100, Utah 4 + 29 + 75, and Wyoming
-            // 1 + 31 + 62. Washington, Arizona and Idaho elect their House two to a
-            // Senate district.
-            //
-            // Then the local rows: North Carolina's 100 counties, 552 cities and towns and
-            // 118 school districts, all unified; California's 58 counties, 483 cities and
-            // towns, and 345 unified, 517 elementary and 112 high school districts; Oregon's
-            // 36 counties, 241 cities and towns, and 187 unified, 9 elementary and 1 high
-            // school district; South Carolina's 46 counties, 271 cities and towns and 72
-            // school districts, and Washington's 39 counties, 281 cities and towns and 295
-            // school districts, all unified; Arizona's 15 counties, 92 cities and towns, and
-            // 97 unified, 102 elementary and 15 high school districts; Idaho's 44 counties,
-            // 199 cities and 116 school districts, all unified; Montana's 56 counties, 127
-            // cities and towns, and 65 unified, 233 elementary and 97 high school districts;
-            // Utah's 29 counties, 255 cities and towns and 41 school districts, all unified;
-            // and Wyoming's 23 counties, 99 cities and towns, and 47 unified districts and
-            // one elementary district.
+            // Per state, in the order of States above: its US House, State Senate and
+            // State House districts together (the counts are in Tiger.cs), then its
+            // counties, cities and towns, and unified school districts, and where it has
+            // them its elementary and then high school districts.
             Assert.Equal(["AZ", "CA", "ID", "MT", "NC", "OR", "SC", "UT", "WA", "WY"], Data.States);
             Assert.Equal(
                 184 + 172 + 96 + 177 + 108 + 69 + 72 + 152 + 108 + 94

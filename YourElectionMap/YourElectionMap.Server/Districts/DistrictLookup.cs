@@ -38,7 +38,7 @@ namespace YourElectionMap.Server.Districts
     /// has a name rather than a number.
     /// </param>
     /// <param name="Number">"44", or null on the same terms as the unit.</param>
-    /// <param name="Detail">The rail's second line: "Federal", "County", "Elementary".</param>
+    /// <param name="Detail">The rail's second line: "Federal", "County", "Elementary school district".</param>
     /// <param name="Area">The place named on the map chip, the address's county, or null.</param>
     /// <param name="Boundary">
     /// The coordinates of a GeoJSON MultiPolygon: polygons, each an outer ring and

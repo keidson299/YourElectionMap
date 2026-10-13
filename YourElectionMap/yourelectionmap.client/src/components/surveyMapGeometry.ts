@@ -1,9 +1,7 @@
 // Hand-drawn stand-in geometry, lifted coordinate for coordinate from
 // design/canvas4/Main.dc.html. It is a drawing of what a district map looks
-// like, not data: no shape here corresponds to a real place.
-//
-// It is only the decoration behind the home card now. The result map draws real
-// boundaries, and nothing from this file reaches it.
+// like, not data: no shape here corresponds to a real place, and nothing from it
+// reaches the result map.
 
 export const DISTRICT_POLYGONS = [
   '0,0 320,-10 350,215 0,240',

@@ -4,8 +4,8 @@ namespace YourElectionMap.Server.Tests
 {
     /// <summary>
     /// The geometry behind "which district am I in", "which ring is a hole" and "how
-    /// much of this boundary is worth keeping". Rings here are written out by hand, so what is being asserted is
-    /// visible in the test.
+    /// much of this boundary is worth keeping". Rings here are written out by hand, so
+    /// what is being asserted is visible in the test.
     /// </summary>
     public class GeometryTests
     {
@@ -32,8 +32,8 @@ namespace YourElectionMap.Server.Tests
         [Fact]
         public void Covers_LeavesOutAHole()
         {
-            // Both rings are wound the same way, which is the point: a dissolve does not
-            // say which is the hole, so only the crossing count can.
+            // Both rings are wound the same way, which is the point: the file keeps rings
+            // loose, so only the crossing count can say which is the hole.
             Assert.False(Geometry.Covers([Square, HoleInIt], 5, 5));
             Assert.True(Geometry.Covers([Square, HoleInIt], 2, 2));
         }
@@ -73,7 +73,7 @@ namespace YourElectionMap.Server.Tests
         [Fact]
         public void ToPolygons_PutsAHoleInsideTheRingAroundIt()
         {
-            // Wound the same way, as a dissolve can leave them.
+            // Wound the same way, as the file can hold them.
             var polygons = Geometry.ToPolygons([HoleInIt, Square]);
 
             var polygon = Assert.Single(polygons);

@@ -58,9 +58,9 @@ namespace YourElectionMap.Server.Districts
         }
 
         /// <summary>
-        /// Whether the point is in the box. A district covers well under a hundredth
-        /// of the state, so this answers "no" for nearly every district at a fraction
-        /// of the cost of <see cref="Covers"/>.
+        /// Whether the point is in the box. Most districts cover a small part of the
+        /// state, so this answers "no" for nearly all of them at a fraction of the cost
+        /// of <see cref="Covers"/>.
         /// </summary>
         public static bool BoxCovers(double[] box, double x, double y) =>
             x >= box[0] && x <= box[2] && y >= box[1] && y <= box[3];

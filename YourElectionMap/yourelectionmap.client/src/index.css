@@ -198,7 +198,7 @@ h1[tabindex='-1']:focus {
   }
 }
 
-/* The Atlas card surface, shared by the home card and the map panels. */
+/* The Atlas card surface, shared by the home card and the result page's status card. */
 .card {
   background: var(--card);
   border: 1px solid var(--rule);

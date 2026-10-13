@@ -84,7 +84,7 @@ describe('formatElectionDate', () => {
     expect(formatElectionDate('2027-01-01')).toBe('Fri, Jan 1')
   })
 
-  // ASP.NET serialises a DateTime with a time part by default.
+  // The server sends a DateOnly, but a DateTime would serialise with a time part.
   it('ignores a time part', () => {
     expect(formatElectionDate('2026-11-03T00:00:00')).toBe('Tue, Nov 3')
   })

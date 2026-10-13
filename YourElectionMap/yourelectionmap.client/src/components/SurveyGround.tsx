@@ -5,8 +5,9 @@ import {
 } from './surveyMapGeometry'
 import './SurveyGround.css'
 
-// The survey sheet behind Home's card and the waiting page's: paper and a
-// graticule, and for Home a river, a few roads and a mesh of district outlines.
+// The survey sheet behind Home's card and the result page's status card: paper
+// and a graticule, and for Home a river, a few roads and a mesh of district
+// outlines.
 // It renders inside an <svg> the caller owns. Pattern ids are fixed, which is
 // safe because the two pages never draw a sheet at the same time.
 

@@ -99,8 +99,8 @@ npm run test:watch                                # vitest in watch mode
 
 `YourElectionMap.Server.Tests` uses `WebApplicationFactory<Program>` to host the real app in
 memory; `Program` is declared `public partial` at the bottom of `Program.cs` to allow that. The
-geocoder and Google's voter lookup are stubbed, so no test reaches the internet, but the tests read the real district files
-and need both generated first. The client tests replace MapLibre with a fake
+geocoder and Google's voter lookup are stubbed, so no test reaches the internet, but the tests
+read the real district files and need every state's generated first. The client tests replace MapLibre with a fake
 (`src/test/fakeMaplibre.ts`), since jsdom has no WebGL, so they fetch no tiles either.
 
 Run the client tests from a path with an uppercase drive letter (`D:\...`). From `d:\...`, Vitest

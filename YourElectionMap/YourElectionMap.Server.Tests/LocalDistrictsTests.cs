@@ -4,10 +4,10 @@ using YourElectionMap.Server.Districts;
 namespace YourElectionMap.Server.Tests
 {
     /// <summary>
-    /// The county, city and school rows, from a small file written here: the real files
-    /// gain them only once the converter is run with those layers. Squares nested the
-    /// way the real ones are: a city inside its county, and a California-style
-    /// elementary district inside the high school district that covers it.
+    /// The county, city and school rows' sorting and naming, on a small file written
+    /// here so the shapes are visible in the test. Squares nested the way the real ones
+    /// are: a city inside its county, and a California-style elementary district inside
+    /// the high school district that covers it.
     /// </summary>
     public sealed class LocalDistrictsTests : IDisposable
     {

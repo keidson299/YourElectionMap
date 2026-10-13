@@ -2,9 +2,9 @@ import type { District, DistrictLookup, LngLat, Polygon } from '../districts/typ
 import type { LookupTarget } from '../routing/routes'
 
 // An invented fixture, so component tests can render a result without a fetch.
-// Unlike the server's three levels, it has all six on purpose: it is the only
-// thing exercising a ward, a zone, an area and the election footer.
-// DistrictsEndpointTests pins what the server really sends.
+// Unlike the server's named county, city and school rows, its local rows are
+// numbered districts on purpose: it is the only thing exercising a ward and a
+// zone. DistrictsEndpointTests pins what the server really sends.
 //
 // The shapes are written in the stand-in drawing's units, as the spec draws them,
 // and placed on the globe by `at`: the spec's address lands on downtown Raleigh,

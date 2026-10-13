@@ -4,13 +4,8 @@ namespace YourElectionMap.Server.Districts
 {
     /// <summary>
     /// Turns a typed address into a point, using the US Census Bureau's geocoder, which
-    /// is free and needs no key.
-    /// <para>
-    /// The address is what it sends. The server makes one other call out, to Google's
-    /// voter lookup (<see cref="GoogleVoterInfo"/>), and the browser makes its own for
-    /// the street map's tiles. Nothing is logged here, and nothing is kept: see the
-    /// privacy section of the design plan.
-    /// </para>
+    /// is free and needs no key. The address is all it sends, and nothing is logged or
+    /// kept.
     /// </summary>
     public sealed class CensusGeocoder
     {

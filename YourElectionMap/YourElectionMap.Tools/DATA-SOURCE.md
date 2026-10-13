@@ -133,7 +133,7 @@ District Not Defined" too, which leaves 207 points of 11,200 on the test grid wi
   address there has no school row. Cities are incorporated places only, so an address outside
   every city, in unincorporated county land, has no city row either.
 - **No population.** TIGERweb's `POP100` field is empty for these layers, so the files have none
-  and the map chip names the district alone.
+  and the map chip shows none.
 - **Longitude and latitude, WGS84,** which is what `outSR=4326` asks for. The tool thins each ring to 15 feet, taken as degrees of
   latitude, which keeps slightly more than that east to west.
 
