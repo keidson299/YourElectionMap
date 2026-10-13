@@ -119,18 +119,17 @@ server's one endpoint, `GET /api/districts`. The current plan is
 refer to its numbered slices.
 
 **The data is real and covers ten states**, Arizona, California, Idaho, Montana, North Carolina,
-Oregon, South Carolina, Utah, Washington and Wyoming: each state's US House, State Senate and State House/Assembly districts, from the Census Bureau's TIGERweb layers. California, North
-Carolina, Oregon, South Carolina and Washington also have their **local rows**: the county, the
-city or town, and the school district (in California and a corner of Oregon, sometimes a high
-school and an elementary district), each a whole government named rather than numbered ("Wake
-County", "Raleigh city"). The other five states get theirs when their local layers are downloaded. An address is placed
+Oregon, South Carolina, Utah, Washington and Wyoming: each state's US House, State Senate and State House/Assembly districts, from the Census Bureau's TIGERweb layers, and its **local rows**: the
+county, the city or town, and the school district (in Arizona, California, Montana and a corner of
+Oregon, sometimes a high school and an elementary district), each a whole government named rather
+than numbered ("Wake County", "Raleigh city"). An address is placed
 by the US Census geocoder and looked up in one file per state in `Districts/Data/`; the next
 election at the address comes from Google's Civic Information API. Those are the server's only two calls out.
 The browser fetches the street tiles and the map's label fonts from OpenFreeMap (`TILE_SOURCE` in
 `src/map/style.ts`), and the page's own fonts, Fraunces and Inter, from Google Fonts
 (`index.html`). There is no County Commission, City Council or School Board district data yet,
-so the rail lists three rows in the states without local rows, and up to six in those with them
-(seven where an address has both a high school and an elementary district). An address
+so the rail lists up to six rows (seven where an address has both a high school and an elementary
+district), and fewer where it has no city or school district. An address
 outside the ten states is a 404.
 
 **Google needs an API key, and nothing breaks without one.** The server reads
@@ -251,8 +250,8 @@ for `FakeGeocoding` and `FakeVoterInfo` (the fake election's date is relative to
 else is real, including the district files. Stub any new outward call the same way. The converter
 has no tests of its own, since its input is not in the repository; `DistrictDataTests` checks its
 output, most strongly with the grid tests that every covered point finds one district per
-legislative level and, in the states with local rows (`WithLocalLevels`), one county, at most one
-city and a school district combination that does not overlap. `LocalDistrictsTests` covers the
+legislative level, one county, at most one city and a school district combination that does not
+overlap. `LocalDistrictsTests` covers the
 local rows' sorting and naming on a small file it writes itself.
 On the client, `src/test/setup.ts` replaces `maplibre-gl` with `src/test/fakeMaplibre.ts`, because
 jsdom has no WebGL.

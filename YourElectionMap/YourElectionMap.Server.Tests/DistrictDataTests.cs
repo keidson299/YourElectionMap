@@ -22,48 +22,35 @@ namespace YourElectionMap.Server.Tests
             .ToDictionary(data => data.States[0]);
 
         /// <summary>
-        /// Each state's capitol, what its lower house is called, and the box around the
-        /// state that every boundary point must fall in.
+        /// Each state's FIPS code, which begins its local rows' Census codes, its capitol,
+        /// what its lower house is called, and the box around the state that every boundary
+        /// point must fall in.
         /// </summary>
         private static readonly Dictionary<string, State> States = new()
         {
             // The State Legislative Building, 16 W Jones Street, Raleigh.
-            ["NC"] = new(35.7822, -78.6398, "State House", (-84.4, -75.4), (33.8, 36.6)),
+            ["NC"] = new("37", 35.7822, -78.6398, "State House", (-84.4, -75.4), (33.8, 36.6)),
             // The State Capitol, 1315 10th Street, Sacramento.
-            ["CA"] = new(38.5767, -121.4934, "State Assembly", (-124.5, -114.1), (32.5, 42.1)),
+            ["CA"] = new("06", 38.5767, -121.4934, "State Assembly", (-124.5, -114.1), (32.5, 42.1)),
             // The State Capitol, 900 Court Street NE, Salem.
-            ["OR"] = new(44.9385, -123.0301, "State House", (-124.75, -116.4), (41.95, 46.35)),
+            ["OR"] = new("41", 44.9385, -123.0301, "State House", (-124.75, -116.4), (41.95, 46.35)),
             // The State House, 1100 Gervais Street, Columbia.
-            ["SC"] = new(34.0004, -81.0330, "State House", (-83.4, -78.45), (31.95, 35.25)),
+            ["SC"] = new("45", 34.0004, -81.0330, "State House", (-83.4, -78.45), (31.95, 35.25)),
             // The rest have straight borders along round degrees, so their boxes start a few
             // hundredths off them: a grid row on 37°N would be on the Utah–Arizona line, and
             // one on 49°N finds a Washington school district on the Canadian line itself.
             // The Legislative Building, 416 Sid Snyder Avenue SW, Olympia.
-            ["WA"] = new(47.0358, -122.9048, "State House", (-124.9, -116.9), (45.52, 49.1)),
+            ["WA"] = new("53", 47.0358, -122.9048, "State House", (-124.9, -116.9), (45.52, 49.1)),
             // The State Capitol, 1700 W Washington Street, Phoenix.
-            ["AZ"] = new(33.4481, -112.0970, "State House", (-114.83, -109.0), (31.31, 37.05)),
+            ["AZ"] = new("04", 33.4481, -112.0970, "State House", (-114.83, -109.0), (31.31, 37.05)),
             // The State Capitol, 700 W Jefferson Street, Boise.
-            ["ID"] = new(43.6177, -116.1996, "State House", (-117.23, -111.0), (41.97, 49.05)),
+            ["ID"] = new("16", 43.6177, -116.1996, "State House", (-117.23, -111.0), (41.97, 49.05)),
             // The State Capitol, 1301 E 6th Avenue, Helena.
-            ["MT"] = new(46.5857, -112.0184, "State House", (-116.07, -104.0), (44.37, 49.05)),
+            ["MT"] = new("30", 46.5857, -112.0184, "State House", (-116.07, -104.0), (44.37, 49.05)),
             // The State Capitol, 350 N State Street, Salt Lake City.
-            ["UT"] = new(40.7774, -111.8882, "State House", (-114.07, -109.0), (36.97, 42.05)),
+            ["UT"] = new("49", 40.7774, -111.8882, "State House", (-114.07, -109.0), (36.97, 42.05)),
             // The State Capitol, 200 W 24th Street, Cheyenne.
-            ["WY"] = new(41.1403, -104.8202, "State House", (-111.07, -104.0), (40.97, 45.05)),
-        };
-
-        /// <summary>
-        /// The states whose files have the county, city and school layers, with the FIPS
-        /// code that begins each of those rows' Census code. The rest have the three
-        /// legislative levels only, until their local layers are fetched.
-        /// </summary>
-        private static readonly Dictionary<string, string> WithLocalLevels = new()
-        {
-            ["CA"] = "06",
-            ["NC"] = "37",
-            ["OR"] = "41",
-            ["SC"] = "45",
-            ["WA"] = "53",
+            ["WY"] = new("56", 41.1403, -104.8202, "State House", (-111.07, -104.0), (40.97, 45.05)),
         };
 
         private static readonly string[] Legislative = ["congressional", "state-upper", "state-lower"];
@@ -83,12 +70,20 @@ namespace YourElectionMap.Server.Tests
             // 36 counties, 241 cities and towns, and 187 unified, 9 elementary and 1 high
             // school district; South Carolina's 46 counties, 271 cities and towns and 72
             // school districts, and Washington's 39 counties, 281 cities and towns and 295
-            // school districts, all unified.
+            // school districts, all unified; Arizona's 15 counties, 92 cities and towns, and
+            // 97 unified, 102 elementary and 15 high school districts; Idaho's 44 counties,
+            // 199 cities and 116 school districts, all unified; Montana's 56 counties, 127
+            // cities and towns, and 65 unified, 233 elementary and 97 high school districts;
+            // Utah's 29 counties, 255 cities and towns and 41 school districts, all unified;
+            // and Wyoming's 23 counties, 99 cities and towns, and 47 unified districts and
+            // one elementary district.
             Assert.Equal(["AZ", "CA", "ID", "MT", "NC", "OR", "SC", "UT", "WA", "WY"], Data.States);
             Assert.Equal(
                 184 + 172 + 96 + 177 + 108 + 69 + 72 + 152 + 108 + 94
                     + (100 + 552 + 118) + (58 + 483 + 345 + 517 + 112)
-                    + (36 + 241 + 187 + 9 + 1) + (46 + 271 + 72) + (39 + 281 + 295),
+                    + (36 + 241 + 187 + 9 + 1) + (46 + 271 + 72) + (39 + 281 + 295)
+                    + (15 + 92 + 97 + 102 + 15) + (44 + 199 + 116)
+                    + (56 + 127 + 65 + 233 + 97) + (29 + 255 + 41) + (23 + 99 + 47 + 1),
                 Data.Count);
         }
 
@@ -122,13 +117,14 @@ namespace YourElectionMap.Server.Tests
                 new[] { "Federal", "State", "State" },
                 legislative.Select(district => district.Detail));
 
-            // The capitol is in a city and a unified school district, so it has one row
-            // per local level, the county first.
-            Assert.Equal(
-                WithLocalLevels.ContainsKey(code) ? ["county", "city", "school"] : [],
-                local.Select(district => district.Level));
+            // The capitol is in a city, so it has a county and a city row, then its school
+            // district, or a high school and an elementary district.
+            Assert.Equal(["county", "city"], local.Take(2).Select(district => district.Level));
+            Assert.NotEmpty(local.Skip(2));
+            Assert.All(local.Skip(2), district => Assert.Equal("school", district.Level));
+            Assert.Null(Disagreement(found.Districts));
 
-            var county = local.FirstOrDefault()?.Office;
+            var county = local[0].Office;
 
             foreach (var district in legislative)
             {
@@ -139,7 +135,7 @@ namespace YourElectionMap.Server.Tests
 
             foreach (var district in local)
             {
-                Assert.StartsWith($"{district.Level}-{WithLocalLevels[code]}", district.Id);
+                Assert.StartsWith($"{district.Level}-{state.Fips}", district.Id);
                 Assert.Null(district.Unit);
                 Assert.Null(district.Number);
             }
@@ -255,7 +251,7 @@ namespace YourElectionMap.Server.Tests
             var found = Covering(latitude, longitude);
 
             Assert.NotEmpty(found);
-            Assert.Null(Disagreement(found, local: found.Any(district => district.Level == "county")));
+            Assert.Null(Disagreement(found));
         }
 
         [Theory]
@@ -344,7 +340,7 @@ namespace YourElectionMap.Server.Tests
 
                     inside++;
 
-                    if (Disagreement(found.Districts, WithLocalLevels.ContainsKey(code)) is { } wrong)
+                    if (Disagreement(found.Districts) is { } wrong)
                     {
                         var ids = found.Districts.Select(district => district.Id);
                         disagreed.Add($"({longitude:0.00}, {latitude:0.00}): {wrong}: {string.Join(", ", ids)}");
@@ -367,23 +363,18 @@ namespace YourElectionMap.Server.Tests
 
         /// <summary>
         /// What is wrong with the districts covering one point, or null. One district per
-        /// legislative level, first; and where the file has the local levels, one county, at
-        /// most one city (unincorporated land has none), and either a unified school
-        /// district, a high school district and the elementary one inside it, one of those
-        /// two alone, or none, where TIGER defines no district.
+        /// legislative level, first; then one county, at most one city (unincorporated land
+        /// has none), and either a unified school district, a high school district and the
+        /// elementary one inside it, one of those two alone, or none, where TIGER defines no
+        /// district.
         /// </summary>
-        private static string? Disagreement(List<District> found, bool local)
+        private static string? Disagreement(List<District> found)
         {
             var levels = found.Select(district => district.Level).ToArray();
 
             if (!levels.Take(3).SequenceEqual(Legislative))
             {
                 return "not one district per legislative level";
-            }
-
-            if (!local)
-            {
-                return levels.Length == 3 ? null : "local rows in a state without them";
             }
 
             if (levels.Count(level => level == "county") != 1 || levels.Count(level => level == "city") > 1)
@@ -406,6 +397,7 @@ namespace YourElectionMap.Server.Tests
         }
 
         private sealed record State(
+            string Fips,
             double Latitude,
             double Longitude,
             string LowerHouse,

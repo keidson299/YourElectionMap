@@ -90,16 +90,23 @@ namespace YourElectionMap.Server.Tests
         [InlineData("900 Court St NE, Salem OR", "county-41047", "city-4164900", "school-4110820")]
         [InlineData("1100 Gervais St, Columbia SC", "county-45079", "city-4516000", "school-4503360")]
         [InlineData("416 Sid Snyder Ave SW, Olympia WA", "county-53067", "city-5351300", "school-5306180")]
-        public async Task Get_ListsTheCapitolsCountyCityAndSchoolDistrict(
+        [InlineData("1700 W Washington St, Phoenix AZ", "county-04013", "city-0455000", "school-0406330", "school-0406300")]
+        [InlineData("700 W Jefferson St, Boise ID", "county-16001", "city-1608830", "school-1600360")]
+        [InlineData("1301 E 6th Ave, Helena MT", "county-30049", "city-3035600", "school-3013830", "school-3000005")]
+        [InlineData("350 N State St, Salt Lake City UT", "county-49035", "city-4967000", "school-4900870")]
+        [InlineData("200 W 24th St, Cheyenne WY", "county-56021", "city-5613900", "school-5601980")]
+        public async Task Get_ListsTheCapitolsCountyCityAndSchoolDistricts(
             string address,
             string county,
             string city,
-            string school)
+            params string[] schools)
         {
+            // Phoenix and Helena have a high school district over an elementary one, and
+            // list both, high school first.
             var lookup = await LookupAsync(AddressQuery(address));
 
             Assert.Equal(
-                new[] { county, city, school },
+                new[] { county, city }.Concat(schools),
                 Each(lookup.GetProperty("districts"), "id").Skip(3));
         }
 
@@ -120,8 +127,7 @@ namespace YourElectionMap.Server.Tests
             int lower,
             string lowerHouse)
         {
-            // Pinned the same way as Raleigh. In California, Oregon, South Carolina and
-            // Washington the local rows follow; the other states have none yet.
+            // Pinned the same way as Raleigh; the local rows that follow are pinned above.
             var lookup = await LookupAsync(AddressQuery(address));
             var districts = lookup.GetProperty("districts");
 
