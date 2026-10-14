@@ -41,6 +41,13 @@ namespace YourElectionMap.Tools
                     new("sldu.geojson", "state-upper", "State Senate", "State", 40),
                     new("sldl.geojson", "state-lower", "State Assembly", "State", 80),
                 ]),
+            ["CO"] = new(
+                "08",
+                [
+                    new("cd.geojson", "congressional", "U.S. House", "Federal", 8),
+                    new("sldu.geojson", "state-upper", "State Senate", "State", 35),
+                    new("sldl.geojson", "state-lower", "State House", "State", 65),
+                ]),
             // Thirty-five districts, as in Arizona.
             ["ID"] = new(
                 "16",
@@ -63,6 +70,27 @@ namespace YourElectionMap.Tools
                     new("sldu.geojson", "state-upper", "State Senate", "State", 50),
                     new("sldl.geojson", "state-lower", "State House", "State", 120),
                 ]),
+            ["NM"] = new(
+                "35",
+                [
+                    new("cd.geojson", "congressional", "U.S. House", "Federal", 3),
+                    new("sldu.geojson", "state-upper", "State Senate", "State", 42),
+                    new("sldl.geojson", "state-lower", "State House", "State", 70),
+                ]),
+            ["NV"] = new(
+                "32",
+                [
+                    new("cd.geojson", "congressional", "U.S. House", "Federal", 4),
+                    new("sldu.geojson", "state-upper", "State Senate", "State", 21),
+                    new("sldl.geojson", "state-lower", "State Assembly", "State", 42),
+                ]),
+            ["OK"] = new(
+                "40",
+                [
+                    new("cd.geojson", "congressional", "U.S. House", "Federal", 5),
+                    new("sldu.geojson", "state-upper", "State Senate", "State", 48),
+                    new("sldl.geojson", "state-lower", "State House", "State", 101),
+                ]),
             ["OR"] = new(
                 "41",
                 [
@@ -76,6 +104,13 @@ namespace YourElectionMap.Tools
                     new("cd.geojson", "congressional", "U.S. House", "Federal", 7),
                     new("sldu.geojson", "state-upper", "State Senate", "State", 46),
                     new("sldl.geojson", "state-lower", "State House", "State", 124),
+                ]),
+            ["TX"] = new(
+                "48",
+                [
+                    new("cd.geojson", "congressional", "U.S. House", "Federal", 38),
+                    new("sldu.geojson", "state-upper", "State Senate", "State", 31),
+                    new("sldl.geojson", "state-lower", "State House", "State", 150),
                 ]),
             // The court-ordered map of November 2025: TIGER has it in layer 0.
             ["UT"] = new(

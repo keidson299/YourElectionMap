@@ -127,8 +127,9 @@ describe('App', () => {
     expect(
       screen.getByText(
         'We could not find districts for that address in Arizona, California,'
-        + ' Idaho, Montana, North Carolina, Oregon, South Carolina, Utah,'
-        + ' Washington or Wyoming. Check it, or try adding your city or ZIP code.',
+        + ' Colorado, Idaho, Montana, Nevada, New Mexico, North Carolina, Oklahoma,'
+        + ' Oregon, South Carolina, Texas, Utah, Washington or Wyoming. Check it,'
+        + ' or try adding your city or ZIP code.',
       ),
     ).toBeInTheDocument()
     expect(screen.getByLabelText('Home address')).toHaveValue('Main Street')
@@ -239,7 +240,7 @@ describe('App', () => {
     ).toBeInTheDocument()
     expect(
       screen.getByText(
-        /covers Arizona, California, Idaho, Montana, North Carolina, Oregon, South Carolina, Utah, Washington and Wyoming so far/,
+        /covers Arizona, California, Colorado, Idaho, Montana, Nevada, New Mexico, North Carolina, Oklahoma, Oregon, South Carolina, Texas, Utah, Washington and Wyoming so far/,
       ),
     ).toBeInTheDocument()
     expect(screen.queryByRole('radio')).toBeNull()

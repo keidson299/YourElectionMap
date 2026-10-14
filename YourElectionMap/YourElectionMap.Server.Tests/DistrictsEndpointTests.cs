@@ -95,6 +95,11 @@ namespace YourElectionMap.Server.Tests
         [InlineData("1301 E 6th Ave, Helena MT", "county-30049", "city-3035600", "school-3013830", "school-3000005")]
         [InlineData("350 N State St, Salt Lake City UT", "county-49035", "city-4967000", "school-4900870")]
         [InlineData("200 W 24th St, Cheyenne WY", "county-56021", "city-5613900", "school-5601980")]
+        [InlineData("200 E Colfax Ave, Denver CO", "county-08031", "city-0820000", "school-0803360")]
+        [InlineData("490 Old Santa Fe Trl, Santa Fe NM", "county-35049", "city-3570500", "school-3502370")]
+        [InlineData("101 N Carson St, Carson City NV", "county-32510", "city-3209700", "school-3200390")]
+        [InlineData("2300 N Lincoln Blvd, Oklahoma City OK", "county-40109", "city-4055000", "school-4022770")]
+        [InlineData("1100 Congress Ave, Austin TX", "county-48453", "city-4805000", "school-4808940")]
         public async Task Get_ListsTheCapitolsCountyCityAndSchoolDistricts(
             string address,
             string county,
@@ -120,6 +125,11 @@ namespace YourElectionMap.Server.Tests
         [InlineData("1301 E 6th Ave, Helena MT", 2, 41, 82, "State House")]
         [InlineData("350 N State St, Salt Lake City UT", 1, 8, 22, "State House")]
         [InlineData("200 W 24th St, Cheyenne WY", 1, 8, 11, "State House")]
+        [InlineData("200 E Colfax Ave, Denver CO", 1, 31, 6, "State House")]
+        [InlineData("490 Old Santa Fe Trl, Santa Fe NM", 3, 25, 47, "State House")]
+        [InlineData("101 N Carson St, Carson City NV", 2, 16, 40, "State Assembly")]
+        [InlineData("2300 N Lincoln Blvd, Oklahoma City OK", 5, 48, 99, "State House")]
+        [InlineData("1100 Congress Ave, Austin TX", 10, 14, 49, "State House")]
         public async Task Get_PlacesEachOtherCapitolInItsStatesDistricts(
             string address,
             int congressional,

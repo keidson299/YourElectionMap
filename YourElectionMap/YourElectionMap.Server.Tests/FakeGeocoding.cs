@@ -41,6 +41,16 @@ namespace YourElectionMap.Server.Tests
             ("Salt", [new(40.7774, -111.8882, "350 N STATE ST, SALT LAKE CITY, UT, 84103")]),
             // The Wyoming State Capitol, Cheyenne.
             ("Cheyenne", [new(41.1403, -104.8202, "200 W 24TH ST, CHEYENNE, WY, 82001")]),
+            // The Colorado State Capitol, Denver.
+            ("Colfax", [new(39.7393, -104.9848, "200 E COLFAX AVE, DENVER, CO, 80203")]),
+            // The New Mexico State Capitol, Santa Fe.
+            ("Santa", [new(35.6824, -105.9397, "490 OLD SANTA FE TRL, SANTA FE, NM, 87501")]),
+            // The Nevada State Capitol, Carson City.
+            ("Carson", [new(39.1640, -119.7663, "101 N CARSON ST, CARSON CITY, NV, 89701")]),
+            // The Oklahoma State Capitol, Oklahoma City.
+            ("Oklahoma", [new(35.4922, -97.5034, "2300 N LINCOLN BLVD, OKLAHOMA CITY, OK, 73105")]),
+            // The Texas State Capitol, Austin.
+            ("Austin", [new(30.2747, -97.7403, "1100 CONGRESS AVE, AUSTIN, TX, 78701")]),
             // The White House, which is in no state the site covers.
             ("Pennsylvania", [new(38.8977, -77.0365, "1600 PENNSYLVANIA AVE NW, WASHINGTON, DC, 20500")]),
             // A town name with no state: Greenville MS first, then Greenville NC.

@@ -38,8 +38,8 @@ namespace YourElectionMap.Server.Tests
             // The State House, 1100 Gervais Street, Columbia.
             ["SC"] = new("45", 34.0004, -81.0330, "State House", (-83.4, -78.45), (31.95, 35.25)),
             // The rest have straight borders along round degrees, so their boxes start a few
-            // hundredths off them: a grid row on 37Â°N would be on the Utahâ€“Arizona line, and
-            // one on 49Â°N finds a Washington school district on the Canadian line itself.
+            // hundredths off them: a grid row on 37°N would be on the Utah–Arizona line, and
+            // one on 49°N finds a Washington school district on the Canadian line itself.
             // The Legislative Building, 416 Sid Snyder Avenue SW, Olympia.
             ["WA"] = new("53", 47.0358, -122.9048, "State House", (-124.9, -116.9), (45.52, 49.1)),
             // The State Capitol, 1700 W Washington Street, Phoenix.
@@ -52,6 +52,16 @@ namespace YourElectionMap.Server.Tests
             ["UT"] = new("49", 40.7774, -111.8882, "State House", (-114.07, -109.0), (36.97, 42.05)),
             // The State Capitol, 200 W 24th Street, Cheyenne.
             ["WY"] = new("56", 41.1403, -104.8202, "State House", (-111.07, -104.0), (40.97, 45.05)),
+            // The State Capitol, 200 E Colfax Avenue, Denver.
+            ["CO"] = new("08", 39.7393, -104.9848, "State House", (-109.07, -102.02), (36.97, 41.05)),
+            // The State Capitol, 490 Old Santa Fe Trail, Santa Fe.
+            ["NM"] = new("35", 35.6824, -105.9397, "State House", (-109.07, -102.97), (31.31, 37.02)),
+            // The State Capitol, 101 N Carson Street, Carson City.
+            ["NV"] = new("32", 39.1640, -119.7663, "State Assembly", (-120.07, -114.0), (34.97, 42.05)),
+            // The State Capitol, 2300 N Lincoln Boulevard, Oklahoma City.
+            ["OK"] = new("40", 35.4922, -97.5034, "State House", (-103.07, -94.4), (33.57, 37.05)),
+            // The State Capitol, 1100 Congress Avenue, Austin.
+            ["TX"] = new("48", 30.2747, -97.7403, "State House", (-106.67, -93.47), (25.82, 36.52)),
         };
 
         private static readonly string[] Legislative = ["congressional", "state-upper", "state-lower"];
@@ -63,13 +73,18 @@ namespace YourElectionMap.Server.Tests
             // State House districts together (the counts are in Tiger.cs), then its
             // counties, cities and towns, and unified school districts, and where it has
             // them its elementary and then high school districts.
-            Assert.Equal(["AZ", "CA", "ID", "MT", "NC", "OR", "SC", "UT", "WA", "WY"], Data.States);
+            Assert.Equal(
+                ["AZ", "CA", "CO", "ID", "MT", "NC", "NM", "NV", "OK", "OR", "SC", "TX", "UT", "WA", "WY"],
+                Data.States);
             Assert.Equal(
                 184 + 172 + 96 + 177 + 108 + 69 + 72 + 152 + 108 + 94
+                    + 108 + 115 + 67 + 154 + 219
                     + (100 + 552 + 118) + (58 + 483 + 345 + 517 + 112)
                     + (36 + 241 + 187 + 9 + 1) + (46 + 271 + 72) + (39 + 281 + 295)
                     + (15 + 92 + 97 + 102 + 15) + (44 + 199 + 116)
-                    + (56 + 127 + 65 + 233 + 97) + (29 + 255 + 41) + (23 + 99 + 47 + 1),
+                    + (56 + 127 + 65 + 233 + 97) + (29 + 255 + 41) + (23 + 99 + 47 + 1)
+                    + (64 + 273 + 178) + (33 + 105 + 89) + (17 + 19 + 17)
+                    + (77 + 600 + 415 + 91) + (254 + 1230 + 1016 + 1 + 1),
                 Data.Count);
         }
 
@@ -84,6 +99,11 @@ namespace YourElectionMap.Server.Tests
         [InlineData("MT")]
         [InlineData("UT")]
         [InlineData("WY")]
+        [InlineData("CO")]
+        [InlineData("NM")]
+        [InlineData("NV")]
+        [InlineData("OK")]
+        [InlineData("TX")]
         public void Covering_FindsOneDistrictPerLevelAtTheCapitol(string code)
         {
             var state = States[code];
@@ -138,6 +158,11 @@ namespace YourElectionMap.Server.Tests
         [InlineData("MT")]
         [InlineData("UT")]
         [InlineData("WY")]
+        [InlineData("CO")]
+        [InlineData("NM")]
+        [InlineData("NV")]
+        [InlineData("OK")]
+        [InlineData("TX")]
         public void Covering_SendsBoundariesAsPolygonsOfLongitudeAndLatitude(string code)
         {
             var state = States[code];
@@ -191,6 +216,11 @@ namespace YourElectionMap.Server.Tests
         [InlineData("MT")]
         [InlineData("UT")]
         [InlineData("WY")]
+        [InlineData("CO")]
+        [InlineData("NM")]
+        [InlineData("NV")]
+        [InlineData("OK")]
+        [InlineData("TX")]
         public void Covering_PutsTheCapitolInsideItsDistrictsOuterRing(string code)
         {
             var state = States[code];
@@ -232,6 +262,17 @@ namespace YourElectionMap.Server.Tests
         [InlineData(40.4555, -109.5287)] // Vernal, the east
         [InlineData(43.4799, -110.7624)] // Jackson, the west of Wyoming
         [InlineData(42.0625, -104.1844)] // Torrington, the east
+        [InlineData(39.0639, -108.5506)] // Grand Junction, the west of Colorado
+        [InlineData(38.0872, -102.6208)] // Lamar, the south-east
+        [InlineData(36.7281, -108.2187)] // Farmington, the north-west of New Mexico
+        [InlineData(32.7026, -103.1360)] // Hobbs, the south-east
+        [InlineData(35.1677, -114.5730)] // Laughlin, the south of Nevada
+        [InlineData(41.9832, -114.6745)] // Jackpot, the north-east
+        [InlineData(36.7292, -102.5132)] // Boise City, the Oklahoma panhandle
+        [InlineData(33.8957, -94.8263)] // Idabel, the south-east
+        [InlineData(31.7619, -106.4850)] // El Paso, the west of Texas
+        [InlineData(25.9017, -97.4975)] // Brownsville, the south
+        [InlineData(35.2220, -101.8313)] // Amarillo, the panhandle
         public void Covering_ReachesTheEndsOfEachState(double latitude, double longitude)
         {
             var found = Covering(latitude, longitude);
@@ -246,17 +287,17 @@ namespace YourElectionMap.Server.Tests
         [InlineData(32.0809, -81.0912)] // Savannah, Georgia
         [InlineData(36.8508, -76.2859)] // Norfolk, Virginia
         [InlineData(33.5, -76.0)] // the Atlantic, east of North Carolina
-        [InlineData(39.5296, -119.8138)] // Reno, Nevada
-        [InlineData(36.1699, -115.1398)] // Las Vegas, Nevada
+        [InlineData(37.6872, -97.3301)] // Wichita, Kansas
+        [InlineData(32.5252, -93.7502)] // Shreveport, Louisiana
         [InlineData(32.5149, -117.0382)] // Tijuana, Mexico
         [InlineData(36.0, -125.0)] // the Pacific, west of California
         [InlineData(44.0, -125.5)] // the Pacific, west of Oregon
         [InlineData(49.2827, -123.1207)] // Vancouver, British Columbia
-        [InlineData(35.0844, -106.6504)] // Albuquerque, New Mexico
+        [InlineData(31.6904, -106.4245)] // Ciudad Juárez, Chihuahua, across the river from El Paso
         [InlineData(31.3086, -110.9422)] // Nogales, Sonora
-        [InlineData(40.7391, -114.0733)] // West Wendover, Nevada, across the line from Utah
-        [InlineData(39.0639, -108.5506)] // Grand Junction, Colorado
-        [InlineData(40.5853, -105.0844)] // Fort Collins, Colorado
+        [InlineData(41.8666, -103.6672)] // Scottsbluff, Nebraska
+        [InlineData(37.9717, -100.8727)] // Garden City, Kansas
+        [InlineData(27.0, -94.0)] // the Gulf of Mexico, south-east of Texas
         [InlineData(44.0805, -103.2310)] // Rapid City, South Dakota
         [InlineData(48.1470, -103.6180)] // Williston, North Dakota
         [InlineData(49.6956, -112.8451)] // Lethbridge, Alberta
@@ -269,7 +310,7 @@ namespace YourElectionMap.Server.Tests
         /// The one check on the file that needs no outside authority. The three plans were
         /// drawn separately, but each is built from the same 2020 census blocks and
         /// covers the whole state exactly once, so anywhere one of them places you the
-        /// other two have to as well â€” and never twice. A plan read wrongly, a district
+        /// other two have to as well — and never twice. A plan read wrongly, a district
         /// missing, or a conversion that put one layer off by a few feet along the coast
         /// would have to show up here. So would two states' files overlapping, where a
         /// border runs through the grid. The counties are built from the same blocks, so
@@ -287,6 +328,11 @@ namespace YourElectionMap.Server.Tests
         [InlineData("MT", 0.05, 15_000, 21_000)]
         [InlineData("UT", 0.05, 7_500, 11_000)]
         [InlineData("WY", 0.05, 9_500, 13_000)]
+        [InlineData("CO", 0.05, 9_500, 13_000)]
+        [InlineData("NM", 0.05, 10_500, 14_500)]
+        [InlineData("NV", 0.05, 10_000, 14_000)]
+        [InlineData("OK", 0.05, 6_000, 8_500)]
+        [InlineData("TX", 0.1, 5_500, 7_800)]
         public void Covering_HasTheLevelsAgreeAcrossTheState(
             string code,
             double step,
@@ -316,6 +362,11 @@ namespace YourElectionMap.Server.Tests
         [InlineData("MT")]
         [InlineData("UT")]
         [InlineData("WY")]
+        [InlineData("CO")]
+        [InlineData("NM")]
+        [InlineData("NV")]
+        [InlineData("OK")]
+        [InlineData("TX")]
         public void Covering_SettlesThePointsBesideASharedEdge(string code)
         {
             var disagreed = new List<string>();
@@ -358,7 +409,8 @@ namespace YourElectionMap.Server.Tests
             }
 
             Assert.Empty(disagreed);
-            Assert.True(tested > 1_000, $"Only {tested} points tested.");
+            // Nevada's few, long Assembly districts give the fewest, about 800.
+            Assert.True(tested > 500, $"Only {tested} points tested.");
         }
 
         /// <summary>Every ring of every State House district, straight from the file.</summary>
@@ -412,7 +464,13 @@ namespace YourElectionMap.Server.Tests
 
                     foreach (var (other, data) in Alone)
                     {
-                        if (other != code && data.Covering(longitude, latitude) is not null)
+                        // Each file is thinned on its own, so two states can both claim a
+                        // strip a few feet wide along their border, as neighbouring
+                        // districts do. One on the Red River, between Oklahoma and Texas,
+                        // falls on the grid. Anything deeper is an overlap.
+                        if (other != code
+                            && data.Covering(longitude, latitude) is { } also
+                            && !(OnEdge(found, longitude, latitude) && OnEdge(also, longitude, latitude)))
                         {
                             disagreed.Add($"({longitude:0.00}, {latitude:0.00}): also in {other}");
                         }
@@ -423,6 +481,20 @@ namespace YourElectionMap.Server.Tests
             Assert.Empty(disagreed);
 
             return inside;
+        }
+
+        /// <summary>
+        /// Whether a point is within thirty feet of the edge of the US House district it
+        /// was found in: as far apart as two thinned edges can be.
+        /// </summary>
+        private static bool OnEdge(Found found, double longitude, double latitude)
+        {
+            var rings = found.Districts[0].Boundary
+                .SelectMany(polygon => polygon)
+                .Select(ring => ring.SelectMany(point => point).ToArray())
+                .ToArray();
+
+            return Geometry.DistanceToRings(rings, longitude, latitude) < 30 / 364_000.0;
         }
 
         /// <summary>

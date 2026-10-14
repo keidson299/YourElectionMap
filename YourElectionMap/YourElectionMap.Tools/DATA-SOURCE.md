@@ -19,6 +19,11 @@ holds its rings in longitude and latitude, to six decimal places, thinned to 15 
 | `mt-districts.json` | Montana | 30 | `Tiger\mt` | 2026-10-11 |
 | `ut-districts.json` | Utah | 49 | `Tiger\ut` | 2026-10-11 |
 | `wy-districts.json` | Wyoming | 56 | `Tiger\wy` | 2026-10-11 |
+| `co-districts.json` | Colorado | 08 | `Tiger\co` | 2026-10-13 |
+| `nm-districts.json` | New Mexico | 35 | `Tiger\nm` | 2026-10-13 |
+| `nv-districts.json` | Nevada | 32 | `Tiger\nv` | 2026-10-13 |
+| `ok-districts.json` | Oklahoma | 40 | `Tiger\ok` | 2026-10-13 |
+| `tx-districts.json` | Texas | 48 | `Tiger\tx` | 2026-10-13 |
 
 Every state's folder holds its five local layers too, downloaded on the same day, apart from
 those of Arizona, Idaho, Montana, Utah and Wyoming, downloaded on 2026-10-12.
@@ -53,11 +58,14 @@ https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/<service>/MapServe
 ```
 
 A state with no high school or elementary districts gets a file with no features in it, which
-is fine: the school districts of Idaho, North Carolina, South Carolina, Utah and Washington are
-all unified.
+is fine: the school districts of Colorado, Idaho, Nevada, New Mexico, North Carolina, South
+Carolina, Utah and Washington are all unified.
 
 A layer too big for one answer comes back with `"exceededTransferLimit": true`. Fetch it in
-pages with `resultOffset` and `resultRecordCount`, and join the features into one file.
+pages with `resultOffset` and `resultRecordCount`, and join the features into one file. Texas's
+unified school districts are too big even to say so: the one request comes back empty. Fetch
+them in pages from the start, 100 at a time, ordered with `orderByFields=GEOID`, and check the
+total against the same query with `returnCountOnly=true`, which counts 1,016.
 
 ### North Carolina
 
@@ -96,6 +104,29 @@ districts and, elsewhere, 15 union high school districts over 102 elementary dis
 no school row. Montana has 97 high school districts over 233 elementary districts, such as
 "Helena High School District" over "Helena Elementary School District", and 65 K-12 districts
 besides.
+
+### Oklahoma
+
+Oklahoma has 91 elementary districts besides its 415 unified ones, and no high school districts:
+TIGER puts nothing over them for the upper grades, so an address in one has its elementary
+district as its only school row, as in Wyoming's Fremont County School District 38.
+
+### Texas
+
+The 120th Congress's districts are the map the Legislature redrew in 2025. Layer 4, the 119th
+Congress's districts, is the map before it. Saved as `Tiger\tx\cd-119.geojson`, it differs from
+layer 0 in 37 of the 38 districts' outlines, which is how it was confirmed that layer 0 holds the
+new map. The tool does not read it.
+
+Texas's school districts are unified but for one high school district over one elementary
+district, "Hallettsville Independent School District (9-12) in Vysehrad" over "Vysehrad
+Independent School District", in Lavaca County.
+
+### Nevada
+
+Nevada's lower house is the Assembly, as California's is, so its file names it "State Assembly".
+Carson City is a county and a city in one, and TIGER names both "Carson City", so the capitol's
+county and city rows read the same.
 
 ### Washington, Arizona and Idaho
 
@@ -149,7 +180,14 @@ grid, every point in every state is in exactly one county. No point is in two ci
 point's school rows are one unified district, a high school district and the elementary district
 inside it, one of those two alone, or none where TIGER defines no district: 47 points of 4,310
 on a 0.1° grid over California, and on a 0.05° grid 627 of 11,513 over Arizona, 207 of 11,200
-over Wyoming, 2 of 11,458 over Oregon, and none in the other six states.
+over Wyoming, 2 of 11,458 over Oregon, and none in the other eleven states (Texas on a 0.1° grid).
+
+Where two covered states meet, each file is thinned on its own, so both can claim a strip a few
+feet wide along the border, as two neighbouring districts can. One point of the grids falls in
+one: (-94.87, 33.77), on the Red River, 7 feet inside Texas in TIGER, is 2 feet inside
+Oklahoma's file, and Texas's file reaches it only by taking the nearest district within 50 feet.
+The lookup answers there with whichever state's file it reads first, Oklahoma. The tests allow
+such a point only within thirty feet of both states' US House edges.
 
 ## Credit
 
@@ -163,7 +201,7 @@ result page.
 From `YourElectionMap/`, once per state:
 
 ```powershell
-foreach ($state in 'az', 'ca', 'id', 'mt', 'nc', 'or', 'sc', 'ut', 'wa', 'wy') {
+foreach ($state in 'az', 'ca', 'co', 'id', 'mt', 'nc', 'nm', 'nv', 'ok', 'or', 'sc', 'tx', 'ut', 'wa', 'wy') {
   dotnet run --project YourElectionMap.Tools -- tiger $state `
     "D:\VisualStudio\GitProjects\YourElectionMap\Docs\Tiger\$state" `
     "YourElectionMap.Server\Districts\Data\$state-districts.json"
@@ -187,8 +225,9 @@ file if:
 - a coordinate is not a longitude and latitude, as a layer fetched without `outSR=4326` would be.
 
 Two runs of the same layers produce the same bytes apart from the date in the header. With the
-local layers, California's file is about 19 MB and North Carolina's about 15 MB, against 7 and
-6 without them. The rest run from Montana's 12 MB and South Carolina's 11 down to Wyoming's 3.
+local layers, Texas's file is about 32 MB, California's about 19 MB and North Carolina's about
+15 MB, the last two against 7 and 6 without them. The rest run from Montana's 12 MB and South
+Carolina's 11 down to Wyoming's 3 and Nevada's 1.5.
 
 Another state needs its FIPS code, office names and district counts added to the table in
 `Tiger.cs`, and its three legislative layers downloaded into a folder of its own, with its five

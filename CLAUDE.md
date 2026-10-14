@@ -118,10 +118,11 @@ server's one endpoint, `GET /api/districts`. The current plan is
 [design/ElectionMapMainDesignPlanV5.md](design/ElectionMapMainDesignPlanV5.md); code comments
 refer to its numbered slices.
 
-**The data is real and covers ten states**, Arizona, California, Idaho, Montana, North Carolina,
-Oregon, South Carolina, Utah, Washington and Wyoming: each state's US House, State Senate and State House/Assembly districts, from the Census Bureau's TIGERweb layers, and its **local rows**: the
-county, the city or town, and the school district (in Arizona, California, Montana and a corner of
-Oregon, sometimes a high school and an elementary district), each a whole government named rather
+**The data is real and covers fifteen states**, Arizona, California, Colorado, Idaho, Montana,
+Nevada, New Mexico, North Carolina, Oklahoma, Oregon, South Carolina, Texas, Utah, Washington and
+Wyoming: each state's US House, State Senate and State House/Assembly districts, from the Census Bureau's TIGERweb layers, and its **local rows**: the
+county, the city or town, and the school district (in Arizona, California, Montana, a corner of
+Oregon and one place in Texas, sometimes a high school and an elementary district), each a whole government named rather
 than numbered ("Wake County", "Raleigh city"). An address is placed
 by the US Census geocoder and looked up in one file per state in `Districts/Data/`; the next
 election at the address comes from Google's Civic Information API. Those are the server's only two calls out.
@@ -130,7 +131,7 @@ The browser fetches the street tiles and the map's label fonts from OpenFreeMap 
 (`index.html`). There is no County Commission, City Council or School Board district data yet,
 so the rail lists up to six rows (seven where an address has both a high school and an elementary
 district), and fewer where it has no city or school district. An address
-outside the ten states is a 404.
+outside the fifteen states is a 404.
 
 **Google needs an API key, and nothing breaks without one.** The server reads
 `GoogleCivic:ApiKey` — user secrets in development, the environment variable `GoogleCivic__ApiKey`
@@ -170,7 +171,7 @@ dotnet publish YourElectionMap.Server/YourElectionMap.Server.csproj         # al
 
 # Builds each state's district file from its TIGERweb layers. Needed once per clone and again
 # when a plan changes.
-foreach ($state in 'az', 'ca', 'id', 'mt', 'nc', 'or', 'sc', 'ut', 'wa', 'wy') {
+foreach ($state in 'az', 'ca', 'co', 'id', 'mt', 'nc', 'nm', 'nv', 'ok', 'or', 'sc', 'tx', 'ut', 'wa', 'wy') {
   dotnet run --project YourElectionMap.Tools -- tiger $state `
     "D:\VisualStudio\GitProjects\YourElectionMap\Docs\Tiger\$state" `
     "YourElectionMap.Server\Districts\Data\$state-districts.json"

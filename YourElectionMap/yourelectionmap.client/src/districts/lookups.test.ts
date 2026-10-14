@@ -148,8 +148,9 @@ describe('openLookup', () => {
     expect(notice).toEqual({
       text:
         'We could not find districts for that address in Arizona, California,'
-        + ' Idaho, Montana, North Carolina, Oregon, South Carolina, Utah,'
-        + ' Washington or Wyoming. Check it, or try adding your city or ZIP code.',
+        + ' Colorado, Idaho, Montana, Nevada, New Mexico, North Carolina, Oklahoma,'
+        + ' Oregon, South Carolina, Texas, Utah, Washington or Wyoming. Check it,'
+        + ' or try adding your city or ZIP code.',
       field: true,
     })
   })

@@ -66,7 +66,8 @@ namespace YourElectionMap.Server.Districts
                     }
                 }
 
-                // States do not overlap, so the first to cover the point is the only one.
+                // States do not overlap, so the first to cover the point is the only one,
+                // but for a strip a few feet wide where two thinned borders cross.
                 if (found.Count > 0)
                 {
                     var settled = Settle(state.Districts, found, longitude, latitude);
