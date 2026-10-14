@@ -109,7 +109,7 @@ and let the owner decide whether to authorize a search or paste the information 
 
 ## What this is
 
-`YourElectionMap` is an ASP.NET Core 9 Web API (`YourElectionMap.Server`) serving a React 19 + Vite
+`YourElectionMap` is an ASP.NET Core 10 Web API (`YourElectionMap.Server`) serving a React 19 + Vite
 SPA (`yourelectionmap.client`), with an xUnit test project (`YourElectionMap.Server.Tests`) and a
 console project (`YourElectionMap.Tools`), run by hand, that builds the district data. The client
 has a Home page (the address form over a decorative survey map) and a result page (a rail of

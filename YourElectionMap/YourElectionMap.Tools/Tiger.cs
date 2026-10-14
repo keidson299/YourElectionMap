@@ -192,7 +192,7 @@ namespace YourElectionMap.Tools
         /// </summary>
         private static void CheckAndSort(List<BuiltDistrict> built, Layer layer)
         {
-            var numbers = built.Select(district => int.Parse(district.Number)).Order().ToArray();
+            var numbers = built.Select(district => int.Parse(district.Number, CultureInfo.InvariantCulture)).Order().ToArray();
 
             if (!numbers.SequenceEqual(Enumerable.Range(1, layer.Count)))
             {
@@ -201,7 +201,7 @@ namespace YourElectionMap.Tools
                     + $"found {numbers.Length}: {string.Join(", ", numbers)}.");
             }
 
-            built.Sort((left, right) => int.Parse(left.Number) - int.Parse(right.Number));
+            built.Sort((left, right) => int.Parse(left.Number, CultureInfo.InvariantCulture) - int.Parse(right.Number, CultureInfo.InvariantCulture));
 
             foreach (var district in built)
             {

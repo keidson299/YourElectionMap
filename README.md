@@ -2,7 +2,7 @@
 
 Type an address and see the election districts you vote in, drawn on a map.
 
-An ASP.NET Core 9 API (`YourElectionMap.Server`) serving a React 19 + Vite SPA
+An ASP.NET Core 10 API (`YourElectionMap.Server`) serving a React 19 + Vite SPA
 (`yourelectionmap.client`), with an xUnit test project (`YourElectionMap.Server.Tests`) and a
 console project (`YourElectionMap.Tools`) that builds the district data.
 

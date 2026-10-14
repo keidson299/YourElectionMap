@@ -9,7 +9,7 @@
       "type": "coreclr",
       "request": "launch",
       "preLaunchTask": "build",
-      "program": "${workspaceFolder}/YourElectionMap.Server/bin/Debug/net9.0/YourElectionMap.Server.dll",
+      "program": "${workspaceFolder}/YourElectionMap.Server/bin/Debug/net10.0/YourElectionMap.Server.dll",
       "args": [],
       "cwd": "${workspaceFolder}/YourElectionMap.Server",
       "stopAtEntry": false,

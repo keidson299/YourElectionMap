@@ -87,7 +87,7 @@ namespace YourElectionMap.Tools
 
             file.WriteLine("{");
             file.WriteLine($"  \"source\": \"{built.Source}\",");
-            file.WriteLine($"  \"generated\": \"{DateTime.UtcNow:yyyy-MM-dd}\",");
+            file.WriteLine($"  \"generated\": \"{DateTime.UtcNow.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}\",");
             file.WriteLine($"  \"state\": \"{built.State}\",");
             file.WriteLine("  \"units\": \"degrees\",");
             file.WriteLine("  \"districts\": [");
