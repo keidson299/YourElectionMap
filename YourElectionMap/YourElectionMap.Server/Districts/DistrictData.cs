@@ -55,26 +55,118 @@ namespace YourElectionMap.Server.Districts
         {
             foreach (var state in _states)
             {
-                var found = new List<District>();
+                var found = new List<Stored>();
 
                 foreach (var district in state.Districts)
                 {
                     if (Geometry.BoxCovers(district.Bbox, longitude, latitude)
                         && Geometry.Covers(district.Rings, longitude, latitude))
                     {
-                        found.Add(district.ToDistrict());
+                        found.Add(district);
                     }
                 }
 
                 // States do not overlap, so the first to cover the point is the only one.
                 if (found.Count > 0)
                 {
-                    return new Found(state.Source, WithCounty(found));
+                    var settled = Settle(state.Districts, found, longitude, latitude);
+
+                    return new Found(state.Source, WithCounty(settled.ConvertAll(district => district.ToDistrict())));
                 }
             }
 
             return null;
         }
+
+        /// <summary>
+        /// Each district is thinned on its own, so two that share an edge no longer meet
+        /// exactly: a few feet either side of it, both cover a point, or neither does. A
+        /// point covered twice keeps the district it is deeper inside. A level that
+        /// covers the whole state, left with nothing, takes the nearest district within
+        /// <see cref="Reach"/>. A city or school district is never filled in that way,
+        /// because plenty of land has none. Either answer is a few feet from a line
+        /// that is itself only good to fifteen.
+        /// </summary>
+        private static List<Stored> Settle(Stored[] districts, List<Stored> found, double x, double y)
+        {
+            double Depth(Stored district) => Geometry.DistanceToRings(district.Rings, x, y);
+
+            // Two of a kind, where there can only be one: an elementary district inside
+            // a high school district is a different kind, and stays.
+            var settled = found
+                .GroupBy(district => (district.Level, district.Detail))
+                .Select(kind => kind.Count() == 1 ? kind.First() : kind.MaxBy(Depth)!)
+                .ToList();
+
+            // A unified district runs every grade, so it cannot share a point with a high
+            // school or elementary district: keep whichever side the point is deeper in.
+            var unified = settled.Find(district => district.Level == "school" && district.Detail == UnifiedSchool);
+            var split = settled.FindAll(district => district.Level == "school" && district != unified);
+
+            if (unified is not null && split.Count > 0)
+            {
+                if (Depth(unified) >= split.Max(Depth))
+                {
+                    settled.RemoveAll(split.Contains);
+                }
+                else
+                {
+                    settled.Remove(unified);
+                }
+            }
+
+            foreach (var level in WholeState)
+            {
+                if (settled.Exists(district => district.Level == level))
+                {
+                    continue;
+                }
+
+                Stored? nearest = null;
+                var nearestDistance = Reach;
+
+                foreach (var district in districts)
+                {
+                    // Twice the reach, so the box allows for a degree of longitude being short.
+                    if (district.Level != level || !Geometry.BoxCovers(Widened(district.Bbox, 2 * Reach), x, y))
+                    {
+                        continue;
+                    }
+
+                    var distance = Depth(district);
+
+                    if (distance <= nearestDistance)
+                    {
+                        nearest = district;
+                        nearestDistance = distance;
+                    }
+                }
+
+                if (nearest is not null)
+                {
+                    settled.Add(nearest);
+                }
+            }
+
+            settled.Sort(Compare);
+
+            return settled;
+        }
+
+        /// <summary>The converter's detail for a school district that runs every grade.</summary>
+        private const string UnifiedSchool = "School district";
+
+        /// <summary>
+        /// Fifty feet, in degrees of latitude: past the thirty a gap between two thinned
+        /// edges can be at most, and well short of the next street.
+        /// </summary>
+        private const double Reach = 50 / 364_000.0;
+
+        /// <summary>The levels every point in the state has one of.</summary>
+        private static readonly string[] WholeState = ["congressional", "state-upper", "state-lower", "county"];
+
+        private static double[] Widened(double[] box, double margin) =>
+            [box[0] - margin, box[1] - margin, box[2] + margin, box[3] + margin];
 
         /// <summary>
         /// The county the point is in, named on the map chip of every other district:

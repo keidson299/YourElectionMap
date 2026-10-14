@@ -61,6 +61,29 @@ namespace YourElectionMap.Server.Tests
             Assert.Equal(inside, Geometry.BoxCovers(Geometry.BoxOf([Square, Island]), x, y));
         }
 
+        [Theory]
+        [InlineData(0.002, 0.005, 0.002)] // inside, nearest the west edge
+        [InlineData(0.005, 0.009, 0.001)] // inside, nearest the north edge
+        [InlineData(0.013, 0.005, 0.003)] // outside, east of it
+        [InlineData(0.013, 0.014, 0.005)] // outside, off the corner: a 3-4-5 triangle
+        public void DistanceToRings_MeasuresToTheNearestEdge(double x, double y, double distance)
+        {
+            // A hundredth of a degree square at the equator, where a degree of longitude
+            // and one of latitude are the same length.
+            double[] small = [0, 0, 0.01, 0, 0.01, 0.01, 0, 0.01, 0, 0];
+
+            Assert.Equal(distance, Geometry.DistanceToRings([small], x, y), 6);
+        }
+
+        [Fact]
+        public void DistanceToRings_ShortensLongitudeAwayFromTheEquator()
+        {
+            // At 60°N a degree of longitude is half a degree of latitude.
+            double[] edge = [1, 59, 1, 61, 1, 59];
+
+            Assert.Equal(0.5, Geometry.DistanceToRings([edge], 0, 60), 3);
+        }
+
         [Fact]
         public void ToPolygons_MakesOneRingOnePolygon()
         {

@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { openLookup, problemNotice, requestLookup, resetLookups } from './lookups'
+import { navigate } from '../routing/history'
 import {
   startFakeDistrictsApi,
   stopFakeDistrictsApi,
@@ -160,6 +161,17 @@ describe('openLookup', () => {
     expect(notice?.text).toContain('at your location')
     // The address field is empty and was not the problem, so it is not flagged.
     expect(notice?.field).toBe(false)
+  })
+
+  it('leaves a visitor where they went while the lookup ran', async () => {
+    window.history.replaceState(null, '', '/map?address=1+Old+Road')
+
+    // The header's lookup is on its way when the visitor clicks Home.
+    const pending = openLookup({ address: '2 New Road' }, { replace: true })
+    navigate('/')
+
+    expect(await pending).toBeNull()
+    expect(currentUrl()).toBe('/')
   })
 })
 

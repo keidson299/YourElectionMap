@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net;
 using System.Text;
 
@@ -84,8 +85,9 @@ namespace YourElectionMap.Server.Tests
         /// </summary>
         public static string Match(params Place[] points)
         {
+            // In the invariant culture: a German machine would otherwise write -78,6398.
             var matches = points.Select(point =>
-                $$"""{ "matchedAddress": "{{point.Address}}", "coordinates": { "x": {{point.Longitude}}, "y": {{point.Latitude}} } }""");
+                $$"""{ "matchedAddress": "{{point.Address}}", "coordinates": { "x": {{point.Longitude.ToString(CultureInfo.InvariantCulture)}}, "y": {{point.Latitude.ToString(CultureInfo.InvariantCulture)}} } }""");
 
             return $$"""
                 {

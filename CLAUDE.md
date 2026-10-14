@@ -236,9 +236,16 @@ changing it, know that:
 - **Boundaries are sent at the detail the file stores** (about 15 feet), not thinned: the map zooms
   to street level. Responses are compressed (Brotli or gzip, the
   framework's defaults).
+- **Districts are thinned to 15 feet each on its own**, so neighbours overlap or miss by a few
+  feet along a shared edge. `DistrictData.Covering` settles a point there: two of a kind keep the
+  one it is deeper in, and a whole-state level (congressional, both chambers, county) left empty
+  takes the nearest within 50 feet. The Census geocoder puts an address about 21 feet off the
+  street's centreline, on its own side, which is clear of that error where a boundary follows a
+  street.
 - **Google can never fail a lookup.** `GoogleVoterInfo` returns null rather than throwing for no
-  key, no election, a refusal, a timeout (four seconds for both calls together) or an unreadable
-  answer; only the browser cancelling propagates.
+  key, no election, a refusal, a timeout (four seconds for both calls together), an unreadable
+  answer or anything else; only the browser cancelling propagates. The election list is the same
+  for every address and is kept in `IMemoryCache` for an hour; a failed read is not kept.
 - **A county, city or school row has no unit or number** (both null on the wire); its `office` is
   its name and its id is its level and Census GEOID, `county-37183`. Rows sort broad to local,
   then by number, with an elementary school district after the high school district over it.

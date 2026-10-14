@@ -12,6 +12,9 @@ builder.Services.AddSingleton<DistrictData>();
 // lookup service that holds one is scoped rather than a singleton.
 builder.Services.AddHttpClient<CensusGeocoder>();
 builder.Services.AddHttpClient<GoogleVoterInfo>();
+
+// Google's election list is the same for every address, so it is read once an hour.
+builder.Services.AddMemoryCache();
 builder.Services.AddScoped<DistrictLookupService>();
 
 // Boundaries go out at full detail, tens of kilobytes of coordinates for a lookup and

@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net;
 using YourElectionMap.Server.Districts;
 
@@ -27,6 +28,28 @@ namespace YourElectionMap.Server.Tests
 
             // x is the longitude, which is the way round it is easy to get wrong.
             Assert.Equal(-78.6398, found[1].Longitude);
+        }
+
+        [Fact]
+        public async Task FindAsync_ReadsTheSameAnswerOnAMachineThatWritesDecimalCommas()
+        {
+            var saved = CultureInfo.CurrentCulture;
+
+            try
+            {
+                CultureInfo.CurrentCulture = new CultureInfo("de-DE");
+                var geocoder = Geocoder((_, _) => Task.FromResult(FakeGeocoding.Reply(
+                    FakeGeocoding.Match(new FakeGeocoding.Place(35.7822, -78.6398, "16 W JONES ST, RALEIGH, NC, 27601")))));
+
+                var found = Assert.Single(await geocoder.FindAsync("16 W Jones St", default));
+
+                Assert.Equal(35.7822, found.Latitude);
+                Assert.Equal(-78.6398, found.Longitude);
+            }
+            finally
+            {
+                CultureInfo.CurrentCulture = saved;
+            }
         }
 
         [Fact]

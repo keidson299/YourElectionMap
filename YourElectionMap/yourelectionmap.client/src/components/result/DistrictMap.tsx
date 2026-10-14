@@ -94,10 +94,12 @@ export function DistrictMap({
     () => buildStyle({ layers, colors, compact }),
     [layers, colors, compact],
   )
-  const bounds = openingBounds(
-    location,
-    layers.selected.boundary,
-    minimumSpan(compact),
+  // Kept, because the map re-renders on every frame of a drag, and this reads
+  // every point of the boundary.
+  const selectedBoundary = layers.selected.boundary
+  const bounds = useMemo(
+    () => openingBounds(location, selectedBoundary, minimumSpan(compact)),
+    [location, selectedBoundary, compact],
   )
 
   // What the map was last given, so a re-render that changes nothing it shows

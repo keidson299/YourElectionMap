@@ -1,3 +1,4 @@
+using System.Text.Json;
 using YourElectionMap.Server.Districts;
 
 namespace YourElectionMap.Server.Tests
@@ -37,8 +38,8 @@ namespace YourElectionMap.Server.Tests
             // The State House, 1100 Gervais Street, Columbia.
             ["SC"] = new("45", 34.0004, -81.0330, "State House", (-83.4, -78.45), (31.95, 35.25)),
             // The rest have straight borders along round degrees, so their boxes start a few
-            // hundredths off them: a grid row on 37°N would be on the Utah–Arizona line, and
-            // one on 49°N finds a Washington school district on the Canadian line itself.
+            // hundredths off them: a grid row on 37Â°N would be on the Utahâ€“Arizona line, and
+            // one on 49Â°N finds a Washington school district on the Canadian line itself.
             // The Legislative Building, 416 Sid Snyder Avenue SW, Olympia.
             ["WA"] = new("53", 47.0358, -122.9048, "State House", (-124.9, -116.9), (45.52, 49.1)),
             // The State Capitol, 1700 W Washington Street, Phoenix.
@@ -268,7 +269,7 @@ namespace YourElectionMap.Server.Tests
         /// The one check on the file that needs no outside authority. The three plans were
         /// drawn separately, but each is built from the same 2020 census blocks and
         /// covers the whole state exactly once, so anywhere one of them places you the
-        /// other two have to as well — and never twice. A plan read wrongly, a district
+        /// other two have to as well â€” and never twice. A plan read wrongly, a district
         /// missing, or a conversion that put one layer off by a few feet along the coast
         /// would have to show up here. So would two states' files overlapping, where a
         /// border runs through the grid. The counties are built from the same blocks, so
@@ -296,6 +297,84 @@ namespace YourElectionMap.Server.Tests
 
             // Enough of the grid to have covered the state rather than clipped a corner.
             Assert.InRange(inside, fewest, most);
+        }
+
+        /// <summary>
+        /// Points a few feet either side of State House edges, where addresses on a
+        /// boundary street land, and where thinning each district on its own leaves
+        /// slivers two districts cover, or none. Every one must still find one district
+        /// per level. Every hundredth edge, to keep the suite quick.
+        /// </summary>
+        [Theory]
+        [InlineData("NC")]
+        [InlineData("CA")]
+        [InlineData("OR")]
+        [InlineData("SC")]
+        [InlineData("WA")]
+        [InlineData("AZ")]
+        [InlineData("ID")]
+        [InlineData("MT")]
+        [InlineData("UT")]
+        [InlineData("WY")]
+        public void Covering_SettlesThePointsBesideASharedEdge(string code)
+        {
+            var disagreed = new List<string>();
+            var tested = 0;
+
+            foreach (var ring in StateHouseRings(code))
+            {
+                for (var i = 0; i + 3 < ring.Length; i += 200)
+                {
+                    var (ax, ay, bx, by) = (ring[i], ring[i + 1], ring[i + 2], ring[i + 3]);
+                    var length = Math.Sqrt((bx - ax) * (bx - ax) + (by - ay) * (by - ay));
+
+                    if (length == 0)
+                    {
+                        continue;
+                    }
+
+                    foreach (var feet in new[] { -10.0, -3.0, 3.0, 10.0 })
+                    {
+                        // Square to the edge, from its middle, on either side.
+                        var offset = feet / 364_000;
+                        var longitude = (ax + bx) / 2 - (by - ay) / length * offset;
+                        var latitude = (ay + by) / 2 + (bx - ax) / length * offset;
+                        var found = Alone[code].Covering(longitude, latitude);
+
+                        if (found is null)
+                        {
+                            continue; // off the state's own edge
+                        }
+
+                        tested++;
+
+                        if (Disagreement(found.Districts) is { } wrong)
+                        {
+                            var ids = found.Districts.Select(district => district.Id);
+                            disagreed.Add($"({longitude:0.000000}, {latitude:0.000000}): {wrong}: {string.Join(", ", ids)}");
+                        }
+                    }
+                }
+            }
+
+            Assert.Empty(disagreed);
+            Assert.True(tested > 1_000, $"Only {tested} points tested.");
+        }
+
+        /// <summary>Every ring of every State House district, straight from the file.</summary>
+        private static IEnumerable<double[]> StateHouseRings(string code)
+        {
+            var path = Path.Combine(
+                AppContext.BaseDirectory, "Districts", "Data", $"{code.ToLowerInvariant()}-districts.json");
+
+            using var file = File.OpenRead(path);
+            using var json = JsonDocument.Parse(file);
+
+            return json.RootElement.GetProperty("districts").EnumerateArray()
+                .Where(district => district.GetProperty("level").GetString() == "state-lower")
+                .SelectMany(district => district.GetProperty("rings").EnumerateArray())
+                .Select(ring => ring.EnumerateArray().Select(value => value.GetDouble()).ToArray())
+                .ToList();
         }
 
         private static List<District> Covering(double latitude, double longitude) =>

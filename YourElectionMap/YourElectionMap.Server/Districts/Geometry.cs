@@ -66,6 +66,42 @@ namespace YourElectionMap.Server.Districts
             x >= box[0] && x <= box[2] && y >= box[1] && y <= box[3];
 
         /// <summary>
+        /// How far the point is from the nearest edge of any ring, in degrees of latitude
+        /// (a degree is about 364,000 feet). Longitude is scaled by the cosine of the
+        /// point's latitude first, so a distance comes out the same whichever way the
+        /// edge runs.
+        /// </summary>
+        public static double DistanceToRings(IReadOnlyList<double[]> rings, double x, double y)
+        {
+            var scale = Math.Cos(y * Math.PI / 180);
+            var nearest = double.MaxValue;
+
+            foreach (var ring in rings)
+            {
+                var count = ring.Length / 2;
+
+                for (int i = 0, j = count - 1; i < count; j = i++)
+                {
+                    // The edge from j to i, with the point at the origin.
+                    var ax = (ring[j * 2] - x) * scale;
+                    var ay = ring[j * 2 + 1] - y;
+                    var dx = (ring[i * 2] - x) * scale - ax;
+                    var dy = ring[i * 2 + 1] - y - ay;
+                    var lengthSquared = dx * dx + dy * dy;
+                    var along = lengthSquared == 0
+                        ? 0
+                        : Math.Clamp(-(ax * dx + ay * dy) / lengthSquared, 0, 1);
+                    var px = ax + along * dx;
+                    var py = ay + along * dy;
+
+                    nearest = Math.Min(nearest, px * px + py * py);
+                }
+            }
+
+            return Math.Sqrt(nearest);
+        }
+
+        /// <summary>
         /// Sorts loose rings into polygons: each an outer ring followed by its holes,
         /// outers wound counter-clockwise and holes clockwise (with y pointing up, as
         /// latitude does). That is the shape GeoJSON asks for, and the page's map fills

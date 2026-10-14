@@ -107,8 +107,8 @@ function parseCoordinates(
   return { lat, lon }
 }
 
-// Six decimal places is roughly a tenth of a metre — more than a district
-// lookup needs, and short enough to keep the URL readable.
+// Five decimal places is about a metre: as fine as the district files, and
+// no more exact about where a visitor stood than a shared link needs to be.
 function formatCoordinate(value: number): string {
-  return String(Math.round(value * 1e6) / 1e6)
+  return String(Math.round(value * 1e5) / 1e5)
 }

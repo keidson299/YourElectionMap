@@ -78,13 +78,13 @@ describe('mapUrl', () => {
     expect(parseRoute(url)).toEqual({ name: 'map', target, district: null })
   })
 
-  it('round-trips coordinates, rounded to six places', () => {
+  it('round-trips coordinates, rounded to five places', () => {
     const url = mapUrl({ coords: { lat: 42.10123456789, lon: -71.2 } })
 
-    expect(url).toBe('/map?lat=42.101235&lon=-71.2')
+    expect(url).toBe('/map?lat=42.10123&lon=-71.2')
     expect(parseRoute(url)).toEqual({
       name: 'map',
-      target: { coords: { lat: 42.101235, lon: -71.2 } },
+      target: { coords: { lat: 42.10123, lon: -71.2 } },
       district: null,
     })
   })
@@ -116,9 +116,9 @@ describe('targetQuery', () => {
     )
   })
 
-  it('names a point, rounded to six places', () => {
+  it('names a point, rounded to five places', () => {
     expect(targetQuery({ coords: { lat: 42.10123456789, lon: -71.2 } })).toBe(
-      'lat=42.101235&lon=-71.2',
+      'lat=42.10123&lon=-71.2',
     )
   })
 })

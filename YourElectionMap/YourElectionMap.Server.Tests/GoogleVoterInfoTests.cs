@@ -1,4 +1,6 @@
+using System.Globalization;
 using System.Net;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using YourElectionMap.Server.Districts;
 
@@ -23,7 +25,7 @@ namespace YourElectionMap.Server.Tests
             var election = await voterInfo.GetAsync(Raleigh, default);
 
             Assert.NotNull(election);
-            Assert.Equal(DateOnly.ParseExact(day, "yyyy-MM-dd"), election.Date);
+            Assert.Equal(DateOnly.ParseExact(day, "yyyy-MM-dd", CultureInfo.InvariantCulture), election.Date);
             Assert.Equal(5, election.Candidates);
             Assert.Equal(1, election.Measures);
         }
@@ -69,11 +71,12 @@ namespace YourElectionMap.Server.Tests
             Assert.Null(await voterInfo.GetAsync(Raleigh, default));
         }
 
-        /// <summary>A DNS failure, as it looks from here, and a timeout.</summary>
+        /// <summary>A DNS failure, as it looks from here, a timeout, and anything else.</summary>
         public static TheoryData<Exception> CallFailures => new()
         {
             new HttpRequestException("no such host"),
             new TaskCanceledException("the client gave up waiting"),
+            new InvalidOperationException("nobody thought of this"),
         };
 
         [Theory]
@@ -109,8 +112,7 @@ namespace YourElectionMap.Server.Tests
             var handler = new FakeGeocoding.StubHandler(
                 (_, _) => Task.FromResult(FakeGeocoding.Reply("{}")));
 
-            var election = await new GoogleVoterInfo(new HttpClient(handler), Settings(apiKey: null))
-                .GetAsync(Raleigh, default);
+            var election = await Google(handler, apiKey: null).GetAsync(Raleigh, default);
 
             Assert.Null(election);
             Assert.Null(handler.LastRequest);
@@ -121,7 +123,7 @@ namespace YourElectionMap.Server.Tests
         {
             var handler = Handler((_, _) => Task.FromResult(FakeGeocoding.Reply("{}")));
 
-            await new GoogleVoterInfo(new HttpClient(handler), Settings("test-key"))
+            await Google(handler)
                 .GetAsync(Raleigh, default);
 
             Assert.NotNull(handler.LastRequest);
@@ -147,7 +149,7 @@ namespace YourElectionMap.Server.Tests
                 ("4", FakeVoterInfo.DaysFromToday(30), "ocd-division/country:us"));
             var handler = Handler((_, _) => Task.FromResult(FakeGeocoding.Reply("{}")), elections);
 
-            await new GoogleVoterInfo(new HttpClient(handler), Settings("test-key"))
+            await Google(handler)
                 .GetAsync(Raleigh, default);
 
             Assert.Contains("electionId=3", handler.LastQuery);
@@ -168,7 +170,7 @@ namespace YourElectionMap.Server.Tests
                 },
                 elections);
 
-            var election = await new GoogleVoterInfo(new HttpClient(handler), Settings("test-key"))
+            var election = await Google(handler)
                 .GetAsync(Raleigh, default);
 
             Assert.Null(election);
@@ -188,15 +190,68 @@ namespace YourElectionMap.Server.Tests
                     ? FakeGeocoding.Reply(body, status)
                     : FakeGeocoding.Reply(FakeVoterInfo.Election(FakeVoterInfo.DaysFromToday(30)))));
 
-            var election = await new GoogleVoterInfo(new HttpClient(handler), Settings("test-key"))
+            var election = await Google(handler)
                 .GetAsync(Raleigh, default);
 
             Assert.Null(election);
         }
 
+        [Fact]
+        public async Task GetAsync_ReadsTheElectionListOnceForManyLookups()
+        {
+            var listsRead = 0;
+            var handler = new FakeGeocoding.StubHandler((request, _) =>
+            {
+                if (FakeVoterInfo.IsElectionList(request))
+                {
+                    Interlocked.Increment(ref listsRead);
+                    return Task.FromResult(FakeGeocoding.Reply(FakeVoterInfo.Elections(
+                        ("9000", FakeVoterInfo.DaysFromToday(30), "ocd-division/country:us"))));
+                }
+
+                return Task.FromResult(FakeGeocoding.Reply(FakeVoterInfo.Election(FakeVoterInfo.DaysFromToday(30))));
+            });
+            var voterInfo = Google(handler);
+
+            for (var i = 0; i < 3; i++)
+            {
+                Assert.NotNull(await voterInfo.GetAsync(Raleigh, default));
+            }
+
+            Assert.Equal(1, listsRead);
+        }
+
+        [Fact]
+        public async Task GetAsync_AsksForTheElectionListAgainAfterItCouldNotBeRead()
+        {
+            var listsRead = 0;
+            var handler = new FakeGeocoding.StubHandler((request, _) =>
+            {
+                if (FakeVoterInfo.IsElectionList(request))
+                {
+                    // Down the first time, answering the second.
+                    return Task.FromResult(Interlocked.Increment(ref listsRead) == 1
+                        ? FakeGeocoding.Reply("{}", HttpStatusCode.ServiceUnavailable)
+                        : FakeGeocoding.Reply(FakeVoterInfo.Elections(
+                            ("9000", FakeVoterInfo.DaysFromToday(30), "ocd-division/country:us"))));
+                }
+
+                return Task.FromResult(FakeGeocoding.Reply(FakeVoterInfo.Election(FakeVoterInfo.DaysFromToday(30))));
+            });
+            var voterInfo = Google(handler);
+
+            Assert.Null(await voterInfo.GetAsync(Raleigh, default));
+            Assert.NotNull(await voterInfo.GetAsync(Raleigh, default));
+            Assert.Equal(2, listsRead);
+        }
+
         private static GoogleVoterInfo VoterInfo(
             Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> reply) =>
-            new(new HttpClient(Handler(reply)), Settings("test-key"));
+            Google(Handler(reply));
+
+        /// <summary>A fresh cache each time, so no test sees another's election list.</summary>
+        private static GoogleVoterInfo Google(HttpMessageHandler handler, string? apiKey = "test-key") =>
+            new(new HttpClient(handler), Settings(apiKey), new MemoryCache(new MemoryCacheOptions()));
 
         /// <summary>
         /// Answers the election list with <paramref name="elections"/>, by default a

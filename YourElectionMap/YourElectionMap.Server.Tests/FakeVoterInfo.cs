@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Globalization;
 using System.Net;
 
 namespace YourElectionMap.Server.Tests
@@ -69,7 +70,7 @@ namespace YourElectionMap.Server.Tests
         /// date has passed.
         /// </summary>
         public static string DaysFromToday(int days) =>
-            DateOnly.FromDateTime(DateTime.UtcNow.AddDays(days)).ToString("yyyy-MM-dd");
+            DateOnly.FromDateTime(DateTime.UtcNow.AddDays(days)).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
 
         /// <summary>
         /// A reply shaped the way the API's reference describes: two races with three and

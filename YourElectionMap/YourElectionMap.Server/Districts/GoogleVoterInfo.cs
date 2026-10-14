@@ -1,4 +1,6 @@
+using System.Globalization;
 using System.Text.Json;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace YourElectionMap.Server.Districts
 {
@@ -9,14 +11,16 @@ namespace YourElectionMap.Server.Districts
     /// secrets in development, an environment variable when deployed.
     /// <para>
     /// The election is extra to the districts, so nothing here can fail a lookup. No key,
-    /// no election, a refusal, a timeout or a reply that is not JSON all come back as
-    /// null, which hides the rail's footer. Google is sent the address and nothing else,
-    /// from the server, so it never sees the visitor; nothing is logged or kept.
+    /// no election, a refusal, a timeout, a reply that is not JSON or anything else that
+    /// goes wrong all come back as null, which hides the rail's footer. Google is sent the
+    /// address and nothing else, from the server, so it never sees the visitor; nothing
+    /// is logged or kept.
     /// </para>
     /// <para>
     /// Google answers an address asked about without an election ID with "Election
     /// unknown", even with a general election weeks away, so the election list is read
     /// first and the next election covering the address's state is asked about by ID.
+    /// The list is the same for every address, so it is kept for an hour.
     /// </para>
     /// </summary>
     public sealed class GoogleVoterInfo
@@ -35,10 +39,18 @@ namespace YourElectionMap.Server.Districts
         /// <summary>
         /// Where "today" is decided: the westernmost time zone the site covers, the Pacific
         /// coast's, so an election counts as over once its day has ended in every state. The
-        /// Carolinas' stays up until 3 a.m. there, which does no harm.
+        /// Carolinas' stays up until 3 a.m. there, which does no harm. A host with no
+        /// time zone data gets Pacific standard time all year, an hour off in summer.
         /// </summary>
         private static readonly TimeZoneInfo LastToClose =
-            TimeZoneInfo.FindSystemTimeZoneById("America/Los_Angeles");
+            TimeZoneInfo.TryFindSystemTimeZoneById("America/Los_Angeles", out var pacific)
+                ? pacific
+                : TimeZoneInfo.CreateCustomTimeZone("Pacific", TimeSpan.FromHours(-8), "Pacific", "Pacific");
+
+        /// <summary>How long the election list is kept. Google adds to it a few times a month.</summary>
+        private static readonly TimeSpan ListLifetime = TimeSpan.FromHours(1);
+
+        private const string ListCacheKey = "GoogleVoterInfo.Elections";
 
         /// <summary>
         /// Both calls together. They run after the geocoder's eight seconds, and the client
@@ -47,11 +59,13 @@ namespace YourElectionMap.Server.Districts
         private static readonly TimeSpan Budget = TimeSpan.FromSeconds(4);
 
         private readonly HttpClient _client;
+        private readonly IMemoryCache _cache;
         private readonly string? _apiKey;
 
-        public GoogleVoterInfo(HttpClient client, IConfiguration configuration)
+        public GoogleVoterInfo(HttpClient client, IConfiguration configuration, IMemoryCache cache)
         {
             _client = client;
+            _cache = cache;
             _apiKey = configuration["GoogleCivic:ApiKey"];
         }
 
@@ -76,10 +90,10 @@ namespace YourElectionMap.Server.Districts
 
             try
             {
-                using var elections = await GetJsonAsync(ElectionsEndpoint, budget.Token);
+                var elections = await ElectionsAsync(budget.Token);
                 var electionId = elections is null
                     ? null
-                    : NextElectionId(elections.RootElement, State(address), today);
+                    : NextElectionId(elections, State(address), today);
 
                 if (electionId is null)
                 {
@@ -98,11 +112,34 @@ namespace YourElectionMap.Server.Districts
                 // The browser gave up and went away.
                 throw;
             }
-            catch (Exception failure) when (
-                failure is HttpRequestException or OperationCanceledException or JsonException)
+            catch (Exception)
             {
+                // A refusal, a timeout, a reply that is not JSON, or anything nobody
+                // thought of: the election is extra, and never costs the districts.
                 return null;
             }
+        }
+
+        /// <summary>
+        /// Google's election list, as read within the last hour, or null when it cannot
+        /// be read. A failure is not kept, so the next lookup asks again.
+        /// </summary>
+        private async Task<IReadOnlyList<Election>?> ElectionsAsync(CancellationToken cancellationToken)
+        {
+            if (_cache.TryGetValue(ListCacheKey, out IReadOnlyList<Election>? kept))
+            {
+                return kept;
+            }
+
+            using var document = await GetJsonAsync(ElectionsEndpoint, cancellationToken);
+            var elections = document is null ? null : ReadElections(document.RootElement);
+
+            if (elections is not null)
+            {
+                _cache.Set<IReadOnlyList<Election>>(ListCacheKey, elections, ListLifetime);
+            }
+
+            return elections;
         }
 
         /// <summary>
@@ -129,12 +166,10 @@ namespace YourElectionMap.Server.Districts
         }
 
         /// <summary>
-        /// The soonest election in Google's list that has not passed and covers the
-        /// whole country or the address's state, leaving out Google's test election.
-        /// An election for one county of the state still counts: Google then has
-        /// nothing for an address outside it, which reads as no election.
+        /// Every election in Google's list that can be read, leaving out Google's test
+        /// election, or null when the answer is not a list at all.
         /// </summary>
-        private static string? NextElectionId(JsonElement root, string? state, DateOnly today)
+        private static List<Election>? ReadElections(JsonElement root)
         {
             if (root.ValueKind != JsonValueKind.Object
                 || !root.TryGetProperty("elections", out var elections)
@@ -143,8 +178,7 @@ namespace YourElectionMap.Server.Districts
                 return null;
             }
 
-            var statewide = state is null ? null : $"{Nationwide}/state:{state.ToLowerInvariant()}";
-            (string Id, DateOnly Day)? next = null;
+            var read = new List<Election>();
 
             foreach (var election in elections.EnumerateArray())
             {
@@ -152,25 +186,48 @@ namespace YourElectionMap.Server.Districts
                     || Text(election, "id") is not { } id
                     || id == TestElectionId
                     || Text(election, "electionDay") is not { } dayText
-                    || !DateOnly.TryParseExact(dayText, "yyyy-MM-dd", out var day)
-                    || day < today
+                    || !TryParseDay(dayText, out var day)
                     || Text(election, "ocdDivisionId") is not { } division)
                 {
                     continue;
                 }
 
+                read.Add(new Election(id, day, division));
+            }
+
+            return read;
+        }
+
+        /// <summary>
+        /// The soonest election in the list that has not passed and covers the whole
+        /// country or the address's state. An election for one county of the state still
+        /// counts: Google then has nothing for an address outside it, which reads as no
+        /// election.
+        /// </summary>
+        private static string? NextElectionId(IReadOnlyList<Election> elections, string? state, DateOnly today)
+        {
+            var statewide = state is null ? null : $"{Nationwide}/state:{state.ToLowerInvariant()}";
+            Election? next = null;
+
+            foreach (var election in elections)
+            {
+                var division = election.Division;
                 var covers = division == Nationwide
                     || (statewide is not null
                         && (division == statewide || division.StartsWith(statewide + "/", StringComparison.Ordinal)));
 
-                if (covers && (next is null || day < next.Value.Day))
+                if (covers && election.Day >= today && (next is null || election.Day < next.Day))
                 {
-                    next = (id, day);
+                    next = election;
                 }
             }
 
             return next?.Id;
         }
+
+        /// <summary>Google's "2026-11-03", read the same whatever the server's culture.</summary>
+        private static bool TryParseDay(string? text, out DateOnly day) =>
+            DateOnly.TryParseExact(text, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out day);
 
         private static string? Text(JsonElement element, string name) =>
             element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String
@@ -205,7 +262,7 @@ namespace YourElectionMap.Server.Districts
                 || election.ValueKind != JsonValueKind.Object
                 || !election.TryGetProperty("electionDay", out var day)
                 || day.ValueKind != JsonValueKind.String
-                || !DateOnly.TryParseExact(day.GetString(), "yyyy-MM-dd", out var date)
+                || !TryParseDay(day.GetString(), out var date)
                 || date < today)
             {
                 return null;
@@ -251,5 +308,8 @@ namespace YourElectionMap.Server.Districts
                 && type.ValueKind == JsonValueKind.String
                 && string.Equals(type.GetString(), "Referendum", StringComparison.OrdinalIgnoreCase))
             || contest.TryGetProperty("referendumTitle", out _);
+
+        /// <summary>One election in Google's list, as kept between lookups.</summary>
+        private sealed record Election(string Id, DateOnly Day, string Division);
     }
 }

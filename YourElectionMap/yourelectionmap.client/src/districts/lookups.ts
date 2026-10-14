@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useSyncExternalStore } from 'react'
 import type { DistrictLookup } from './types'
-import { navigate } from '../routing/history'
+import { getSnapshot, navigate } from '../routing/history'
 import { mapUrl, targetQuery, type LookupTarget } from '../routing/routes'
 
 // The districts API, and the state of every lookup this visit has made. The
@@ -57,13 +57,20 @@ export function requestLookup(target: LookupTarget): Promise<SettledLookup> {
 
 /**
  * Look the target up, and go to its map if it is there. Resolves to the notice
- * to show under the address field, or null when the page has moved on.
+ * to show under the address field, or null when the page has moved on: to the
+ * map, or anywhere else the visitor went while the lookup ran.
  */
 export async function openLookup(
   target: LookupTarget,
   options: { replace?: boolean } = {},
 ): Promise<LookupNotice | null> {
+  const startedAt = getSnapshot()
   const state = await requestLookup(target)
+
+  // Gone Home, or Back, while waiting: an answer must not pull them back.
+  if (getSnapshot() !== startedAt) {
+    return null
+  }
 
   if (state.status === 'found') {
     navigate(mapUrl(target), options)
