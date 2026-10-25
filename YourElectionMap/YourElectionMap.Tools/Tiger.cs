@@ -25,6 +25,13 @@ namespace YourElectionMap.Tools
         /// <summary>The states this knows: FIPS code, then each layer's office and count.</summary>
         private static readonly Dictionary<string, State> States = new(StringComparer.OrdinalIgnoreCase)
         {
+            ["AL"] = new(
+                "01",
+                [
+                    new("cd.geojson", "congressional", "U.S. House", "Federal", 7),
+                    new("sldu.geojson", "state-upper", "State Senate", "State", 35),
+                    new("sldl.geojson", "state-lower", "State House", "State", 105),
+                ]),
             ["AR"] = new(
                 "05",
                 [
@@ -55,6 +62,20 @@ namespace YourElectionMap.Tools
                     new("sldu.geojson", "state-upper", "State Senate", "State", 35),
                     new("sldl.geojson", "state-lower", "State House", "State", 65),
                 ]),
+            ["FL"] = new(
+                "12",
+                [
+                    new("cd.geojson", "congressional", "U.S. House", "Federal", 28),
+                    new("sldu.geojson", "state-upper", "State Senate", "State", 40),
+                    new("sldl.geojson", "state-lower", "State House", "State", 120),
+                ]),
+            ["GA"] = new(
+                "13",
+                [
+                    new("cd.geojson", "congressional", "U.S. House", "Federal", 14),
+                    new("sldu.geojson", "state-upper", "State Senate", "State", 56),
+                    new("sldl.geojson", "state-lower", "State House", "State", 180),
+                ]),
             // Thirty-five districts, as in Arizona.
             ["ID"] = new(
                 "16",
@@ -70,12 +91,33 @@ namespace YourElectionMap.Tools
                     new("sldu.geojson", "state-upper", "State Senate", "State", 50),
                     new("sldl.geojson", "state-lower", "State House", "State", 100),
                 ]),
+            ["IL"] = new(
+                "17",
+                [
+                    new("cd.geojson", "congressional", "U.S. House", "Federal", 17),
+                    new("sldu.geojson", "state-upper", "State Senate", "State", 59),
+                    new("sldl.geojson", "state-lower", "State House", "State", 118),
+                ]),
+            ["IN"] = new(
+                "18",
+                [
+                    new("cd.geojson", "congressional", "U.S. House", "Federal", 9),
+                    new("sldu.geojson", "state-upper", "State Senate", "State", 50),
+                    new("sldl.geojson", "state-lower", "State House", "State", 100),
+                ]),
             ["KS"] = new(
                 "20",
                 [
                     new("cd.geojson", "congressional", "U.S. House", "Federal", 4),
                     new("sldu.geojson", "state-upper", "State Senate", "State", 40),
                     new("sldl.geojson", "state-lower", "State House", "State", 125),
+                ]),
+            ["KY"] = new(
+                "21",
+                [
+                    new("cd.geojson", "congressional", "U.S. House", "Federal", 6),
+                    new("sldu.geojson", "state-upper", "State Senate", "State", 38),
+                    new("sldl.geojson", "state-lower", "State House", "State", 100),
                 ]),
             // Its counties are parishes.
             ["LA"] = new(
@@ -86,6 +128,13 @@ namespace YourElectionMap.Tools
                     new("sldl.geojson", "state-lower", "State House", "State", 105),
                 ],
                 County: "Parish"),
+            ["MI"] = new(
+                "26",
+                [
+                    new("cd.geojson", "congressional", "U.S. House", "Federal", 13),
+                    new("sldu.geojson", "state-upper", "State Senate", "State", 38),
+                    new("sldl.geojson", "state-lower", "State House", "State", 110),
+                ]),
             // Each Senate district is halved into two House districts, 1A and 1B.
             ["MN"] = new(
                 "27",
@@ -154,6 +203,13 @@ namespace YourElectionMap.Tools
                     new("sldu.geojson", "state-upper", "State Senate", "State", 21),
                     new("sldl.geojson", "state-lower", "State Assembly", "State", 42),
                 ]),
+            ["OH"] = new(
+                "39",
+                [
+                    new("cd.geojson", "congressional", "U.S. House", "Federal", 15),
+                    new("sldu.geojson", "state-upper", "State Senate", "State", 33),
+                    new("sldl.geojson", "state-lower", "State House", "State", 99),
+                ]),
             ["OK"] = new(
                 "40",
                 [
@@ -184,6 +240,13 @@ namespace YourElectionMap.Tools
                     new("sldu.geojson", "state-upper", "State Senate", "State", 35),
                     new("sldl.geojson", "state-lower", "State House", "State", 35, Halved: [26, 28]),
                 ]),
+            ["TN"] = new(
+                "47",
+                [
+                    new("cd.geojson", "congressional", "U.S. House", "Federal", 9),
+                    new("sldu.geojson", "state-upper", "State Senate", "State", 33),
+                    new("sldl.geojson", "state-lower", "State House", "State", 99),
+                ]),
             ["TX"] = new(
                 "48",
                 [
@@ -207,6 +270,13 @@ namespace YourElectionMap.Tools
                     new("cd.geojson", "congressional", "U.S. House", "Federal", 10),
                     new("sldu.geojson", "state-upper", "State Senate", "State", 49),
                     new("sldl.geojson", "state-lower", "State House", "State", 49),
+                ]),
+            ["WI"] = new(
+                "55",
+                [
+                    new("cd.geojson", "congressional", "U.S. House", "Federal", 8),
+                    new("sldu.geojson", "state-upper", "State Senate", "State", 33),
+                    new("sldl.geojson", "state-lower", "State Assembly", "State", 99),
                 ]),
             // One seat in the House, elected at large: numbered 1 here.
             ["WY"] = new(
@@ -338,7 +408,8 @@ namespace YourElectionMap.Tools
 
         /// <summary>
         /// A numbered district, or null for TIGER's "not defined" area, which fills water
-        /// no district takes in, as Lake Pontchartrain in Louisiana's Senate layer.
+        /// no district takes in, as Lake Pontchartrain in Louisiana's Senate layer: GEOID
+        /// <c>17ZZ</c> in a congressional layer, <c>22ZZZ</c> in a legislative one.
         /// </summary>
         private static BuiltDistrict? Build(Layer layer, string fips, JsonElement feature)
         {
@@ -352,7 +423,7 @@ namespace YourElectionMap.Tools
                     $"{layer.File}: \"{name}\" has GEOID {geoid}, not in state {fips}.");
             }
 
-            if (geoid == fips + "ZZZ")
+            if (geoid == fips + "ZZ" || geoid == fips + "ZZZ")
             {
                 Console.WriteLine($"  {geoid,-18} skipped: \"{name}\"");
                 return null;

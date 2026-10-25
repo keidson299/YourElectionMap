@@ -126,12 +126,14 @@ describe('App', () => {
     expect(currentUrl()).toBe('/')
     expect(
       screen.getByText(
-        'We could not find districts for that address in Arizona, Arkansas,'
-        + ' California, Colorado, Idaho, Iowa, Kansas, Louisiana, Minnesota,'
+        'We could not find districts for that address in Alabama, Arizona,'
+        + ' Arkansas, California, Colorado, Florida, Georgia, Idaho, Illinois,'
+        + ' Indiana, Iowa, Kansas, Kentucky, Louisiana, Michigan, Minnesota,'
         + ' Mississippi, Missouri, Montana, Nebraska, Nevada, New Mexico,'
-        + ' North Carolina, North Dakota, Oklahoma, Oregon, South Carolina,'
-        + ' South Dakota, Texas, Utah, Washington or Wyoming. Check it, or try'
-        + ' adding your city or ZIP code.',
+        + ' North Carolina, North Dakota, Ohio, Oklahoma, Oregon, South'
+        + ' Carolina, South Dakota, Tennessee, Texas, Utah, Washington,'
+        + ' Wisconsin or Wyoming. Check it, or try adding your city or ZIP'
+        + ' code.',
       ),
     ).toBeInTheDocument()
     expect(screen.getByLabelText('Home address')).toHaveValue('Main Street')
@@ -242,7 +244,7 @@ describe('App', () => {
     ).toBeInTheDocument()
     expect(
       screen.getByText(
-        /covers Arizona, Arkansas, California, Colorado, Idaho, Iowa, Kansas, Louisiana, Minnesota, Mississippi, Missouri, Montana, Nebraska, Nevada, New Mexico, North Carolina, North Dakota, Oklahoma, Oregon, South Carolina, South Dakota, Texas, Utah, Washington and Wyoming so far/,
+        /covers Alabama, Arizona, Arkansas, California, Colorado, Florida, Georgia, Idaho, Illinois, Indiana, Iowa, Kansas, Kentucky, Louisiana, Michigan, Minnesota, Mississippi, Missouri, Montana, Nebraska, Nevada, New Mexico, North Carolina, North Dakota, Ohio, Oklahoma, Oregon, South Carolina, South Dakota, Tennessee, Texas, Utah, Washington, Wisconsin and Wyoming so far/,
       ),
     ).toBeInTheDocument()
     expect(screen.queryByRole('radio')).toBeNull()

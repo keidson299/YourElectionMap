@@ -6,10 +6,11 @@ An ASP.NET Core 10 API (`YourElectionMap.Server`) serving a React 19 + Vite SPA
 (`yourelectionmap.client`), with an xUnit test project (`YourElectionMap.Server.Tests`) and a
 console project (`YourElectionMap.Tools`) that builds the district data.
 
-The data is real and covers **Arizona, Arkansas, California, Colorado, Idaho, Iowa, Kansas,
-Louisiana, Minnesota, Mississippi, Missouri, Montana, Nebraska, Nevada, New Mexico, North
-Carolina, North Dakota, Oklahoma, Oregon, South Carolina, South Dakota, Texas, Utah, Washington
-and Wyoming**: each state's US House, State
+The data is real and covers **Alabama, Arizona, Arkansas, California, Colorado, Florida,
+Georgia, Idaho, Illinois, Indiana, Iowa, Kansas, Kentucky, Louisiana, Michigan, Minnesota,
+Mississippi, Missouri, Montana, Nebraska, Nevada, New Mexico, North Carolina, North Dakota, Ohio,
+Oklahoma, Oregon, South Carolina, South Dakota, Tennessee, Texas, Utah, Washington, Wisconsin and
+Wyoming**: each state's US House, State
 Senate and State House or Assembly districts (Nebraska's one-chamber Legislature instead of the
 last two), and its
 county, city or town and school district too, all from
@@ -39,8 +40,8 @@ outside the repository. See [DATA-SOURCE.md](YourElectionMap/YourElectionMap.Too
 for the download query and the folder layout the tool expects. From `YourElectionMap/`:
 
 ```powershell
-# Once for each state: AR, AZ, CA, CO, IA, ID, KS, LA, MN, MO, MS, MT, NC, ND, NE, NM, NV, OK,
-# OR, SC, SD, TX, UT, WA and WY. Nebraska's folder has no sldl.geojson: its Legislature has one chamber.
+# Once for each state: AL, AR, AZ, CA, CO, FL, GA, IA, ID, IL, IN, KS, KY, LA, MI, MN, MO, MS,
+# MT, NC, ND, NE, NM, NV, OH, OK, OR, SC, SD, TN, TX, UT, WA, WI and WY. Nebraska's folder has no sldl.geojson: its Legislature has one chamber.
 dotnet run --project YourElectionMap.Tools -- tiger <state> `
   "<folder holding the state's cd.geojson, sldu.geojson and sldl.geojson>" `
   YourElectionMap.Server\Districts\Data\<state>-districts.json

@@ -95,14 +95,21 @@ export function useLookup(target: LookupTarget) {
 
 /** The states the server has districts for. */
 const STATES = [
+  'Alabama',
   'Arizona',
   'Arkansas',
   'California',
   'Colorado',
+  'Florida',
+  'Georgia',
   'Idaho',
+  'Illinois',
+  'Indiana',
   'Iowa',
   'Kansas',
+  'Kentucky',
   'Louisiana',
+  'Michigan',
   'Minnesota',
   'Mississippi',
   'Missouri',
@@ -112,17 +119,20 @@ const STATES = [
   'New Mexico',
   'North Carolina',
   'North Dakota',
+  'Ohio',
   'Oklahoma',
   'Oregon',
   'South Carolina',
   'South Dakota',
+  'Tennessee',
   'Texas',
   'Utah',
   'Washington',
+  'Wisconsin',
   'Wyoming',
 ]
 
-/** The states as the page names them: "Arizona, California, …, Washington and Wyoming". */
+/** The states as the page names them: "Alabama, Arizona, …, Washington and Wyoming". */
 export const COVERED_STATES = `${STATES.slice(0, -1).join(', ')} and ${STATES.at(-1)}`
 
 /** The same states, for a sentence that finds none of them. */

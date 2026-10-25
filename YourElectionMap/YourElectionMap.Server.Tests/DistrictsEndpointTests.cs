@@ -110,6 +110,16 @@ namespace YourElectionMap.Server.Tests
         [InlineData("900 N 3rd St, Baton Rouge LA", "county-22033", "city-2205000", "school-2200540")]
         [InlineData("201 W Capitol Ave, Jefferson City Missouri", "county-29051", "city-2937000", "school-2916190")]
         [InlineData("400 High St, Jackson MS", "county-28049", "city-2836000", "school-2802190")]
+        [InlineData("600 Dexter Ave, Montgomery AL", "county-01101", "city-0151000", "school-0102430")]
+        [InlineData("400 S Monroe St, Tallahassee FL", "county-12073", "city-1270600", "school-1201110")]
+        [InlineData("206 Washington St SW, Atlanta GA", "county-13121", "city-1304000", "school-1300120")]
+        [InlineData("700 Capital Ave, Frankfort KY", "county-21073", "city-2128900", "school-2101980")]
+        [InlineData("600 Dr Martin L King Jr Blvd, Nashville TN", "county-47037", "city-4752006", "school-4703180")]
+        [InlineData("401 S 2nd St, Springfield IL", "county-17167", "city-1772000", "school-1737080")]
+        [InlineData("200 W Washington St, Indianapolis IN", "county-18097", "city-1836003", "school-1804770")]
+        [InlineData("100 N Capitol Ave, Lansing MI", "county-26065", "city-2646000", "school-2621150")]
+        [InlineData("1 Capitol Sq, Columbus OH", "county-39049", "city-3918000", "school-3904380")]
+        [InlineData("2 E Main St, Madison WI", "county-55025", "city-5548000", "school-5508520")]
         public async Task Get_ListsTheCapitolsCountyCityAndSchoolDistricts(
             string address,
             string county,
@@ -153,6 +163,16 @@ namespace YourElectionMap.Server.Tests
         [InlineData("900 N 3rd St, Baton Rouge LA", 2, 14, "67", "State House")]
         [InlineData("201 W Capitol Ave, Jefferson City Missouri", 5, 6, "60", "State House")]
         [InlineData("400 High St, Jackson MS", 2, 29, "67", "State House")]
+        [InlineData("600 Dexter Ave, Montgomery AL", 2, 26, "77", "State House")]
+        [InlineData("400 S Monroe St, Tallahassee FL", 2, 3, "9", "State House")]
+        [InlineData("206 Washington St SW, Atlanta GA", 5, 36, "58", "State House")]
+        [InlineData("700 Capital Ave, Frankfort KY", 1, 20, "57", "State House")]
+        [InlineData("600 Dr Martin L King Jr Blvd, Nashville TN", 7, 21, "51", "State House")]
+        [InlineData("401 S 2nd St, Springfield IL", 13, 48, "96", "State House")]
+        [InlineData("200 W Washington St, Indianapolis IN", 7, 46, "97", "State House")]
+        [InlineData("100 N Capitol Ave, Lansing MI", 7, 21, "77", "State House")]
+        [InlineData("1 Capitol Sq, Columbus OH", 15, 15, "1", "State House")]
+        [InlineData("2 E Main St, Madison WI", 2, 26, "76", "State Assembly")]
         public async Task Get_PlacesEachOtherCapitolInItsStatesDistricts(
             string address,
             int congressional,
@@ -307,7 +327,7 @@ namespace YourElectionMap.Server.Tests
         [Fact]
         public async Task Get_UsesTheFirstMatchInACoveredState()
         {
-            // The stub answers Greenville AL first and Greenville NC second, as the real
+            // The stub answers Greenville ME first and Greenville NC second, as the real
             // geocoder can for an address with no state.
             var lookup = await LookupAsync(AddressQuery("100 Main St, Greenville"));
 
@@ -321,14 +341,14 @@ namespace YourElectionMap.Server.Tests
         [Fact]
         public async Task Get_AsksGoogleAboutTheAddressTheGeocoderMatchedInACoveredState()
         {
-            // Typed with no state, and matched in Alabama first: Google must be
+            // Typed with no state, and matched in Maine first: Google must be
             // asked about the match the districts came from, spelled with its state.
             await LookupAsync(AddressQuery("100 Main St, Greenville"));
 
             Assert.Contains(
                 FakeVoterInfo.Asked,
                 asked => asked.Contains("100 MAIN ST, GREENVILLE, NC, 27858"));
-            Assert.DoesNotContain(FakeVoterInfo.Asked, asked => asked.Contains(", AL,"));
+            Assert.DoesNotContain(FakeVoterInfo.Asked, asked => asked.Contains(", ME,"));
         }
 
         [Fact]

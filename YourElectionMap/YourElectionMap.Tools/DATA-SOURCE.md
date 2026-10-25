@@ -34,6 +34,16 @@ holds its rings in longitude and latitude, to six decimal places, thinned to 15 
 | `la-districts.json` | Louisiana | 22 | `Tiger\la` | 2026-10-24 |
 | `mo-districts.json` | Missouri | 29 | `Tiger\mo` | 2026-10-24 |
 | `ms-districts.json` | Mississippi | 28 | `Tiger\ms` | 2026-10-24 |
+| `al-districts.json` | Alabama | 01 | `Tiger\al` | 2026-10-25 |
+| `fl-districts.json` | Florida | 12 | `Tiger\fl` | 2026-10-25 |
+| `ga-districts.json` | Georgia | 13 | `Tiger\ga` | 2026-10-25 |
+| `ky-districts.json` | Kentucky | 21 | `Tiger\ky` | 2026-10-25 |
+| `tn-districts.json` | Tennessee | 47 | `Tiger\tn` | 2026-10-25 |
+| `il-districts.json` | Illinois | 17 | `Tiger\il` | 2026-10-25 |
+| `in-districts.json` | Indiana | 18 | `Tiger\in` | 2026-10-25 |
+| `mi-districts.json` | Michigan | 26 | `Tiger\mi` | 2026-10-25 |
+| `oh-districts.json` | Ohio | 39 | `Tiger\oh` | 2026-10-25 |
+| `wi-districts.json` | Wisconsin | 55 | `Tiger\wi` | 2026-10-25 |
 
 Every state's folder holds its five local layers too, downloaded on the same day, apart from
 those of Arizona, Idaho, Montana, Utah and Wyoming, downloaded on 2026-10-12.
@@ -69,9 +79,9 @@ https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/<service>/MapServe
 ```
 
 A state with no high school or elementary districts gets a file with no features in it, which
-is fine: the school districts of Arkansas, Colorado, Idaho, Iowa, Kansas, Louisiana, Mississippi,
-Nebraska, Nevada, New Mexico, North Carolina, South Carolina, South Dakota, Utah and Washington
-are all unified.
+is fine: the school districts of Alabama, Arkansas, Colorado, Florida, Idaho, Indiana, Iowa,
+Kansas, Louisiana, Mississippi, Nebraska, Nevada, New Mexico, North Carolina, Ohio, South
+Carolina, South Dakota, Utah and Washington are all unified.
 
 A layer too big for one answer comes back with `"exceededTransferLimit": true`. Fetch it in
 pages with `resultOffset` and `resultRecordCount`, and join the features into one file. Texas's
@@ -184,6 +194,40 @@ TIGER puts nothing over them for the upper grades, as in Oklahoma. St. Louis is 
 any county, so TIGER has it in the county layer as "St. Louis city" as well as in the place
 layer, and its county and city rows read the same, as Carson City's do.
 
+### Tennessee, Kentucky and Georgia
+
+Tennessee has 15 towns with an elementary district of their own, such as "Franklin Special
+School District", inside a high school district TIGER names for the county and the town,
+"Williamson County School District in Franklin"; its other 126 districts are unified. Kentucky
+has 4 such pairs, "Anchorage Independent School District" inside "Jefferson County School
+District in Anchorage ISD" among them, and 169 unified districts. Georgia has one place:
+"Fort Benning Schools", the post's elementary district, across two high school districts,
+"Chattahoochee County for Fort Benning" and "Muscogee County for Fort Benning". An address in
+any of them has a high school and an elementary row, as in Arizona.
+
+Tennessee and Kentucky each have a "School District Not Defined", which the tool leaves out:
+Tennessee's along the Mississippi by Memphis, and Kentucky's the Kentucky Bend, the state's
+corner cut off by a loop of the Mississippi.
+
+### The Great Lakes
+
+TIGER's counties reach out over the Great Lakes to the state line, and Michigan's, Indiana's and
+Ohio's legislative districts go with them. Illinois's do not: its US House, Senate and House
+layers each have a "not defined" area, GEOID `17ZZ` in the US House layer and `17ZZZ` in the
+other two, which is its part of Lake Michigan. Wisconsin's US House districts reach over its
+lakes, but its Senate and Assembly districts stop at the shore: both layers have a "not defined"
+area, `55ZZZ`, in five pieces, Lake Michigan with Green Bay, Lake Winnebago, Lake Superior, and
+two in the harbor at Superior. The tool leaves all of these out, so a point out on the water
+has a county and, in Wisconsin, a US House district, but no legislators. The tests allow that
+inside a box around each piece, and only for those levels all together, which one district
+gone missing would not do. Each of the five states' school layers has a "School District Not
+Defined" as well, mostly the same water, which the tool leaves out.
+
+Illinois has 105 high school districts over 371 elementary districts besides its 386 unified
+ones, as California does, and Wisconsin 10 union high school districts over 43 elementary
+districts besides its 368 unified ones. Michigan has 27 elementary districts with no high
+school district over them in TIGER, as in Oklahoma.
+
 ### Washington, Arizona and Idaho
 
 Each Legislature has one set of districts, 49 in Washington, 30 in Arizona and 35 in Idaho, each
@@ -212,8 +256,9 @@ District Not Defined" too, which leaves 207 points of 11,200 on the test grid wi
   "State House District 38" or "Assembly District 6". A few are MultiPolygons, for islands. The
   tool takes the number from the end of `NAME`, with the letter of a halved district's half,
   "State House District 4A", apart from the at-large districts of Wyoming and the Dakotas. A
-  legislative layer's "not defined" area, GEOID `<FIPS>ZZZ`, which only Louisiana's Senate
-  layer has, is left out.
+  layer's "not defined" area, GEOID `<FIPS>ZZ` in a US House layer and `<FIPS>ZZZ` in a
+  legislative one, is left out: Louisiana's Senate, Illinois's three layers and Wisconsin's two
+  chambers have one, for water.
 - **`GEOID`**, which starts with the state's FIPS code.
 - **One feature per county, city or school district**, named in full by `NAME`, the way the
   Census writes it: "Wake County", "Raleigh city", "Wake County Schools", "Central Union High
@@ -227,8 +272,8 @@ District Not Defined" too, which leaves 207 points of 11,200 on the test grid wi
 - **Longitude and latitude, WGS84,** which is what `outSR=4326` asks for. The tool thins each ring to 15 feet, taken as degrees of
   latitude, which keeps slightly more than that east to west.
 
-In every state the three layers cover the state exactly once each, but for Lake Pontchartrain
-in Louisiana's Senate layer: on a 0.02° grid, every point is in one district of each level, give
+In every state the three layers cover the state exactly once each, but for the water TIGER
+leaves out, Lake Pontchartrain in Louisiana and the lakes in Illinois and Wisconsin: on a 0.02° grid, every point is in one district of each level, give
 or take a point on a district line. No point is in two
 states where they meet. Several borders run along round degrees, such as 37°N between Utah and
 Arizona, so a grid line exactly on one finds points on the line itself in neither state, or,
@@ -240,8 +285,11 @@ grid, every point in every state is in exactly one county. No point is in two ci
 point's school rows are one unified district, a high school district and the elementary district
 inside it, one of those two alone, or none where TIGER defines no district: 47 points of 4,310
 on a 0.1° grid over California, and on a 0.05° grid 627 of 11,513 over Arizona, 207 of 11,200
-over Wyoming, 2 of 11,458 over Oregon, 1 of 10,532 over Minnesota, and none in the other twenty
-states (Texas on a 0.1° grid).
+over Wyoming, 2 of 11,458 over Oregon, 1 of 10,532 over Minnesota, 3 of 4,343 over
+Tennessee, 2 of 4,252 over Kentucky, and over the five Great Lakes states, mostly on the lakes,
+174 of 6,296 over Illinois, 25 of 3,941 over Indiana, 1,055 of 11,404 over Michigan, 402 of 4,941
+over Ohio and 1,049 of 7,701 over Wisconsin; none in the other twenty-three states (Texas on a 0.1°
+grid).
 
 Where two covered states meet, each file is thinned on its own, so both can claim a strip a few
 feet wide along the border, as two neighbouring districts can. One point of the grids falls in
@@ -262,9 +310,10 @@ result page.
 From `YourElectionMap/`, once per state:
 
 ```powershell
-foreach ($state in 'ar', 'az', 'ca', 'co', 'ia', 'id', 'ks', 'la', 'mn',
-           'mo', 'ms', 'mt', 'nc', 'nd', 'ne', 'nm', 'nv', 'ok',
-           'or', 'sc', 'sd', 'tx', 'ut', 'wa', 'wy') {
+foreach ($state in 'al', 'ar', 'az', 'ca', 'co', 'fl', 'ga', 'ia', 'id',
+           'il', 'in', 'ks', 'ky', 'la', 'mi', 'mn', 'mo', 'ms',
+           'mt', 'nc', 'nd', 'ne', 'nm', 'nv', 'oh', 'ok', 'or',
+           'sc', 'sd', 'tn', 'tx', 'ut', 'wa', 'wi', 'wy') {
   dotnet run --project YourElectionMap.Tools -- tiger $state `
     "D:\VisualStudio\GitProjects\YourElectionMap\Docs\Tiger\$state" `
     "YourElectionMap.Server\Districts\Data\$state-districts.json"

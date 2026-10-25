@@ -82,6 +82,26 @@ namespace YourElectionMap.Server.Tests
             ["MO"] = new("29", 38.5792, -92.1729, "State House", (-95.78, -89.09), (35.97, 40.62)),
             // The State Capitol, 400 High Street, Jackson.
             ["MS"] = new("28", 32.3036, -90.1823, "State House", (-91.66, -88.07), (30.12, 35.02)),
+            // The State Capitol, 600 Dexter Avenue, Montgomery.
+            ["AL"] = new("01", 32.3771, -86.3008, "State House", (-88.48, -84.88), (30.14, 35.01)),
+            // The Capitol, 400 S Monroe Street, Tallahassee.
+            ["FL"] = new("12", 30.4381, -84.2816, "State House", (-87.64, -79.97), (24.39, 31.01)),
+            // The State Capitol, 206 Washington Street SW, Atlanta.
+            ["GA"] = new("13", 33.7490, -84.3880, "State House", (-85.61, -80.78), (30.34, 35.01)),
+            // The State Capitol, 700 Capital Avenue, Frankfort.
+            ["KY"] = new("21", 38.1867, -84.8753, "State House", (-89.58, -81.96), (36.49, 39.15)),
+            // The State Capitol, 600 Dr. Martin L. King Jr. Boulevard, Nashville.
+            ["TN"] = new("47", 36.1658, -86.7844, "State House", (-90.32, -81.64), (34.98, 36.68)),
+            // The State Capitol, 401 S 2nd Street, Springfield.
+            ["IL"] = new("17", 39.7983, -89.6544, "State House", (-91.52, -87.01), (36.96, 42.51)),
+            // The Statehouse, 200 W Washington Street, Indianapolis.
+            ["IN"] = new("18", 39.7686, -86.1625, "State House", (-88.10, -84.78), (37.77, 41.77)),
+            // The State Capitol, 100 N Capitol Avenue, Lansing.
+            ["MI"] = new("26", 42.7336, -84.5555, "State House", (-90.42, -82.12), (41.69, 48.31)),
+            // The Statehouse, 1 Capitol Square, Columbus.
+            ["OH"] = new("39", 39.9612, -82.9988, "State House", (-84.83, -80.51), (38.40, 42.33)),
+            // The State Capitol, 2 E Main Street, Madison.
+            ["WI"] = new("55", 43.0747, -89.3842, "State Assembly", (-92.89, -86.24), (42.48, 47.31)),
         };
 
         /// <summary>The levels a state elects its legislators by, broad to local.</summary>
@@ -100,8 +120,9 @@ namespace YourElectionMap.Server.Tests
             // them its elementary and then high school districts.
             Assert.Equal(
                 [
-                    "AR", "AZ", "CA", "CO", "IA", "ID", "KS", "LA", "MN", "MO", "MS", "MT", "NC",
-                    "ND", "NE", "NM", "NV", "OK", "OR", "SC", "SD", "TX", "UT", "WA", "WY",
+                    "AL", "AR", "AZ", "CA", "CO", "FL", "GA", "IA", "ID", "IL", "IN", "KS", "KY",
+                    "LA", "MI", "MN", "MO", "MS", "MT", "NC", "ND", "NE", "NM", "NV", "OH", "OK",
+                    "OR", "SC", "SD", "TN", "TX", "UT", "WA", "WI", "WY",
                 ],
                 Data.States);
             Assert.Equal(
@@ -109,6 +130,8 @@ namespace YourElectionMap.Server.Tests
                     + 108 + 115 + 67 + 154 + 219
                     + 169 + 209 + 96 + 52 + 73
                     + 139 + 154 + 150 + 205 + 178
+                    + 147 + 188 + 250 + 144 + 141
+                    + 194 + 159 + 161 + 147 + 140
                     + (100 + 552 + 118) + (58 + 483 + 345 + 517 + 112)
                     + (36 + 241 + 187 + 9 + 1) + (46 + 271 + 72) + (39 + 281 + 295)
                     + (15 + 92 + 97 + 102 + 15) + (44 + 199 + 116)
@@ -118,7 +141,11 @@ namespace YourElectionMap.Server.Tests
                     + (105 + 626 + 285) + (87 + 856 + 321 + 8 + 1) + (53 + 355 + 147 + 20)
                     + (93 + 528 + 244) + (66 + 310 + 147)
                     + (75 + 501 + 234) + (99 + 939 + 325) + (64 + 305 + 69)
-                    + (115 + 947 + 445 + 71) + (82 + 300 + 137),
+                    + (115 + 947 + 445 + 71) + (82 + 300 + 137)
+                    + (67 + 465 + 141) + (67 + 411 + 67) + (159 + 538 + 181 + 1 + 2)
+                    + (120 + 415 + 169 + 4 + 4) + (95 + 345 + 126 + 15 + 15)
+                    + (102 + 1294 + 386 + 371 + 105) + (92 + 566 + 290) + (83 + 533 + 513 + 27)
+                    + (88 + 923 + 611) + (72 + 608 + 368 + 43 + 10),
                 Data.Count);
         }
 
@@ -148,6 +175,16 @@ namespace YourElectionMap.Server.Tests
         [InlineData("LA")]
         [InlineData("MO")]
         [InlineData("MS")]
+        [InlineData("AL")]
+        [InlineData("FL")]
+        [InlineData("GA")]
+        [InlineData("KY")]
+        [InlineData("TN")]
+        [InlineData("IL")]
+        [InlineData("IN")]
+        [InlineData("MI")]
+        [InlineData("OH")]
+        [InlineData("WI")]
         public void Covering_FindsOneDistrictPerLevelAtTheCapitol(string code)
         {
             var state = States[code];
@@ -218,6 +255,16 @@ namespace YourElectionMap.Server.Tests
         [InlineData("LA")]
         [InlineData("MO")]
         [InlineData("MS")]
+        [InlineData("AL")]
+        [InlineData("FL")]
+        [InlineData("GA")]
+        [InlineData("KY")]
+        [InlineData("TN")]
+        [InlineData("IL")]
+        [InlineData("IN")]
+        [InlineData("MI")]
+        [InlineData("OH")]
+        [InlineData("WI")]
         public void Covering_SendsBoundariesAsPolygonsOfLongitudeAndLatitude(string code)
         {
             var state = States[code];
@@ -286,6 +333,16 @@ namespace YourElectionMap.Server.Tests
         [InlineData("LA")]
         [InlineData("MO")]
         [InlineData("MS")]
+        [InlineData("AL")]
+        [InlineData("FL")]
+        [InlineData("GA")]
+        [InlineData("KY")]
+        [InlineData("TN")]
+        [InlineData("IL")]
+        [InlineData("IN")]
+        [InlineData("MI")]
+        [InlineData("OH")]
+        [InlineData("WI")]
         public void Covering_PutsTheCapitolInsideItsDistrictsOuterRing(string code)
         {
             var state = States[code];
@@ -360,6 +417,34 @@ namespace YourElectionMap.Server.Tests
         [InlineData(36.1931, -89.6556)] // Caruthersville, the Bootheel
         [InlineData(34.9890, -90.0126)] // Southaven, the north of Mississippi
         [InlineData(30.3960, -88.8853)] // Biloxi, the coast
+        [InlineData(30.6954, -88.0399)] // Mobile, the south-west of Alabama
+        [InlineData(34.7304, -86.5861)] // Huntsville, the north
+        [InlineData(30.4213, -87.2169)] // Pensacola, the west of Florida
+        [InlineData(24.5551, -81.7800)] // Key West, the south
+        [InlineData(32.4610, -84.9877)] // Columbus, the west of Georgia, across the river from Phenix City
+        [InlineData(33.4735, -82.0105)] // Augusta, the east
+        [InlineData(32.0809, -81.0912)] // Savannah, the coast
+        [InlineData(37.0834, -88.6000)] // Paducah, the west of Kentucky
+        [InlineData(37.4793, -82.5188)] // Pikeville, the east
+        [InlineData(39.0837, -84.5086)] // Covington, across the river from Cincinnati
+        [InlineData(35.1495, -90.0490)] // Memphis, the west of Tennessee
+        [InlineData(36.5484, -82.5618)] // Kingsport, the north-east
+        [InlineData(37.0053, -89.1765)] // Cairo, the south of Illinois
+        [InlineData(42.4167, -90.4290)] // Galena, the north-west
+        [InlineData(41.5067, -90.5151)] // Moline, across the river from Davenport
+        [InlineData(38.6245, -90.1510)] // East St. Louis, across the river from St. Louis
+        [InlineData(37.9716, -87.5711)] // Evansville, the south-west of Indiana
+        [InlineData(41.5934, -87.3464)] // Gary, on Lake Michigan
+        [InlineData(41.0793, -85.1394)] // Fort Wayne, the east
+        [InlineData(46.4547, -90.1710)] // Ironwood, the west of Michigan's Upper Peninsula
+        [InlineData(46.4953, -84.3453)] // Sault Ste. Marie, the east of it
+        [InlineData(42.3314, -83.0458)] // Detroit, the south-east
+        [InlineData(39.1031, -84.5120)] // Cincinnati, the south-west of Ohio, across the river from Covington
+        [InlineData(41.6528, -83.5379)] // Toledo, the north-west
+        [InlineData(41.0998, -80.6495)] // Youngstown, the east
+        [InlineData(46.7208, -92.1041)] // Superior, the north-west of Wisconsin, across the harbor from Duluth
+        [InlineData(42.5847, -87.8212)] // Kenosha, the south-east
+        [InlineData(44.8113, -91.4985)] // Eau Claire, the west
         public void Covering_ReachesTheEndsOfEachState(double latitude, double longitude)
         {
             var found = Covering(latitude, longitude);
@@ -370,16 +455,17 @@ namespace YourElectionMap.Server.Tests
 
         [Theory]
         [InlineData(38.8977, -77.0365)] // the White House
-        [InlineData(33.4735, -82.0105)] // Augusta, Georgia
-        [InlineData(32.0809, -81.0912)] // Savannah, Georgia
+        [InlineData(38.4192, -82.4452)] // Huntington, West Virginia
+        [InlineData(40.4406, -79.9959)] // Pittsburgh, Pennsylvania
+        [InlineData(42.1292, -80.0851)] // Erie, Pennsylvania
+        [InlineData(42.3149, -83.0364)] // Windsor, Ontario, across the river from Detroit
+        [InlineData(46.5219, -84.3461)] // Sault Ste. Marie, Ontario
+        [InlineData(48.3809, -89.2477)] // Thunder Bay, Ontario
         [InlineData(36.8508, -76.2859)] // Norfolk, Virginia
         [InlineData(33.5, -76.0)] // the Atlantic, east of North Carolina
-        [InlineData(41.5067, -90.5151)] // Moline, Illinois, across the river from Davenport
-        [InlineData(38.6245, -90.1510)] // East St. Louis, Illinois
-        [InlineData(35.1495, -90.0490)] // Memphis, Tennessee
-        [InlineData(30.6954, -88.0399)] // Mobile, Alabama
         [InlineData(28.5, -90.5)] // the Gulf of Mexico, south of Louisiana
-        [InlineData(44.8113, -91.4985)] // Eau Claire, Wisconsin
+        [InlineData(27.0, -84.0)] // the Gulf of Mexico, west of Florida
+        [InlineData(23.1136, -82.3666)] // Havana, Cuba
         [InlineData(49.8951, -97.1384)] // Winnipeg, Manitoba
         [InlineData(50.4452, -104.6189)] // Regina, Saskatchewan
         [InlineData(32.5149, -117.0382)] // Tijuana, Mexico
@@ -406,6 +492,24 @@ namespace YourElectionMap.Server.Tests
                 ["congressional-1", "state-lower-89", "county-22103", "school-2201650"],
                 found.Select(district => district.Id));
             Assert.Null(Disagreement(found, -90.1, 30.2));
+        }
+
+        [Theory]
+        [InlineData(41.9, -87.5, "county-17031")] // Lake Michigan, off Chicago
+        [InlineData(43.05, -87.7, "congressional-4", "county-55079")] // Lake Michigan, off Milwaukee
+        [InlineData(44.0, -88.4, "congressional-6", "county-55015")] // Lake Winnebago
+        public void Covering_FindsNoLegislatorsOnTheLakesTigerLeavesOut(
+            double latitude,
+            double longitude,
+            params string[] ids)
+        {
+            // Illinois's districts of all three levels stop at the shore of Lake Michigan,
+            // and Wisconsin's State Senate and Assembly districts at the shores of its
+            // lakes, where its US House districts and the counties go on.
+            var found = Covering(latitude, longitude);
+
+            Assert.Equal(ids, found.Select(district => district.Id));
+            Assert.Null(Disagreement(found, longitude, latitude));
         }
 
         /// <summary>
@@ -445,6 +549,16 @@ namespace YourElectionMap.Server.Tests
         [InlineData("LA", 0.05, 4_200, 6_000)]
         [InlineData("MO", 0.05, 6_300, 8_700)]
         [InlineData("MS", 0.05, 4_000, 5_700)]
+        [InlineData("AL", 0.05, 4_300, 6_200)]
+        [InlineData("FL", 0.05, 5_800, 8_000)]
+        [InlineData("GA", 0.05, 5_000, 7_000)]
+        [InlineData("KY", 0.05, 3_500, 5_000)]
+        [InlineData("TN", 0.05, 3_600, 5_100)]
+        [InlineData("IL", 0.05, 5_400, 7_200)]
+        [InlineData("IN", 0.05, 3_400, 4_500)]
+        [InlineData("MI", 0.05, 9_800, 13_000)]
+        [InlineData("OH", 0.05, 4_200, 5_700)]
+        [InlineData("WI", 0.05, 6_600, 8_800)]
         public void Covering_HasTheLevelsAgreeAcrossTheState(
             string code,
             double step,
@@ -489,6 +603,16 @@ namespace YourElectionMap.Server.Tests
         [InlineData("LA")]
         [InlineData("MO")]
         [InlineData("MS")]
+        [InlineData("AL")]
+        [InlineData("FL")]
+        [InlineData("GA")]
+        [InlineData("KY")]
+        [InlineData("TN")]
+        [InlineData("IL")]
+        [InlineData("IN")]
+        [InlineData("MI")]
+        [InlineData("OH")]
+        [InlineData("WI")]
         public void Covering_SettlesThePointsBesideASharedEdge(string code)
         {
             var disagreed = new List<string>();
@@ -625,8 +749,8 @@ namespace YourElectionMap.Server.Tests
 
         /// <summary>
         /// What is wrong with the districts covering one point, or null. One county; one
-        /// district per legislative level of the county's state, but for Louisiana's Senate
-        /// on Lake Pontchartrain; at most one city
+        /// district per legislative level of the county's state, but on the water TIGER
+        /// leaves out of some levels (<see cref="Waters"/>); at most one city
         /// (unincorporated land has none); and either a unified school district, a high
         /// school district and the elementary one inside it, one of those two alone, or
         /// none, where TIGER defines no district.
@@ -650,8 +774,9 @@ namespace YourElectionMap.Server.Tests
                 .ToArray();
 
             if (!legislative.SequenceEqual(Legislative(state))
-                && !(OnLakePontchartrain(state, longitude, latitude)
-                    && legislative.SequenceEqual(["congressional", "state-lower"])))
+                && !Waters.Any(water => water.Fips == state.Fips
+                    && water.Covers(longitude, latitude)
+                    && legislative.SequenceEqual(Legislative(state).Except(water.Lacks))))
             {
                 return "not one district per legislative level";
             }
@@ -671,13 +796,30 @@ namespace YourElectionMap.Server.Tests
         }
 
         /// <summary>
-        /// Whether a point is in the box around Lake Pontchartrain, which TIGER puts in no
-        /// Louisiana Senate district: the box of its "not defined" area in the Senate layer.
+        /// The water TIGER puts in no district of some legislative levels, as the boxes of
+        /// the pieces of its "not defined" areas, and the levels a point there lacks. The
+        /// boxes take in shore as well, but a point there may only lack those levels all
+        /// together, which one district gone missing would not do.
         /// </summary>
-        private static bool OnLakePontchartrain(State state, double longitude, double latitude) =>
-            state.Fips == "22"
-                && longitude is > -90.31 and < -89.62
-                && latitude is > 30.01 and < 30.39;
+        private static readonly Water[] Waters =
+        [
+            new("22", (-90.31, -89.62), (30.01, 30.39), ["state-upper"]), // Lake Pontchartrain
+            new("17", (-87.84, -87.01), (41.75, 42.50), ["congressional", "state-upper", "state-lower"]), // Lake Michigan
+            new("55", (-88.05, -86.24), (42.49, 45.45), ["state-upper", "state-lower"]), // Lake Michigan and Green Bay
+            new("55", (-88.54, -88.29), (43.79, 44.21), ["state-upper", "state-lower"]), // Lake Winnebago
+            new("55", (-92.15, -89.95), (46.56, 47.32), ["state-upper", "state-lower"]), // Lake Superior and the Superior harbor
+        ];
+
+        private sealed record Water(
+            string Fips,
+            (double Low, double High) Longitudes,
+            (double Low, double High) Latitudes,
+            string[] Lacks)
+        {
+            public bool Covers(double longitude, double latitude) =>
+                longitude > Longitudes.Low && longitude < Longitudes.High
+                    && latitude > Latitudes.Low && latitude < Latitudes.High;
+        }
 
         private sealed record State(
             string Fips,

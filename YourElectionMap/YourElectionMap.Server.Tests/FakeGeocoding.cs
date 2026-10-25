@@ -73,12 +73,32 @@ namespace YourElectionMap.Server.Tests
             ("Missouri", [new(38.5792, -92.1729, "201 W CAPITOL AVE, JEFFERSON CITY, MO, 65101")]),
             // The Mississippi State Capitol, Jackson.
             ("Jackson", [new(32.3036, -90.1823, "400 HIGH ST, JACKSON, MS, 39201")]),
+            // The Alabama State Capitol, Montgomery.
+            ("Montgomery", [new(32.3771, -86.3008, "600 DEXTER AVE, MONTGOMERY, AL, 36104")]),
+            // The Florida Capitol, Tallahassee.
+            ("Tallahassee", [new(30.4381, -84.2816, "400 S MONROE ST, TALLAHASSEE, FL, 32399")]),
+            // The Georgia State Capitol, Atlanta.
+            ("Atlanta", [new(33.7490, -84.3880, "206 WASHINGTON ST SW, ATLANTA, GA, 30334")]),
+            // The Kentucky State Capitol, Frankfort.
+            ("Frankfort", [new(38.1867, -84.8753, "700 CAPITAL AVE, FRANKFORT, KY, 40601")]),
+            // The Tennessee State Capitol, Nashville.
+            ("Nashville", [new(36.1658, -86.7844, "600 DR MARTIN L KING JR BLVD, NASHVILLE, TN, 37243")]),
+            // The Illinois State Capitol, Springfield.
+            ("Springfield", [new(39.7983, -89.6544, "401 S 2ND ST, SPRINGFIELD, IL, 62701")]),
+            // The Indiana Statehouse, Indianapolis.
+            ("Indianapolis", [new(39.7686, -86.1625, "200 W WASHINGTON ST, INDIANAPOLIS, IN, 46204")]),
+            // The Michigan State Capitol, Lansing.
+            ("Lansing", [new(42.7336, -84.5555, "100 N CAPITOL AVE, LANSING, MI, 48933")]),
+            // The Ohio Statehouse, Columbus.
+            ("Columbus", [new(39.9612, -82.9988, "1 CAPITOL SQ, COLUMBUS, OH, 43215")]),
+            // The Wisconsin State Capitol, Madison.
+            ("Madison", [new(43.0747, -89.3842, "2 E MAIN ST, MADISON, WI, 53703")]),
             // The White House, which is in no state the site covers.
             ("Pennsylvania", [new(38.8977, -77.0365, "1600 PENNSYLVANIA AVE NW, WASHINGTON, DC, 20500")]),
-            // A town name with no state: Greenville AL first, then Greenville NC.
+            // A town name with no state: Greenville ME first, then Greenville NC.
             ("Greenville",
             [
-                new(31.8296, -86.6178, "100 MAIN ST, GREENVILLE, AL, 36037"),
+                new(45.4595, -69.5906, "100 MAIN ST, GREENVILLE, ME, 04441"),
                 new(35.6127, -77.3664, "100 MAIN ST, GREENVILLE, NC, 27858"),
             ]),
         ];
