@@ -100,6 +100,7 @@ const STATES = [
   'Arkansas',
   'California',
   'Colorado',
+  'Delaware',
   'Florida',
   'Georgia',
   'Idaho',
@@ -109,6 +110,7 @@ const STATES = [
   'Kansas',
   'Kentucky',
   'Louisiana',
+  'Maryland',
   'Michigan',
   'Minnesota',
   'Mississippi',
@@ -122,17 +124,20 @@ const STATES = [
   'Ohio',
   'Oklahoma',
   'Oregon',
+  'Pennsylvania',
   'South Carolina',
   'South Dakota',
   'Tennessee',
   'Texas',
   'Utah',
+  'Virginia',
   'Washington',
+  'West Virginia',
   'Wisconsin',
   'Wyoming',
 ]
 
-/** The states as the page names them: "Alabama, Arizona, …, Washington and Wyoming". */
+/** The states as the page names them: "Alabama, Arizona, …, Wisconsin and Wyoming". */
 export const COVERED_STATES = `${STATES.slice(0, -1).join(', ')} and ${STATES.at(-1)}`
 
 /** The same states, for a sentence that finds none of them. */

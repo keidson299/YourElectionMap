@@ -102,6 +102,16 @@ namespace YourElectionMap.Server.Tests
             ["OH"] = new("39", 39.9612, -82.9988, "State House", (-84.83, -80.51), (38.40, 42.33)),
             // The State Capitol, 2 E Main Street, Madison.
             ["WI"] = new("55", 43.0747, -89.3842, "State Assembly", (-92.89, -86.24), (42.48, 47.31)),
+            // Legislative Hall, 411 Legislative Avenue, Dover.
+            ["DE"] = new("10", 39.1573, -75.5197, "State House", (-75.79, -74.98), (38.45, 39.84)),
+            // The State House, 100 State Circle, Annapolis.
+            ["MD"] = new("24", 38.9787, -76.4910, "House of Delegates", (-79.49, -74.98), (37.88, 39.73)),
+            // The State Capitol, 501 N 3rd Street, Harrisburg.
+            ["PA"] = new("42", 40.2645, -76.8836, "State House", (-80.52, -74.68), (39.71, 42.52)),
+            // The State Capitol, 1000 Bank Street, Richmond.
+            ["VA"] = new("51", 37.5385, -77.4336, "House of Delegates", (-83.68, -75.16), (36.54, 39.47)),
+            // The State Capitol, 1900 Kanawha Boulevard E, Charleston.
+            ["WV"] = new("54", 38.3365, -81.6123, "House of Delegates", (-82.65, -77.71), (37.20, 40.64)),
         };
 
         /// <summary>The levels a state elects its legislators by, broad to local.</summary>
@@ -115,14 +125,15 @@ namespace YourElectionMap.Server.Tests
         {
             // Per state, in the order of States above: its US House, State Senate and
             // State House districts together (the counts are in Tiger.cs, a halved
-            // district counting twice), then its
+            // district counting twice and one in three three times), then its
             // counties, cities and towns, and unified school districts, and where it has
             // them its elementary and then high school districts.
             Assert.Equal(
                 [
-                    "AL", "AR", "AZ", "CA", "CO", "FL", "GA", "IA", "ID", "IL", "IN", "KS", "KY",
-                    "LA", "MI", "MN", "MO", "MS", "MT", "NC", "ND", "NE", "NM", "NV", "OH", "OK",
-                    "OR", "SC", "SD", "TN", "TX", "UT", "WA", "WI", "WY",
+                    "AL", "AR", "AZ", "CA", "CO", "DE", "FL", "GA", "IA", "ID", "IL", "IN", "KS",
+                    "KY", "LA", "MD", "MI", "MN", "MO", "MS", "MT", "NC", "ND", "NE", "NM", "NV",
+                    "OH", "OK", "OR", "PA", "SC", "SD", "TN", "TX", "UT", "VA", "WA", "WI", "WV",
+                    "WY",
                 ],
                 Data.States);
             Assert.Equal(
@@ -132,6 +143,7 @@ namespace YourElectionMap.Server.Tests
                     + 139 + 154 + 150 + 205 + 178
                     + 147 + 188 + 250 + 144 + 141
                     + 194 + 159 + 161 + 147 + 140
+                    + 63 + 126 + 270 + 151 + 119
                     + (100 + 552 + 118) + (58 + 483 + 345 + 517 + 112)
                     + (36 + 241 + 187 + 9 + 1) + (46 + 271 + 72) + (39 + 281 + 295)
                     + (15 + 92 + 97 + 102 + 15) + (44 + 199 + 116)
@@ -145,7 +157,9 @@ namespace YourElectionMap.Server.Tests
                     + (67 + 465 + 141) + (67 + 411 + 67) + (159 + 538 + 181 + 1 + 2)
                     + (120 + 415 + 169 + 4 + 4) + (95 + 345 + 126 + 15 + 15)
                     + (102 + 1294 + 386 + 371 + 105) + (92 + 566 + 290) + (83 + 533 + 513 + 27)
-                    + (88 + 923 + 611) + (72 + 608 + 368 + 43 + 10),
+                    + (88 + 923 + 611) + (72 + 608 + 368 + 43 + 10)
+                    + (3 + 57 + 16) + (24 + 157 + 24) + (67 + 1012 + 500)
+                    + (133 + 227 + 135 + 1) + (55 + 229 + 55),
                 Data.Count);
         }
 
@@ -185,6 +199,11 @@ namespace YourElectionMap.Server.Tests
         [InlineData("MI")]
         [InlineData("OH")]
         [InlineData("WI")]
+        [InlineData("DE")]
+        [InlineData("MD")]
+        [InlineData("PA")]
+        [InlineData("VA")]
+        [InlineData("WV")]
         public void Covering_FindsOneDistrictPerLevelAtTheCapitol(string code)
         {
             var state = States[code];
@@ -265,6 +284,11 @@ namespace YourElectionMap.Server.Tests
         [InlineData("MI")]
         [InlineData("OH")]
         [InlineData("WI")]
+        [InlineData("DE")]
+        [InlineData("MD")]
+        [InlineData("PA")]
+        [InlineData("VA")]
+        [InlineData("WV")]
         public void Covering_SendsBoundariesAsPolygonsOfLongitudeAndLatitude(string code)
         {
             var state = States[code];
@@ -343,6 +367,11 @@ namespace YourElectionMap.Server.Tests
         [InlineData("MI")]
         [InlineData("OH")]
         [InlineData("WI")]
+        [InlineData("DE")]
+        [InlineData("MD")]
+        [InlineData("PA")]
+        [InlineData("VA")]
+        [InlineData("WV")]
         public void Covering_PutsTheCapitolInsideItsDistrictsOuterRing(string code)
         {
             var state = States[code];
@@ -445,6 +474,24 @@ namespace YourElectionMap.Server.Tests
         [InlineData(46.7208, -92.1041)] // Superior, the north-west of Wisconsin, across the harbor from Duluth
         [InlineData(42.5847, -87.8212)] // Kenosha, the south-east
         [InlineData(44.8113, -91.4985)] // Eau Claire, the west
+        [InlineData(39.7391, -75.5398)] // Wilmington, the north of Delaware
+        [InlineData(38.4540, -75.0491)] // Fenwick Island, the south-east
+        [InlineData(39.6531, -79.4281)] // Oakland, the west of Maryland
+        [InlineData(38.3365, -75.0849)] // Ocean City, the coast
+        [InlineData(37.9813, -76.0247)] // Smith Island, in the Chesapeake Bay
+        [InlineData(39.9526, -75.1652)] // Philadelphia, the south-east of Pennsylvania
+        [InlineData(41.3687, -74.7002)] // Matamoras, the east
+        [InlineData(40.4406, -79.9959)] // Pittsburgh, the west
+        [InlineData(42.1292, -80.0851)] // Erie, on Lake Erie
+        [InlineData(38.8048, -77.0469)] // Alexandria, the north of Virginia, across the river from Washington
+        [InlineData(36.8679, -82.7782)] // Big Stone Gap, the west
+        [InlineData(36.8508, -76.2859)] // Norfolk, the south-east
+        [InlineData(36.8529, -75.9780)] // Virginia Beach, the coast
+        [InlineData(37.8257, -75.9927)] // Tangier, an island in the Chesapeake Bay
+        [InlineData(40.6126, -80.5631)] // Chester, the northern panhandle of West Virginia
+        [InlineData(39.3209, -77.7303)] // Harpers Ferry, the eastern panhandle
+        [InlineData(38.4192, -82.4452)] // Huntington, the west
+        [InlineData(37.2696, -81.2223)] // Bluefield, the south
         public void Covering_ReachesTheEndsOfEachState(double latitude, double longitude)
         {
             var found = Covering(latitude, longitude);
@@ -455,13 +502,14 @@ namespace YourElectionMap.Server.Tests
 
         [Theory]
         [InlineData(38.8977, -77.0365)] // the White House
-        [InlineData(38.4192, -82.4452)] // Huntington, West Virginia
-        [InlineData(40.4406, -79.9959)] // Pittsburgh, Pennsylvania
-        [InlineData(42.1292, -80.0851)] // Erie, Pennsylvania
+        [InlineData(39.9259, -75.1196)] // Camden, New Jersey, across the river from Philadelphia
+        [InlineData(40.2206, -74.7597)] // Trenton, New Jersey
+        [InlineData(42.0987, -75.9180)] // Binghamton, New York
+        [InlineData(42.6, -80.2)] // Lake Erie, on Ontario's side
         [InlineData(42.3149, -83.0364)] // Windsor, Ontario, across the river from Detroit
         [InlineData(46.5219, -84.3461)] // Sault Ste. Marie, Ontario
         [InlineData(48.3809, -89.2477)] // Thunder Bay, Ontario
-        [InlineData(36.8508, -76.2859)] // Norfolk, Virginia
+        [InlineData(38.0, -74.5)] // the Atlantic, east of Maryland
         [InlineData(33.5, -76.0)] // the Atlantic, east of North Carolina
         [InlineData(28.5, -90.5)] // the Gulf of Mexico, south of Louisiana
         [InlineData(27.0, -84.0)] // the Gulf of Mexico, west of Florida
@@ -559,6 +607,11 @@ namespace YourElectionMap.Server.Tests
         [InlineData("MI", 0.05, 9_800, 13_000)]
         [InlineData("OH", 0.05, 4_200, 5_700)]
         [InlineData("WI", 0.05, 6_600, 8_800)]
+        [InlineData("DE", 0.05, 200, 330)]
+        [InlineData("MD", 0.05, 1_100, 1_550)]
+        [InlineData("PA", 0.05, 4_300, 5_800)]
+        [InlineData("VA", 0.05, 3_800, 5_200)]
+        [InlineData("WV", 0.05, 2_200, 3_000)]
         public void Covering_HasTheLevelsAgreeAcrossTheState(
             string code,
             double step,
@@ -613,6 +666,11 @@ namespace YourElectionMap.Server.Tests
         [InlineData("MI")]
         [InlineData("OH")]
         [InlineData("WI")]
+        [InlineData("DE")]
+        [InlineData("MD")]
+        [InlineData("PA")]
+        [InlineData("VA")]
+        [InlineData("WV")]
         public void Covering_SettlesThePointsBesideASharedEdge(string code)
         {
             var disagreed = new List<string>();

@@ -118,13 +118,14 @@ server's one endpoint, `GET /api/districts`. The current plan is
 [design/ElectionMapMainDesignPlanV5.md](design/ElectionMapMainDesignPlanV5.md); code comments
 refer to its numbered slices.
 
-**The data is real and covers thirty-five states**, Alabama, Arizona, Arkansas, California,
-Colorado, Florida, Georgia, Idaho, Illinois, Indiana, Iowa, Kansas, Kentucky, Louisiana, Michigan,
-Minnesota, Mississippi, Missouri, Montana, Nebraska, Nevada, New Mexico, North Carolina, North
-Dakota, Ohio, Oklahoma, Oregon, South Carolina, South Dakota, Tennessee, Texas, Utah, Washington,
-Wisconsin and Wyoming: each state's US House, State Senate and State House/Assembly districts
-(Nebraska's Legislature has one chamber, so no `state-lower` row, a few House districts are halves
-numbered "4A", "65B", and some water is in no district of a level: Lake Pontchartrain in Louisiana's Senate,
+**The data is real and covers forty states**, Alabama, Arizona, Arkansas, California,
+Colorado, Delaware, Florida, Georgia, Idaho, Illinois, Indiana, Iowa, Kansas, Kentucky, Louisiana,
+Maryland, Michigan, Minnesota, Mississippi, Missouri, Montana, Nebraska, Nevada, New Mexico, North
+Carolina, North Dakota, Ohio, Oklahoma, Oregon, Pennsylvania, South Carolina, South Dakota,
+Tennessee, Texas, Utah, Virginia, Washington, West Virginia, Wisconsin and Wyoming: each state's
+US House, State Senate and State House, Assembly or House of Delegates districts
+(Nebraska's Legislature has one chamber, so no `state-lower` row, a few lower-house districts are
+halves or thirds numbered "4A", "65B", "1C", and some water is in no district of a level: Lake Pontchartrain in Louisiana's Senate,
 Illinois's part of Lake Michigan in any, and Wisconsin's lakes in its Senate or Assembly), from the Census
 Bureau's TIGERweb layers, and its **local rows**: the county (a parish in Louisiana, whose rows'
 detail says so), the city or town, and the school district (in Arizona, California, Illinois, Montana, Wisconsin, a corner of Oregon, fifteen towns in
@@ -138,7 +139,7 @@ The browser fetches the street tiles and the map's label fonts from OpenFreeMap 
 (`index.html`). There is no County Commission, City Council or School Board district data yet,
 so the rail lists up to six rows (seven where an address has both a high school and an elementary
 district), and fewer where it has no city or school district. An address
-outside the thirty-five states is a 404.
+outside the forty states is a 404.
 
 **Google needs an API key, and nothing breaks without one.** The server reads
 `GoogleCivic:ApiKey` — user secrets in development, the environment variable `GoogleCivic__ApiKey`
@@ -178,10 +179,11 @@ dotnet publish YourElectionMap.Server/YourElectionMap.Server.csproj         # al
 
 # Builds each state's district file from its TIGERweb layers. Needed once per clone and again
 # when a plan changes.
-foreach ($state in 'al', 'ar', 'az', 'ca', 'co', 'fl', 'ga', 'ia', 'id',
-           'il', 'in', 'ks', 'ky', 'la', 'mi', 'mn', 'mo', 'ms',
-           'mt', 'nc', 'nd', 'ne', 'nm', 'nv', 'oh', 'ok', 'or',
-           'sc', 'sd', 'tn', 'tx', 'ut', 'wa', 'wi', 'wy') {
+foreach ($state in 'al', 'ar', 'az', 'ca', 'co', 'de', 'fl', 'ga', 'ia',
+           'id', 'il', 'in', 'ks', 'ky', 'la', 'md', 'mi', 'mn',
+           'mo', 'ms', 'mt', 'nc', 'nd', 'ne', 'nm', 'nv', 'oh',
+           'ok', 'or', 'pa', 'sc', 'sd', 'tn', 'tx', 'ut', 'va',
+           'wa', 'wi', 'wv', 'wy') {
   dotnet run --project YourElectionMap.Tools -- tiger $state `
     "D:\VisualStudio\GitProjects\YourElectionMap\Docs\Tiger\$state" `
     "YourElectionMap.Server\Districts\Data\$state-districts.json"

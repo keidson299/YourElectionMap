@@ -93,6 +93,17 @@ namespace YourElectionMap.Server.Tests
             ("Columbus", [new(39.9612, -82.9988, "1 CAPITOL SQ, COLUMBUS, OH, 43215")]),
             // The Wisconsin State Capitol, Madison.
             ("Madison", [new(43.0747, -89.3842, "2 E MAIN ST, MADISON, WI, 53703")]),
+            // Legislative Hall, Dover.
+            ("Dover", [new(39.1573, -75.5197, "411 LEGISLATIVE AVE, DOVER, DE, 19901")]),
+            // The Maryland State House, Annapolis.
+            ("Annapolis", [new(38.9787, -76.4910, "100 STATE CIR, ANNAPOLIS, MD, 21401")]),
+            // The Pennsylvania State Capitol, Harrisburg.
+            ("Harrisburg", [new(40.2645, -76.8836, "501 N 3RD ST, HARRISBURG, PA, 17120")]),
+            // The Virginia State Capitol, Richmond.
+            ("Richmond", [new(37.5385, -77.4336, "1000 BANK ST, RICHMOND, VA, 23219")]),
+            // The West Virginia State Capitol, Charleston: by its street, since South
+            // Carolina has a Charleston too.
+            ("Kanawha", [new(38.3365, -81.6123, "1900 KANAWHA BLVD E, CHARLESTON, WV, 25305")]),
             // The White House, which is in no state the site covers.
             ("Pennsylvania", [new(38.8977, -77.0365, "1600 PENNSYLVANIA AVE NW, WASHINGTON, DC, 20500")]),
             // A town name with no state: Greenville ME first, then Greenville NC.

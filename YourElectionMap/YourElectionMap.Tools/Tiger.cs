@@ -62,6 +62,14 @@ namespace YourElectionMap.Tools
                     new("sldu.geojson", "state-upper", "State Senate", "State", 35),
                     new("sldl.geojson", "state-lower", "State House", "State", 65),
                 ]),
+            // One seat in the House, elected at large, as in Wyoming.
+            ["DE"] = new(
+                "10",
+                [
+                    new("cd.geojson", "congressional", "U.S. House", "Federal", 1),
+                    new("sldu.geojson", "state-upper", "State Senate", "State", 21),
+                    new("sldl.geojson", "state-lower", "State House", "State", 41),
+                ]),
             ["FL"] = new(
                 "12",
                 [
@@ -128,6 +136,18 @@ namespace YourElectionMap.Tools
                     new("sldl.geojson", "state-lower", "State House", "State", 105),
                 ],
                 County: "Parish"),
+            // Forty-seven districts, each electing a senator and three delegates: some from
+            // the whole district, some from its halves, 2A and 2B, or its thirds, 1A, 1B and
+            // 1C, as the Legislature drew them.
+            ["MD"] = new(
+                "24",
+                [
+                    new("cd.geojson", "congressional", "U.S. House", "Federal", 8),
+                    new("sldu.geojson", "state-upper", "State Senate", "State", 47),
+                    new("sldl.geojson", "state-lower", "House of Delegates", "State", 47,
+                        Halved: [2, 7, 9, 11, 12, 30, 34, 35, 37, 43, 44, 47],
+                        InThree: [1, 27, 29, 33, 38, 42]),
+                ]),
             ["MI"] = new(
                 "26",
                 [
@@ -224,6 +244,13 @@ namespace YourElectionMap.Tools
                     new("sldu.geojson", "state-upper", "State Senate", "State", 30),
                     new("sldl.geojson", "state-lower", "State House", "State", 60),
                 ]),
+            ["PA"] = new(
+                "42",
+                [
+                    new("cd.geojson", "congressional", "U.S. House", "Federal", 17),
+                    new("sldu.geojson", "state-upper", "State Senate", "State", 50),
+                    new("sldl.geojson", "state-lower", "State House", "State", 203),
+                ]),
             ["SC"] = new(
                 "45",
                 [
@@ -262,6 +289,13 @@ namespace YourElectionMap.Tools
                     new("sldu.geojson", "state-upper", "State Senate", "State", 29),
                     new("sldl.geojson", "state-lower", "State House", "State", 75),
                 ]),
+            ["VA"] = new(
+                "51",
+                [
+                    new("cd.geojson", "congressional", "U.S. House", "Federal", 11),
+                    new("sldu.geojson", "state-upper", "State Senate", "State", 40),
+                    new("sldl.geojson", "state-lower", "House of Delegates", "State", 100),
+                ]),
             // One set of 49 districts, each electing a senator and two representatives:
             // TIGER has it in both layers.
             ["WA"] = new(
@@ -277,6 +311,14 @@ namespace YourElectionMap.Tools
                     new("cd.geojson", "congressional", "U.S. House", "Federal", 8),
                     new("sldu.geojson", "state-upper", "State Senate", "State", 33),
                     new("sldl.geojson", "state-lower", "State Assembly", "State", 99),
+                ]),
+            // Seventeen Senate districts, each electing two senators.
+            ["WV"] = new(
+                "54",
+                [
+                    new("cd.geojson", "congressional", "U.S. House", "Federal", 2),
+                    new("sldu.geojson", "state-upper", "State Senate", "State", 17),
+                    new("sldl.geojson", "state-lower", "House of Delegates", "State", 100),
                 ]),
             // One seat in the House, elected at large: numbered 1 here.
             ["WY"] = new(
@@ -374,17 +416,22 @@ namespace YourElectionMap.Tools
         }
 
         /// <summary>
-        /// Numbered 1 to N, each once, in order, with a halved district's two halves in
-        /// its place: anything else is a plan this was not written for. Prints a line per
+        /// Numbered 1 to N, each once, in order, with a halved district's two halves, or a
+        /// district in three's three parts, in its place: anything else is a plan this was
+        /// not written for. Prints a line per
         /// district as it goes.
         /// </summary>
         private static void CheckAndSort(List<BuiltDistrict> built, Layer layer)
         {
             var expected = Enumerable.Range(1, layer.Count)
-                .Select(number => number.ToString(CultureInfo.InvariantCulture))
-                .SelectMany(number => layer.Halved?.Contains(int.Parse(number, CultureInfo.InvariantCulture)) == true
-                    ? new[] { number + "A", number + "B" }
-                    : [number])
+                .SelectMany(number =>
+                {
+                    var name = number.ToString(CultureInfo.InvariantCulture);
+
+                    return layer.Halved?.Contains(number) == true ? new[] { name + "A", name + "B" }
+                        : layer.InThree?.Contains(number) == true ? [name + "A", name + "B", name + "C"]
+                        : [name];
+                })
                 .ToList();
 
             built.Sort((left, right) => expected.IndexOf(left.Number) - expected.IndexOf(right.Number));
@@ -429,8 +476,8 @@ namespace YourElectionMap.Tools
                 return null;
             }
 
-            // "Congressional District 7", "Assembly District 7", half of a district,
-            // "State House District 4A", or a state's one seat, "Congressional District
+            // "Congressional District 7", "Assembly District 7", part of a district,
+            // "State House District 4A" or "State Legislative Subdistrict 1C", or a state's one seat, "Congressional District
             // (at Large)".
             var match = TrailingNumber().Match(name);
             string number;
@@ -593,7 +640,7 @@ namespace YourElectionMap.Tools
             return rings;
         }
 
-        [GeneratedRegex(@"(\d+)([AB]?)\s*$")]
+        [GeneratedRegex(@"(\d+)([ABC]?)\s*$")]
         private static partial Regex TrailingNumber();
 
         /// <param name="County">The county rows' detail: "Parish" in Louisiana.</param>
@@ -601,7 +648,8 @@ namespace YourElectionMap.Tools
 
         /// <summary>
         /// A legislative layer: districts 1 to <paramref name="Count"/>, each of those in
-        /// <paramref name="Halved"/> as two, an A and a B.
+        /// <paramref name="Halved"/> as two, an A and a B, and each in <paramref name="InThree"/>
+        /// as three, an A, a B and a C.
         /// </summary>
         private sealed record Layer(
             string File,
@@ -609,7 +657,8 @@ namespace YourElectionMap.Tools
             string Office,
             string Detail,
             int Count,
-            int[]? Halved = null);
+            int[]? Halved = null,
+            int[]? InThree = null);
 
         private sealed record NamedLayer(string File, string Level, string Detail);
     }

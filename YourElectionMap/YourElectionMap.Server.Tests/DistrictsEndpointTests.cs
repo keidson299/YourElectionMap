@@ -120,6 +120,12 @@ namespace YourElectionMap.Server.Tests
         [InlineData("100 N Capitol Ave, Lansing MI", "county-26065", "city-2646000", "school-2621150")]
         [InlineData("1 Capitol Sq, Columbus OH", "county-39049", "city-3918000", "school-3904380")]
         [InlineData("2 E Main St, Madison WI", "county-55025", "city-5548000", "school-5508520")]
+        [InlineData("411 Legislative Ave, Dover DE", "county-10001", "city-1021200", "school-1000190")]
+        [InlineData("100 State Cir, Annapolis MD", "county-24003", "city-2401600", "school-2400060")]
+        [InlineData("501 N 3rd St, Harrisburg PA", "county-42043", "city-4232800", "school-4211580")]
+        // Richmond is a city outside any county, as St. Louis is, so TIGER has it as both.
+        [InlineData("1000 Bank St, Richmond VA", "county-51760", "city-5167000", "school-5103240")]
+        [InlineData("1900 Kanawha Blvd E, Charleston WV", "county-54039", "city-5414600", "school-5400600")]
         public async Task Get_ListsTheCapitolsCountyCityAndSchoolDistricts(
             string address,
             string county,
@@ -173,6 +179,12 @@ namespace YourElectionMap.Server.Tests
         [InlineData("100 N Capitol Ave, Lansing MI", 7, 21, "77", "State House")]
         [InlineData("1 Capitol Sq, Columbus OH", 15, 15, "1", "State House")]
         [InlineData("2 E Main St, Madison WI", 2, 26, "76", "State Assembly")]
+        [InlineData("411 Legislative Ave, Dover DE", 1, 17, "32", "State House")]
+        // Maryland elects some delegates from a district's halves or thirds.
+        [InlineData("100 State Cir, Annapolis MD", 3, 30, "30A", "House of Delegates")]
+        [InlineData("501 N 3rd St, Harrisburg PA", 10, 15, "103", "State House")]
+        [InlineData("1000 Bank St, Richmond VA", 4, 14, "78", "House of Delegates")]
+        [InlineData("1900 Kanawha Blvd E, Charleston WV", 1, 8, "54", "House of Delegates")]
         public async Task Get_PlacesEachOtherCapitolInItsStatesDistricts(
             string address,
             int congressional,
