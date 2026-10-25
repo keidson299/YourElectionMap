@@ -24,8 +24,8 @@ namespace YourElectionMap.Server.Tests
 
         /// <summary>
         /// Each state's FIPS code, which begins its local rows' Census codes, its capitol,
-        /// what its lower house is called, and the box around the state that every boundary
-        /// point must fall in.
+        /// what its lower house is called (Nebraska has none), and the box around the state
+        /// that every boundary point must fall in.
         /// </summary>
         private static readonly Dictionary<string, State> States = new()
         {
@@ -62,29 +62,63 @@ namespace YourElectionMap.Server.Tests
             ["OK"] = new("40", 35.4922, -97.5034, "State House", (-103.07, -94.4), (33.57, 37.05)),
             // The State Capitol, 1100 Congress Avenue, Austin.
             ["TX"] = new("48", 30.2747, -97.7403, "State House", (-106.67, -93.47), (25.82, 36.52)),
+            // The State Capitol, 300 SW 10th Avenue, Topeka.
+            ["KS"] = new("20", 39.0481, -95.6780, "State House", (-102.07, -94.55), (36.97, 40.05)),
+            // The State Capitol, 75 Rev Dr Martin Luther King Jr Boulevard, St. Paul.
+            ["MN"] = new("27", 44.9551, -93.1022, "State House", (-97.27, -89.45), (43.47, 49.42)),
+            // The State Capitol, 600 E Boulevard Avenue, Bismarck.
+            ["ND"] = new("38", 46.8209, -100.7827, "State House", (-104.07, -96.5), (45.92, 49.05)),
+            // The State Capitol, 1445 K Street, Lincoln. One chamber, the Legislature.
+            ["NE"] = new("31", 40.8081, -96.6997, null, (-104.07, -95.27), (39.97, 43.05), UpperHouse: "Legislature"),
+            // The State Capitol, 500 E Capitol Avenue, Pierre.
+            ["SD"] = new("46", 44.3671, -100.3462, "State House", (-104.07, -96.4), (42.47, 45.97)),
+            // The State Capitol, 500 Woodlane Street, Little Rock.
+            ["AR"] = new("05", 34.7466, -92.2890, "State House", (-94.62, -89.64), (32.97, 36.52)),
+            // The State Capitol, 1007 E Grand Avenue, Des Moines.
+            ["IA"] = new("19", 41.5912, -93.6038, "State House", (-96.64, -90.14), (40.37, 43.51)),
+            // The State Capitol, 900 N 3rd Street, Baton Rouge.
+            ["LA"] = new("22", 30.4571, -91.1874, "State House", (-94.05, -88.75), (28.87, 33.03)),
+            // The State Capitol, 201 W Capitol Avenue, Jefferson City.
+            ["MO"] = new("29", 38.5792, -92.1729, "State House", (-95.78, -89.09), (35.97, 40.62)),
+            // The State Capitol, 400 High Street, Jackson.
+            ["MS"] = new("28", 32.3036, -90.1823, "State House", (-91.66, -88.07), (30.12, 35.02)),
         };
 
-        private static readonly string[] Legislative = ["congressional", "state-upper", "state-lower"];
+        /// <summary>The levels a state elects its legislators by, broad to local.</summary>
+        private static string[] Legislative(State state) =>
+            state.LowerHouse is null
+                ? ["congressional", "state-upper"]
+                : ["congressional", "state-upper", "state-lower"];
 
         [Fact]
         public void Loads_EveryDistrictOfEveryState()
         {
             // Per state, in the order of States above: its US House, State Senate and
-            // State House districts together (the counts are in Tiger.cs), then its
+            // State House districts together (the counts are in Tiger.cs, a halved
+            // district counting twice), then its
             // counties, cities and towns, and unified school districts, and where it has
             // them its elementary and then high school districts.
             Assert.Equal(
-                ["AZ", "CA", "CO", "ID", "MT", "NC", "NM", "NV", "OK", "OR", "SC", "TX", "UT", "WA", "WY"],
+                [
+                    "AR", "AZ", "CA", "CO", "IA", "ID", "KS", "LA", "MN", "MO", "MS", "MT", "NC",
+                    "ND", "NE", "NM", "NV", "OK", "OR", "SC", "SD", "TX", "UT", "WA", "WY",
+                ],
                 Data.States);
             Assert.Equal(
                 184 + 172 + 96 + 177 + 108 + 69 + 72 + 152 + 108 + 94
                     + 108 + 115 + 67 + 154 + 219
+                    + 169 + 209 + 96 + 52 + 73
+                    + 139 + 154 + 150 + 205 + 178
                     + (100 + 552 + 118) + (58 + 483 + 345 + 517 + 112)
                     + (36 + 241 + 187 + 9 + 1) + (46 + 271 + 72) + (39 + 281 + 295)
                     + (15 + 92 + 97 + 102 + 15) + (44 + 199 + 116)
                     + (56 + 127 + 65 + 233 + 97) + (29 + 255 + 41) + (23 + 99 + 47 + 1)
                     + (64 + 273 + 178) + (33 + 105 + 89) + (17 + 19 + 17)
-                    + (77 + 600 + 415 + 91) + (254 + 1230 + 1016 + 1 + 1),
+                    + (77 + 600 + 415 + 91) + (254 + 1230 + 1016 + 1 + 1)
+                    + (105 + 626 + 285) + (87 + 856 + 321 + 8 + 1) + (53 + 355 + 147 + 20)
+                    + (93 + 528 + 244) + (66 + 310 + 147)
+                    + (75 + 501 + 234) + (99 + 939 + 325) + (64 + 305 + 69)
+                    + (115 + 947 + 445 + 71) + (82 + 300 + 137),
                 Data.Count);
         }
 
@@ -104,6 +138,16 @@ namespace YourElectionMap.Server.Tests
         [InlineData("NV")]
         [InlineData("OK")]
         [InlineData("TX")]
+        [InlineData("KS")]
+        [InlineData("MN")]
+        [InlineData("ND")]
+        [InlineData("NE")]
+        [InlineData("SD")]
+        [InlineData("AR")]
+        [InlineData("IA")]
+        [InlineData("LA")]
+        [InlineData("MO")]
+        [InlineData("MS")]
         public void Covering_FindsOneDistrictPerLevelAtTheCapitol(string code)
         {
             var state = States[code];
@@ -112,15 +156,16 @@ namespace YourElectionMap.Server.Tests
             Assert.NotNull(found);
             Assert.Equal("U.S. Census Bureau TIGER", found.Source);
 
-            var legislative = found.Districts.Take(3).ToArray();
-            var local = found.Districts.Skip(3).ToArray();
+            var levels = Legislative(state);
+            var legislative = found.Districts.Take(levels.Length).ToArray();
+            var local = found.Districts.Skip(levels.Length).ToArray();
 
-            Assert.Equal(Legislative, legislative.Select(district => district.Level));
+            Assert.Equal(levels, legislative.Select(district => district.Level));
             Assert.Equal(
-                new[] { "U.S. House", "State Senate", state.LowerHouse },
+                new[] { "U.S. House", state.UpperHouse, state.LowerHouse }.Take(levels.Length),
                 legislative.Select(district => district.Office));
             Assert.Equal(
-                new[] { "Federal", "State", "State" },
+                new[] { "Federal", "State", "State" }.Take(levels.Length),
                 legislative.Select(district => district.Detail));
 
             // The capitol is in a city, so it has a county and a city row, then its school
@@ -128,7 +173,7 @@ namespace YourElectionMap.Server.Tests
             Assert.Equal(["county", "city"], local.Take(2).Select(district => district.Level));
             Assert.NotEmpty(local.Skip(2));
             Assert.All(local.Skip(2), district => Assert.Equal("school", district.Level));
-            Assert.Null(Disagreement(found.Districts));
+            Assert.Null(Disagreement(found.Districts, state.Longitude, state.Latitude));
 
             var county = local[0].Office;
 
@@ -163,6 +208,16 @@ namespace YourElectionMap.Server.Tests
         [InlineData("NV")]
         [InlineData("OK")]
         [InlineData("TX")]
+        [InlineData("KS")]
+        [InlineData("MN")]
+        [InlineData("ND")]
+        [InlineData("NE")]
+        [InlineData("SD")]
+        [InlineData("AR")]
+        [InlineData("IA")]
+        [InlineData("LA")]
+        [InlineData("MO")]
+        [InlineData("MS")]
         public void Covering_SendsBoundariesAsPolygonsOfLongitudeAndLatitude(string code)
         {
             var state = States[code];
@@ -221,6 +276,16 @@ namespace YourElectionMap.Server.Tests
         [InlineData("NV")]
         [InlineData("OK")]
         [InlineData("TX")]
+        [InlineData("KS")]
+        [InlineData("MN")]
+        [InlineData("ND")]
+        [InlineData("NE")]
+        [InlineData("SD")]
+        [InlineData("AR")]
+        [InlineData("IA")]
+        [InlineData("LA")]
+        [InlineData("MO")]
+        [InlineData("MS")]
         public void Covering_PutsTheCapitolInsideItsDistrictsOuterRing(string code)
         {
             var state = States[code];
@@ -273,12 +338,34 @@ namespace YourElectionMap.Server.Tests
         [InlineData(31.7619, -106.4850)] // El Paso, the west of Texas
         [InlineData(25.9017, -97.4975)] // Brownsville, the south
         [InlineData(35.2220, -101.8313)] // Amarillo, the panhandle
+        [InlineData(37.9717, -100.8727)] // Garden City, the west of Kansas
+        [InlineData(39.1141, -94.6275)] // Kansas City, the east
+        [InlineData(46.8738, -96.7678)] // Moorhead, the west of Minnesota
+        [InlineData(46.7867, -92.1005)] // Duluth, the east
+        [InlineData(49.3456, -95.0647)] // Angle Inlet, on the Northwest Angle, across the Lake of the Woods
+        [InlineData(48.1470, -103.6180)] // Williston, the west of North Dakota
+        [InlineData(46.8772, -96.7898)] // Fargo, the east
+        [InlineData(41.8666, -103.6672)] // Scottsbluff, the west of Nebraska
+        [InlineData(41.2565, -95.9345)] // Omaha, the east
+        [InlineData(44.0805, -103.2310)] // Rapid City, the west of South Dakota
+        [InlineData(43.5446, -96.7311)] // Sioux Falls, the east
+        [InlineData(35.3859, -94.3985)] // Fort Smith, the west of Arkansas
+        [InlineData(35.1465, -90.1845)] // West Memphis, the east
+        [InlineData(41.2619, -95.8608)] // Council Bluffs, the west of Iowa, across the river from Omaha
+        [InlineData(41.5236, -90.5776)] // Davenport, the east
+        [InlineData(32.5252, -93.7502)] // Shreveport, the north-west of Louisiana
+        [InlineData(29.2766, -89.3542)] // Venice, near the mouth of the Mississippi
+        [InlineData(39.0997, -94.5786)] // Kansas City, the west of Missouri
+        [InlineData(38.6270, -90.1994)] // St. Louis, the east, a city outside any county
+        [InlineData(36.1931, -89.6556)] // Caruthersville, the Bootheel
+        [InlineData(34.9890, -90.0126)] // Southaven, the north of Mississippi
+        [InlineData(30.3960, -88.8853)] // Biloxi, the coast
         public void Covering_ReachesTheEndsOfEachState(double latitude, double longitude)
         {
             var found = Covering(latitude, longitude);
 
             Assert.NotEmpty(found);
-            Assert.Null(Disagreement(found));
+            Assert.Null(Disagreement(found, longitude, latitude));
         }
 
         [Theory]
@@ -287,23 +374,38 @@ namespace YourElectionMap.Server.Tests
         [InlineData(32.0809, -81.0912)] // Savannah, Georgia
         [InlineData(36.8508, -76.2859)] // Norfolk, Virginia
         [InlineData(33.5, -76.0)] // the Atlantic, east of North Carolina
-        [InlineData(37.6872, -97.3301)] // Wichita, Kansas
-        [InlineData(32.5252, -93.7502)] // Shreveport, Louisiana
+        [InlineData(41.5067, -90.5151)] // Moline, Illinois, across the river from Davenport
+        [InlineData(38.6245, -90.1510)] // East St. Louis, Illinois
+        [InlineData(35.1495, -90.0490)] // Memphis, Tennessee
+        [InlineData(30.6954, -88.0399)] // Mobile, Alabama
+        [InlineData(28.5, -90.5)] // the Gulf of Mexico, south of Louisiana
+        [InlineData(44.8113, -91.4985)] // Eau Claire, Wisconsin
+        [InlineData(49.8951, -97.1384)] // Winnipeg, Manitoba
+        [InlineData(50.4452, -104.6189)] // Regina, Saskatchewan
         [InlineData(32.5149, -117.0382)] // Tijuana, Mexico
         [InlineData(36.0, -125.0)] // the Pacific, west of California
         [InlineData(44.0, -125.5)] // the Pacific, west of Oregon
         [InlineData(49.2827, -123.1207)] // Vancouver, British Columbia
         [InlineData(31.6904, -106.4245)] // Ciudad Juárez, Chihuahua, across the river from El Paso
         [InlineData(31.3086, -110.9422)] // Nogales, Sonora
-        [InlineData(41.8666, -103.6672)] // Scottsbluff, Nebraska
-        [InlineData(37.9717, -100.8727)] // Garden City, Kansas
         [InlineData(27.0, -94.0)] // the Gulf of Mexico, south-east of Texas
-        [InlineData(44.0805, -103.2310)] // Rapid City, South Dakota
-        [InlineData(48.1470, -103.6180)] // Williston, North Dakota
         [InlineData(49.6956, -112.8451)] // Lethbridge, Alberta
         public void Covering_FindsNothingOutsideTheStates(double latitude, double longitude)
         {
             Assert.Null(Data.Covering(longitude, latitude));
+        }
+
+        [Fact]
+        public void Covering_FindsNoSenateDistrictOnLakePontchartrain()
+        {
+            // TIGER leaves the lake out of every Louisiana Senate district, though its
+            // House districts, parishes and school districts reach across it.
+            var found = Covering(30.2, -90.1);
+
+            Assert.Equal(
+                ["congressional-1", "state-lower-89", "county-22103", "school-2201650"],
+                found.Select(district => district.Id));
+            Assert.Null(Disagreement(found, -90.1, 30.2));
         }
 
         /// <summary>
@@ -333,6 +435,16 @@ namespace YourElectionMap.Server.Tests
         [InlineData("NV", 0.05, 10_000, 14_000)]
         [InlineData("OK", 0.05, 6_000, 8_500)]
         [InlineData("TX", 0.1, 5_500, 7_800)]
+        [InlineData("KS", 0.05, 7_500, 10_000)]
+        [InlineData("MN", 0.05, 9_000, 12_500)]
+        [InlineData("ND", 0.05, 7_500, 10_000)]
+        [InlineData("NE", 0.05, 7_500, 10_000)]
+        [InlineData("SD", 0.05, 8_000, 10_500)]
+        [InlineData("AR", 0.05, 4_500, 6_500)]
+        [InlineData("IA", 0.05, 5_300, 7_300)]
+        [InlineData("LA", 0.05, 4_200, 6_000)]
+        [InlineData("MO", 0.05, 6_300, 8_700)]
+        [InlineData("MS", 0.05, 4_000, 5_700)]
         public void Covering_HasTheLevelsAgreeAcrossTheState(
             string code,
             double step,
@@ -346,8 +458,8 @@ namespace YourElectionMap.Server.Tests
         }
 
         /// <summary>
-        /// Points a few feet either side of State House edges, where addresses on a
-        /// boundary street land, and where thinning each district on its own leaves
+        /// Points a few feet either side of State House edges (in Nebraska, the
+        /// Legislature's), where addresses on a boundary street land, and where thinning each district on its own leaves
         /// slivers two districts cover, or none. Every one must still find one district
         /// per level. Every hundredth edge, to keep the suite quick.
         /// </summary>
@@ -367,12 +479,22 @@ namespace YourElectionMap.Server.Tests
         [InlineData("NV")]
         [InlineData("OK")]
         [InlineData("TX")]
+        [InlineData("KS")]
+        [InlineData("MN")]
+        [InlineData("ND")]
+        [InlineData("NE")]
+        [InlineData("SD")]
+        [InlineData("AR")]
+        [InlineData("IA")]
+        [InlineData("LA")]
+        [InlineData("MO")]
+        [InlineData("MS")]
         public void Covering_SettlesThePointsBesideASharedEdge(string code)
         {
             var disagreed = new List<string>();
             var tested = 0;
 
-            foreach (var ring in StateHouseRings(code))
+            foreach (var ring in LowerHouseRings(code))
             {
                 for (var i = 0; i + 3 < ring.Length; i += 200)
                 {
@@ -399,7 +521,7 @@ namespace YourElectionMap.Server.Tests
 
                         tested++;
 
-                        if (Disagreement(found.Districts) is { } wrong)
+                        if (Disagreement(found.Districts, longitude, latitude) is { } wrong)
                         {
                             var ids = found.Districts.Select(district => district.Id);
                             disagreed.Add($"({longitude:0.000000}, {latitude:0.000000}): {wrong}: {string.Join(", ", ids)}");
@@ -413,9 +535,13 @@ namespace YourElectionMap.Server.Tests
             Assert.True(tested > 500, $"Only {tested} points tested.");
         }
 
-        /// <summary>Every ring of every State House district, straight from the file.</summary>
-        private static IEnumerable<double[]> StateHouseRings(string code)
+        /// <summary>
+        /// Every ring of every State House district, or in Nebraska every Legislature
+        /// district, straight from the file.
+        /// </summary>
+        private static IEnumerable<double[]> LowerHouseRings(string code)
         {
+            var level = Legislative(States[code])[^1];
             var path = Path.Combine(
                 AppContext.BaseDirectory, "Districts", "Data", $"{code.ToLowerInvariant()}-districts.json");
 
@@ -423,7 +549,7 @@ namespace YourElectionMap.Server.Tests
             using var json = JsonDocument.Parse(file);
 
             return json.RootElement.GetProperty("districts").EnumerateArray()
-                .Where(district => district.GetProperty("level").GetString() == "state-lower")
+                .Where(district => district.GetProperty("level").GetString() == level)
                 .SelectMany(district => district.GetProperty("rings").EnumerateArray())
                 .Select(ring => ring.EnumerateArray().Select(value => value.GetDouble()).ToArray())
                 .ToList();
@@ -456,7 +582,7 @@ namespace YourElectionMap.Server.Tests
 
                     inside++;
 
-                    if (Disagreement(found.Districts) is { } wrong)
+                    if (Disagreement(found.Districts, longitude, latitude) is { } wrong)
                     {
                         var ids = found.Districts.Select(district => district.Id);
                         disagreed.Add($"({longitude:0.00}, {latitude:0.00}): {wrong}: {string.Join(", ", ids)}");
@@ -498,24 +624,36 @@ namespace YourElectionMap.Server.Tests
         }
 
         /// <summary>
-        /// What is wrong with the districts covering one point, or null. One district per
-        /// legislative level, first; then one county, at most one city (unincorporated land
-        /// has none), and either a unified school district, a high school district and the
-        /// elementary one inside it, one of those two alone, or none, where TIGER defines no
-        /// district.
+        /// What is wrong with the districts covering one point, or null. One county; one
+        /// district per legislative level of the county's state, but for Louisiana's Senate
+        /// on Lake Pontchartrain; at most one city
+        /// (unincorporated land has none); and either a unified school district, a high
+        /// school district and the elementary one inside it, one of those two alone, or
+        /// none, where TIGER defines no district.
         /// </summary>
-        private static string? Disagreement(List<District> found)
+        private static string? Disagreement(List<District> found, double longitude, double latitude)
         {
             var levels = found.Select(district => district.Level).ToArray();
-
-            if (!levels.Take(3).SequenceEqual(Legislative))
-            {
-                return "not one district per legislative level";
-            }
 
             if (levels.Count(level => level == "county") != 1 || levels.Count(level => level == "city") > 1)
             {
                 return "not one county and at most one city";
+            }
+
+            // The county's Census code begins with its state's, which says whether there
+            // is a lower house.
+            var county = found.Single(district => district.Level == "county").Id;
+            var state = States.Values.Single(known => county.StartsWith($"county-{known.Fips}", StringComparison.Ordinal));
+
+            var legislative = levels
+                .Where(level => level is "congressional" or "state-upper" or "state-lower")
+                .ToArray();
+
+            if (!legislative.SequenceEqual(Legislative(state))
+                && !(OnLakePontchartrain(state, longitude, latitude)
+                    && legislative.SequenceEqual(["congressional", "state-lower"])))
+            {
+                return "not one district per legislative level";
             }
 
             var schools = found
@@ -532,12 +670,22 @@ namespace YourElectionMap.Server.Tests
                 : "school districts that overlap";
         }
 
+        /// <summary>
+        /// Whether a point is in the box around Lake Pontchartrain, which TIGER puts in no
+        /// Louisiana Senate district: the box of its "not defined" area in the Senate layer.
+        /// </summary>
+        private static bool OnLakePontchartrain(State state, double longitude, double latitude) =>
+            state.Fips == "22"
+                && longitude is > -90.31 and < -89.62
+                && latitude is > 30.01 and < 30.39;
+
         private sealed record State(
             string Fips,
             double Latitude,
             double Longitude,
-            string LowerHouse,
+            string? LowerHouse,
             (double Low, double High) Longitudes,
-            (double Low, double High) Latitudes);
+            (double Low, double High) Latitudes,
+            string UpperHouse = "State Senate");
     }
 }

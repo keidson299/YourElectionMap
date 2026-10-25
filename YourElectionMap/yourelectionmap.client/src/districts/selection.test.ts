@@ -43,8 +43,12 @@ describe('resolveSelection', () => {
     expect(resolveSelection(ALL, 'no-such-district')).toBe(house)
   })
 
-  it('falls back to the first district where there is no lower chamber', () => {
-    expect(resolveSelection([federal, senate, county], null)).toBe(federal)
+  it('falls back to the one chamber where there is no lower one', () => {
+    expect(resolveSelection([federal, senate, county], null)).toBe(senate)
+  })
+
+  it('falls back to the first district where there is no state chamber', () => {
+    expect(resolveSelection([federal, county], null)).toBe(federal)
   })
 })
 

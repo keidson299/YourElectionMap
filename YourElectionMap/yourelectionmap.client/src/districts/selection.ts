@@ -1,12 +1,16 @@
 import type { District, DistrictLevel } from './types'
 
-/** Drawn at neighbourhood scale, and reliably available from the Census. */
-const DEFAULT_LEVEL: DistrictLevel = 'state-lower'
+/**
+ * Drawn at neighbourhood scale, and reliably available from the Census: the
+ * lower state chamber, or where there is none, as in Nebraska, the one chamber.
+ */
+const DEFAULT_LEVELS: readonly DistrictLevel[] = ['state-lower', 'state-upper']
 
 /**
  * The district named in the URL when the lookup has it, otherwise the lower
- * state chamber, otherwise the first district. A lookup is never empty: the
- * data layer reads one with no districts as no match.
+ * state chamber, otherwise the upper one, otherwise the first district. A
+ * lookup is never empty: the data layer reads one with no districts as no
+ * match.
  */
 export function resolveSelection(
   districts: readonly District[],
@@ -14,7 +18,9 @@ export function resolveSelection(
 ): District {
   return (
     districts.find((district) => district.id === requestedId) ??
-    districts.find((district) => district.level === DEFAULT_LEVEL) ??
+    DEFAULT_LEVELS.map((level) =>
+      districts.find((district) => district.level === level),
+    ).find((district) => district !== undefined) ??
     districts[0]
   )
 }

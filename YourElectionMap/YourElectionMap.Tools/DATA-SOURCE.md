@@ -24,6 +24,16 @@ holds its rings in longitude and latitude, to six decimal places, thinned to 15 
 | `nv-districts.json` | Nevada | 32 | `Tiger\nv` | 2026-10-13 |
 | `ok-districts.json` | Oklahoma | 40 | `Tiger\ok` | 2026-10-13 |
 | `tx-districts.json` | Texas | 48 | `Tiger\tx` | 2026-10-13 |
+| `ks-districts.json` | Kansas | 20 | `Tiger\ks` | 2026-10-24 |
+| `mn-districts.json` | Minnesota | 27 | `Tiger\mn` | 2026-10-24 |
+| `nd-districts.json` | North Dakota | 38 | `Tiger\nd` | 2026-10-24 |
+| `ne-districts.json` | Nebraska | 31 | `Tiger\ne` | 2026-10-24 |
+| `sd-districts.json` | South Dakota | 46 | `Tiger\sd` | 2026-10-24 |
+| `ar-districts.json` | Arkansas | 05 | `Tiger\ar` | 2026-10-24 |
+| `ia-districts.json` | Iowa | 19 | `Tiger\ia` | 2026-10-24 |
+| `la-districts.json` | Louisiana | 22 | `Tiger\la` | 2026-10-24 |
+| `mo-districts.json` | Missouri | 29 | `Tiger\mo` | 2026-10-24 |
+| `ms-districts.json` | Mississippi | 28 | `Tiger\ms` | 2026-10-24 |
 
 Every state's folder holds its five local layers too, downloaded on the same day, apart from
 those of Arizona, Idaho, Montana, Utah and Wyoming, downloaded on 2026-10-12.
@@ -43,7 +53,8 @@ TIGERweb's current layers are the January 1, 2026 vintage. TIGER data is public 
 | High school district | `School`, 1, Secondary School Districts | `scsd.geojson` |
 | Elementary school district | `School`, 2, Elementary School Districts | `elsd.geojson` |
 
-The three legislative layers are required. The five local ones are optional: the tool builds
+The three legislative layers are required, but for Nebraska's lower house, which it does not
+have (see below). The five local ones are optional: the tool builds
 a state without any it does not find, and says so. Each service lists the same layers again
 for earlier vintages further down, and `State_County` lists more county layers, which are
 coarser copies for zoomed-out maps; layer 1 is the full-detail one. Census designated places
@@ -58,8 +69,9 @@ https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/<service>/MapServe
 ```
 
 A state with no high school or elementary districts gets a file with no features in it, which
-is fine: the school districts of Colorado, Idaho, Nevada, New Mexico, North Carolina, South
-Carolina, Utah and Washington are all unified.
+is fine: the school districts of Arkansas, Colorado, Idaho, Iowa, Kansas, Louisiana, Mississippi,
+Nebraska, Nevada, New Mexico, North Carolina, South Carolina, South Dakota, Utah and Washington
+are all unified.
 
 A layer too big for one answer comes back with `"exceededTransferLimit": true`. Fetch it in
 pages with `resultOffset` and `resultRecordCount`, and join the features into one file. Texas's
@@ -128,6 +140,50 @@ Nevada's lower house is the Assembly, as California's is, so its file names it "
 Carson City is a county and a city in one, and TIGER names both "Carson City", so the capitol's
 county and city rows read the same.
 
+### Nebraska
+
+Nebraska's Legislature has one chamber. TIGER holds its 49 districts in the upper layer, named
+"State Senate District 28", and has nothing for Nebraska in the lower one, so its folder has no
+`sldl.geojson` and `Tiger.cs` lists two layers for it. The file names the districts'
+office "Legislature", which is what the ballot says ("Member of the Legislature"), and has no
+`state-lower` rows; the page selects the Legislature district first where it would otherwise
+select the State House one.
+
+### Minnesota, North Dakota and South Dakota
+
+Each elects its House from halves of Senate districts, at least in places, and TIGER names a half
+"State House District 65B". Minnesota halves all 67 of its Senate districts, so its 134 House
+districts run 1A, 1B to 67B; North Dakota halves District 4 alone, into 4A and 4B, and South
+Dakota Districts 26 and 28. Their other House districts elect two representatives each from the
+Senate district's outline, as Washington's do. `Tiger.cs` lists which districts are halved, and
+the tool keeps the letter in the number, so the page shows "State House · District 65B".
+
+North Dakota has 20 elementary districts and Minnesota 7 with no high school district over them in
+TIGER, as in Oklahoma. Minnesota also has one high school district over one elementary district,
+"Park Rapids Public School District in Pine Point (9-12)" over "Pine Point Public School District",
+and a "School District Not Defined", which the tool leaves out. Both Dakotas have one House seat,
+at large, numbered 1 as Wyoming's is.
+
+### Louisiana
+
+Louisiana's counties are parishes, and TIGER names them so, "East Baton Rouge Parish". `Tiger.cs`
+gives Louisiana's county rows the detail "Parish" in place of "County"; their level and ids are
+the same as any county's, "county-22033".
+
+Its Senate layer has one feature more than its 39 districts: "State Senate Districts not
+defined", GEOID `22ZZZ`, which is Lake Pontchartrain. No Senate district takes the lake in,
+though the House districts, the parishes and the school districts reach across it. The tool
+leaves the feature out, as it leaves out a school layer's "not defined" area, so a point on the
+lake has no State Senate row. The tests allow that one missing row inside a box around the
+lake, and nowhere else.
+
+### Missouri
+
+Missouri has 71 elementary districts besides its 445 unified ones, and no high school districts:
+TIGER puts nothing over them for the upper grades, as in Oklahoma. St. Louis is a city outside
+any county, so TIGER has it in the county layer as "St. Louis city" as well as in the place
+layer, and its county and city rows read the same, as Carson City's do.
+
 ### Washington, Arizona and Idaho
 
 Each Legislature has one set of districts, 49 in Washington, 30 in Arizona and 35 in Idaho, each
@@ -154,7 +210,10 @@ District Not Defined" too, which leaves 207 points of 11,200 on the test grid wi
 
 - **One feature per district**, named "Congressional District 7", "State Senate District 8",
   "State House District 38" or "Assembly District 6". A few are MultiPolygons, for islands. The
-  tool takes the number from the end of `NAME`, apart from Wyoming's at-large district.
+  tool takes the number from the end of `NAME`, with the letter of a halved district's half,
+  "State House District 4A", apart from the at-large districts of Wyoming and the Dakotas. A
+  legislative layer's "not defined" area, GEOID `<FIPS>ZZZ`, which only Louisiana's Senate
+  layer has, is left out.
 - **`GEOID`**, which starts with the state's FIPS code.
 - **One feature per county, city or school district**, named in full by `NAME`, the way the
   Census writes it: "Wake County", "Raleigh city", "Wake County Schools", "Central Union High
@@ -168,8 +227,9 @@ District Not Defined" too, which leaves 207 points of 11,200 on the test grid wi
 - **Longitude and latitude, WGS84,** which is what `outSR=4326` asks for. The tool thins each ring to 15 feet, taken as degrees of
   latitude, which keeps slightly more than that east to west.
 
-In every state the three layers cover the state exactly once each: on a 0.02° grid, every point
-is in one district of each level, give or take a point on a district line. No point is in two
+In every state the three layers cover the state exactly once each, but for Lake Pontchartrain
+in Louisiana's Senate layer: on a 0.02° grid, every point is in one district of each level, give
+or take a point on a district line. No point is in two
 states where they meet. Several borders run along round degrees, such as 37°N between Utah and
 Arizona, so a grid line exactly on one finds points on the line itself in neither state, or,
 on 49°N, in a Washington school district and no legislative district; the tests' boxes start a
@@ -180,7 +240,8 @@ grid, every point in every state is in exactly one county. No point is in two ci
 point's school rows are one unified district, a high school district and the elementary district
 inside it, one of those two alone, or none where TIGER defines no district: 47 points of 4,310
 on a 0.1° grid over California, and on a 0.05° grid 627 of 11,513 over Arizona, 207 of 11,200
-over Wyoming, 2 of 11,458 over Oregon, and none in the other eleven states (Texas on a 0.1° grid).
+over Wyoming, 2 of 11,458 over Oregon, 1 of 10,532 over Minnesota, and none in the other twenty
+states (Texas on a 0.1° grid).
 
 Where two covered states meet, each file is thinned on its own, so both can claim a strip a few
 feet wide along the border, as two neighbouring districts can. One point of the grids falls in
@@ -201,7 +262,9 @@ result page.
 From `YourElectionMap/`, once per state:
 
 ```powershell
-foreach ($state in 'az', 'ca', 'co', 'id', 'mt', 'nc', 'nm', 'nv', 'ok', 'or', 'sc', 'tx', 'ut', 'wa', 'wy') {
+foreach ($state in 'ar', 'az', 'ca', 'co', 'ia', 'id', 'ks', 'la', 'mn',
+           'mo', 'ms', 'mt', 'nc', 'nd', 'ne', 'nm', 'nv', 'ok',
+           'or', 'sc', 'sd', 'tx', 'ut', 'wa', 'wy') {
   dotnet run --project YourElectionMap.Tools -- tiger $state `
     "D:\VisualStudio\GitProjects\YourElectionMap\Docs\Tiger\$state" `
     "YourElectionMap.Server\Districts\Data\$state-districts.json"
@@ -216,12 +279,13 @@ file if:
   missing;
 - a layer says it was cut short (`exceededTransferLimit`);
 - a feature has no `NAME` or `GEOID`, or its `GEOID` is not in the state;
-- a feature's `NAME` does not end in a district number, unless it is a state's one
-  at-large seat;
+- a feature's `NAME` does not end in a district number, or a number and A or B, unless it is
+  a state's one at-large seat;
 - a county, city or school district's `GEOID` is in its layer twice, or its `NAME` holds a quote
   or backslash, which the file would need escaped;
 - a feature is not a Polygon or MultiPolygon, or has no shape at all;
-- a legislative layer's districts are not exactly 1 to N;
+- a legislative layer's districts are not exactly 1 to N, each district `Tiger.cs` lists as
+  halved being an A and a B instead;
 - a coordinate is not a longitude and latitude, as a layer fetched without `outSR=4326` would be.
 
 Two runs of the same layers produce the same bytes apart from the date in the header. With the
@@ -229,7 +293,7 @@ local layers, Texas's file is about 32 MB, California's about 19 MB and North Ca
 15 MB, the last two against 7 and 6 without them. The rest run from Montana's 12 MB and South
 Carolina's 11 down to Wyoming's 3 and Nevada's 1.5.
 
-Another state needs its FIPS code, office names and district counts added to the table in
-`Tiger.cs`, and its three legislative layers downloaded into a folder of its own, with its five
+Another state needs its FIPS code, office names, district counts, any halved districts and its
+word for a county, where that is not "County", added to the table in `Tiger.cs`, and its three legislative layers downloaded into a folder of its own, with its five
 local layers alongside them for the county, city and school rows. The local layers need nothing
 in `Tiger.cs`.

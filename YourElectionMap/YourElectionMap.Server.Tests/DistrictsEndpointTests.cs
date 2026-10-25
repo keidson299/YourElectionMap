@@ -100,6 +100,16 @@ namespace YourElectionMap.Server.Tests
         [InlineData("101 N Carson St, Carson City NV", "county-32510", "city-3209700", "school-3200390")]
         [InlineData("2300 N Lincoln Blvd, Oklahoma City OK", "county-40109", "city-4055000", "school-4022770")]
         [InlineData("1100 Congress Ave, Austin TX", "county-48453", "city-4805000", "school-4808940")]
+        [InlineData("300 SW 10th Ave, Topeka KS", "county-20177", "city-2071000", "school-2012260")]
+        [InlineData("75 Rev Dr Martin Luther King Jr Blvd, St Paul MN", "county-27123", "city-2758000", "school-2733840")]
+        [InlineData("600 E Boulevard Ave, Bismarck ND", "county-38015", "city-3807200", "school-3800014")]
+        [InlineData("1445 K St, Lincoln Nebraska", "county-31109", "city-3128000", "school-3172840")]
+        [InlineData("500 E Capitol Ave, Pierre SD", "county-46065", "city-4649600", "school-4655260")]
+        [InlineData("500 Woodlane St, Little Rock AR", "county-05119", "city-0541000", "school-0509000")]
+        [InlineData("1007 E Grand Ave, Des Moines IA", "county-19153", "city-1921000", "school-1908970")]
+        [InlineData("900 N 3rd St, Baton Rouge LA", "county-22033", "city-2205000", "school-2200540")]
+        [InlineData("201 W Capitol Ave, Jefferson City Missouri", "county-29051", "city-2937000", "school-2916190")]
+        [InlineData("400 High St, Jackson MS", "county-28049", "city-2836000", "school-2802190")]
         public async Task Get_ListsTheCapitolsCountyCityAndSchoolDistricts(
             string address,
             string county,
@@ -107,34 +117,47 @@ namespace YourElectionMap.Server.Tests
             params string[] schools)
         {
             // Phoenix and Helena have a high school district over an elementary one, and
-            // list both, high school first.
+            // list both, high school first. Nebraska has one chamber, so two legislative
+            // rows rather than three come before them.
             var lookup = await LookupAsync(AddressQuery(address));
 
             Assert.Equal(
                 new[] { county, city }.Concat(schools),
-                Each(lookup.GetProperty("districts"), "id").Skip(3));
+                Each(lookup.GetProperty("districts"), "id")
+                    .SkipWhile(id => id!.StartsWith("congressional-", StringComparison.Ordinal)
+                        || id.StartsWith("state-", StringComparison.Ordinal)));
         }
 
         [Theory]
-        [InlineData(SacramentoAddress, 7, 8, 6, "State Assembly")]
-        [InlineData("900 Court St NE, Salem OR", 6, 11, 21, "State House")]
-        [InlineData("1100 Gervais St, Columbia SC", 6, 26, 72, "State House")]
-        [InlineData("416 Sid Snyder Ave SW, Olympia WA", 10, 22, 22, "State House")]
-        [InlineData("1700 W Washington St, Phoenix AZ", 3, 11, 11, "State House")]
-        [InlineData("700 W Jefferson St, Boise ID", 2, 19, 19, "State House")]
-        [InlineData("1301 E 6th Ave, Helena MT", 2, 41, 82, "State House")]
-        [InlineData("350 N State St, Salt Lake City UT", 1, 8, 22, "State House")]
-        [InlineData("200 W 24th St, Cheyenne WY", 1, 8, 11, "State House")]
-        [InlineData("200 E Colfax Ave, Denver CO", 1, 31, 6, "State House")]
-        [InlineData("490 Old Santa Fe Trl, Santa Fe NM", 3, 25, 47, "State House")]
-        [InlineData("101 N Carson St, Carson City NV", 2, 16, 40, "State Assembly")]
-        [InlineData("2300 N Lincoln Blvd, Oklahoma City OK", 5, 48, 99, "State House")]
-        [InlineData("1100 Congress Ave, Austin TX", 10, 14, 49, "State House")]
+        [InlineData(SacramentoAddress, 7, 8, "6", "State Assembly")]
+        [InlineData("900 Court St NE, Salem OR", 6, 11, "21", "State House")]
+        [InlineData("1100 Gervais St, Columbia SC", 6, 26, "72", "State House")]
+        [InlineData("416 Sid Snyder Ave SW, Olympia WA", 10, 22, "22", "State House")]
+        [InlineData("1700 W Washington St, Phoenix AZ", 3, 11, "11", "State House")]
+        [InlineData("700 W Jefferson St, Boise ID", 2, 19, "19", "State House")]
+        [InlineData("1301 E 6th Ave, Helena MT", 2, 41, "82", "State House")]
+        [InlineData("350 N State St, Salt Lake City UT", 1, 8, "22", "State House")]
+        [InlineData("200 W 24th St, Cheyenne WY", 1, 8, "11", "State House")]
+        [InlineData("200 E Colfax Ave, Denver CO", 1, 31, "6", "State House")]
+        [InlineData("490 Old Santa Fe Trl, Santa Fe NM", 3, 25, "47", "State House")]
+        [InlineData("101 N Carson St, Carson City NV", 2, 16, "40", "State Assembly")]
+        [InlineData("2300 N Lincoln Blvd, Oklahoma City OK", 5, 48, "99", "State House")]
+        [InlineData("1100 Congress Ave, Austin TX", 10, 14, "49", "State House")]
+        [InlineData("300 SW 10th Ave, Topeka KS", 2, 19, "57", "State House")]
+        // Each Minnesota Senate district is halved into two House districts.
+        [InlineData("75 Rev Dr Martin Luther King Jr Blvd, St Paul MN", 4, 65, "65B", "State House")]
+        [InlineData("600 E Boulevard Ave, Bismarck ND", 1, 35, "35", "State House")]
+        [InlineData("500 E Capitol Ave, Pierre SD", 1, 24, "24", "State House")]
+        [InlineData("500 Woodlane St, Little Rock AR", 2, 14, "74", "State House")]
+        [InlineData("1007 E Grand Ave, Des Moines IA", 3, 17, "33", "State House")]
+        [InlineData("900 N 3rd St, Baton Rouge LA", 2, 14, "67", "State House")]
+        [InlineData("201 W Capitol Ave, Jefferson City Missouri", 5, 6, "60", "State House")]
+        [InlineData("400 High St, Jackson MS", 2, 29, "67", "State House")]
         public async Task Get_PlacesEachOtherCapitolInItsStatesDistricts(
             string address,
             int congressional,
             int upper,
-            int lower,
+            string lower,
             string lowerHouse)
         {
             // Pinned the same way as Raleigh; the local rows that follow are pinned above.
@@ -147,6 +170,32 @@ namespace YourElectionMap.Server.Tests
             Assert.Equal(
                 new[] { "U.S. House", "State Senate", lowerHouse },
                 Each(districts, "office").Take(3));
+        }
+
+        [Fact]
+        public async Task Get_PlacesNebraskasCapitolInItsOneChamber()
+        {
+            // Nebraska's Legislature has one chamber, so the county comes third.
+            var lookup = await LookupAsync(AddressQuery("1445 K St, Lincoln Nebraska"));
+            var districts = lookup.GetProperty("districts");
+
+            Assert.Equal(
+                new[] { "congressional-1", "state-upper-28", "county-31109" },
+                Each(districts, "id").Take(3));
+            Assert.Equal(
+                new[] { "U.S. House", "Legislature", "Lancaster County" },
+                Each(districts, "office").Take(3));
+        }
+
+        [Fact]
+        public async Task Get_NamesLouisianasCountiesParishes()
+        {
+            var lookup = await LookupAsync(AddressQuery("900 N 3rd St, Baton Rouge LA"));
+            var parish = lookup.GetProperty("districts").EnumerateArray()
+                .Single(district => district.GetProperty("level").GetString() == "county");
+
+            Assert.Equal("East Baton Rouge Parish", parish.GetProperty("office").GetString());
+            Assert.Equal("Parish", parish.GetProperty("detail").GetString());
         }
 
         [Fact]
@@ -258,7 +307,7 @@ namespace YourElectionMap.Server.Tests
         [Fact]
         public async Task Get_UsesTheFirstMatchInACoveredState()
         {
-            // The stub answers Greenville MS first and Greenville NC second, as the real
+            // The stub answers Greenville AL first and Greenville NC second, as the real
             // geocoder can for an address with no state.
             var lookup = await LookupAsync(AddressQuery("100 Main St, Greenville"));
 
@@ -272,14 +321,14 @@ namespace YourElectionMap.Server.Tests
         [Fact]
         public async Task Get_AsksGoogleAboutTheAddressTheGeocoderMatchedInACoveredState()
         {
-            // Typed with no state, and matched in Mississippi first: Google must be
+            // Typed with no state, and matched in Alabama first: Google must be
             // asked about the match the districts came from, spelled with its state.
             await LookupAsync(AddressQuery("100 Main St, Greenville"));
 
             Assert.Contains(
                 FakeVoterInfo.Asked,
                 asked => asked.Contains("100 MAIN ST, GREENVILLE, NC, 27858"));
-            Assert.DoesNotContain(FakeVoterInfo.Asked, asked => asked.Contains(", MS,"));
+            Assert.DoesNotContain(FakeVoterInfo.Asked, asked => asked.Contains(", AL,"));
         }
 
         [Fact]
