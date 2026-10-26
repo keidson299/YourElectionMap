@@ -104,6 +104,16 @@ namespace YourElectionMap.Server.Tests
             // The West Virginia State Capitol, Charleston: by its street, since South
             // Carolina has a Charleston too.
             ("Kanawha", [new(38.3365, -81.6123, "1900 KANAWHA BLVD E, CHARLESTON, WV, 25305")]),
+            // The Connecticut State Capitol, Hartford.
+            ("Hartford", [new(41.7640, -72.6823, "210 CAPITOL AVE, HARTFORD, CT, 06106")]),
+            // The Massachusetts State House, Boston.
+            ("Boston", [new(42.3587, -71.0637, "24 BEACON ST, BOSTON, MA, 02133")]),
+            // The New Jersey State House, Trenton.
+            ("Trenton", [new(40.2204, -74.7701, "125 W STATE ST, TRENTON, NJ, 08608")]),
+            // The New York State Capitol, Albany.
+            ("Albany", [new(42.6526, -73.7573, "172 STATE ST, ALBANY, NY, 12247")]),
+            // The Rhode Island State House, Providence.
+            ("Providence", [new(41.8309, -71.4148, "82 SMITH ST, PROVIDENCE, RI, 02903")]),
             // The White House, which is in no state the site covers.
             ("Pennsylvania", [new(38.8977, -77.0365, "1600 PENNSYLVANIA AVE NW, WASHINGTON, DC, 20500")]),
             // A town name with no state: Greenville ME first, then Greenville NC.

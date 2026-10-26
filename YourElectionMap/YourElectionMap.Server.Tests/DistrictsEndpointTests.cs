@@ -126,6 +126,13 @@ namespace YourElectionMap.Server.Tests
         // Richmond is a city outside any county, as St. Louis is, so TIGER has it as both.
         [InlineData("1000 Bank St, Richmond VA", "county-51760", "city-5167000", "school-5103240")]
         [InlineData("1900 Kanawha Blvd E, Charleston WV", "county-54039", "city-5414600", "school-5400600")]
+        // In Connecticut, Massachusetts, New Jersey and Rhode Island the city row is a
+        // town or city from TIGER's county subdivisions, whose codes are longer.
+        [InlineData("210 Capitol Ave, Hartford CT", "county-09110", "city-0911037070", "school-0901920")]
+        [InlineData("24 Beacon St, Boston MA", "county-25025", "city-2502507000", "school-2502790")]
+        [InlineData("125 W State St, Trenton NJ", "county-34021", "city-3402174000", "school-3416290")]
+        [InlineData("172 State St, Albany NY", "county-36001", "city-3601000", "school-3602460")]
+        [InlineData("82 Smith St, Providence RI", "county-44007", "city-4400759000", "school-4400900")]
         public async Task Get_ListsTheCapitolsCountyCityAndSchoolDistricts(
             string address,
             string county,
@@ -185,6 +192,10 @@ namespace YourElectionMap.Server.Tests
         [InlineData("501 N 3rd St, Harrisburg PA", 10, 15, "103", "State House")]
         [InlineData("1000 Bank St, Richmond VA", 4, 14, "78", "House of Delegates")]
         [InlineData("1900 Kanawha Blvd E, Charleston WV", 1, 8, "54", "House of Delegates")]
+        [InlineData("210 Capitol Ave, Hartford CT", 1, 1, "7", "State House")]
+        [InlineData("125 W State St, Trenton NJ", 12, 15, "15", "General Assembly")]
+        [InlineData("172 State St, Albany NY", 20, 46, "109", "State Assembly")]
+        [InlineData("82 Smith St, Providence RI", 1, 1, "1", "State House")]
         public async Task Get_PlacesEachOtherCapitolInItsStatesDistricts(
             string address,
             int congressional,
@@ -217,6 +228,35 @@ namespace YourElectionMap.Server.Tests
             Assert.Equal(
                 new[] { "U.S. House", "Legislature", "Lancaster County" },
                 Each(districts, "office").Take(3));
+        }
+
+        [Fact]
+        public async Task Get_NamesMassachusettssDistrictsRatherThanNumberingThem()
+        {
+            // Each is its name, over its chamber, with no unit or number, as a county is.
+            var lookup = await LookupAsync(AddressQuery("24 Beacon St, Boston MA"));
+            var districts = lookup.GetProperty("districts");
+
+            Assert.Equal(
+                new[] { "congressional-8", "state-upper-25D25", "state-lower-25130" },
+                Each(districts, "id").Take(3));
+            Assert.Equal(
+                new[] { "U.S. House", "Third Suffolk District", "8th Suffolk District" },
+                Each(districts, "office").Take(3));
+            Assert.Equal(new[] { "Federal", "State Senate", "State House" }, Each(districts, "detail").Take(3));
+            Assert.Equal(new[] { "District", null, null }, Each(districts, "unit").Take(3));
+            Assert.Equal(new[] { "8", null, null }, Each(districts, "number").Take(3));
+        }
+
+        [Fact]
+        public async Task Get_NamesConnecticutsCountiesPlanningRegions()
+        {
+            var lookup = await LookupAsync(AddressQuery("210 Capitol Ave, Hartford CT"));
+            var region = lookup.GetProperty("districts").EnumerateArray()
+                .Single(district => district.GetProperty("level").GetString() == "county");
+
+            Assert.Equal("Capitol Planning Region", region.GetProperty("office").GetString());
+            Assert.Equal("Planning region", region.GetProperty("detail").GetString());
         }
 
         [Fact]

@@ -93,7 +93,8 @@ namespace YourElectionMap.Server.Districts
             double Depth(Stored district) => Geometry.DistanceToRings(district.Rings, x, y);
 
             // Two of a kind, where there can only be one: an elementary district inside
-            // a high school district is a different kind, and stays.
+            // a high school district is a different kind, and stays, as does a village
+            // inside a town.
             var settled = found
                 .GroupBy(district => (district.Level, district.Detail))
                 .Select(kind => kind.Count() == 1 ? kind.First() : kind.MaxBy(Depth)!)
@@ -200,7 +201,8 @@ namespace YourElectionMap.Server.Districts
 
             // Broad to local, which is the order the rail lists them in, so the lookup
             // never has to sort. Within a level, by number; an elementary school
-            // district after the secondary one covering it; then by id, so the order
+            // district after the secondary one covering it, and a village after its
+            // town; then by id, so the order
             // never depends on the sort.
             Array.Sort(document.Districts, Compare);
 
@@ -224,14 +226,18 @@ namespace YourElectionMap.Server.Districts
                 return leftNumber.CompareTo(rightNumber);
             }
 
-            var byGrades = Elementary(left) - Elementary(right);
+            var byReach = Inner(left) - Inner(right);
 
-            return byGrades != 0 ? byGrades : string.CompareOrdinal(left.Id, right.Id);
+            return byReach != 0 ? byReach : string.CompareOrdinal(left.Id, right.Id);
         }
 
-        /// <summary>1 for the converter's "Elementary school district", the more local of two.</summary>
-        private static int Elementary(Stored district) =>
-            district.Detail.StartsWith("Elementary", StringComparison.Ordinal) ? 1 : 0;
+        /// <summary>
+        /// 1 for the more local of two at one level: the converter's "Elementary school
+        /// district", inside a high school district, and New York's "City or village",
+        /// a village being inside a town.
+        /// </summary>
+        private static int Inner(Stored district) =>
+            district.Detail.StartsWith("Elementary", StringComparison.Ordinal) || district.Detail == "City or village" ? 1 : 0;
 
         /// <summary>
         /// The client's DISTRICT_LEVELS order. A level this does not know sorts last

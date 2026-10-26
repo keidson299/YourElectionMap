@@ -49,9 +49,16 @@ holds its rings in longitude and latitude, to six decimal places, thinned to 15 
 | `pa-districts.json` | Pennsylvania | 42 | `Tiger\pa` | 2026-10-25 |
 | `va-districts.json` | Virginia | 51 | `Tiger\va` | 2026-10-25 |
 | `wv-districts.json` | West Virginia | 54 | `Tiger\wv` | 2026-10-25 |
+| `ct-districts.json` | Connecticut | 09 | `Tiger\ct` | 2026-10-25 |
+| `ma-districts.json` | Massachusetts | 25 | `Tiger\ma` | 2026-10-25 |
+| `nj-districts.json` | New Jersey | 34 | `Tiger\nj` | 2026-10-25 |
+| `ny-districts.json` | New York | 36 | `Tiger\ny` | 2026-10-25 |
+| `ri-districts.json` | Rhode Island | 44 | `Tiger\ri` | 2026-10-25 |
 
 Every state's folder holds its five local layers too, downloaded on the same day, apart from
-those of Arizona, Idaho, Montana, Utah and Wyoming, downloaded on 2026-10-12.
+those of Arizona, Idaho, Montana, Utah and Wyoming, downloaded on 2026-10-12. Connecticut's,
+Massachusetts's, New Jersey's, New York's and Rhode Island's hold a sixth, their county
+subdivisions.
 
 ## The source
 
@@ -64,12 +71,13 @@ TIGERweb's current layers are the January 1, 2026 vintage. TIGER data is public 
 | State House / Assembly | `Legislative`, 2, 2026 State Legislative Districts – Lower | `sldl.geojson` |
 | County | `State_County`, 1, Counties | `county.geojson` |
 | City or town | `Places_CouSub_ConCity_SubMCD`, 4, Incorporated Places | `place.geojson` |
+| Town (CT, MA, NJ, NY and RI) | `Places_CouSub_ConCity_SubMCD`, 1, County Subdivisions | `cousub.geojson` |
 | School district | `School`, 0, Unified School Districts | `unsd.geojson` |
 | High school district | `School`, 1, Secondary School Districts | `scsd.geojson` |
 | Elementary school district | `School`, 2, Elementary School Districts | `elsd.geojson` |
 
 The three legislative layers are required, but for Nebraska's lower house, which it does not
-have (see below). The five local ones are optional: the tool builds
+have (see below). The local ones are optional: the tool builds
 a state without any it does not find, and says so. Each service lists the same layers again
 for earlier vintages further down, and `State_County` lists more county layers, which are
 coarser copies for zoomed-out maps; layer 1 is the full-detail one. Census designated places
@@ -253,6 +261,54 @@ The districts and counties of Maryland and Virginia reach across the Chesapeake 
 Pennsylvania's across its part of Lake Erie, which only its school layer leaves out, as a
 "School District Not Defined".
 
+### Connecticut, Massachusetts, New Jersey, New York and Rhode Island
+
+In these five a town or township is a government as much as any city. TIGER keeps them in its
+county subdivisions, and most are not places as well. Connecticut's places layer
+has 30 cities and boroughs against 169 towns, and Massachusetts's 58 cities against 351 cities
+and towns. `Tiger.cs` says where each state's city rows come from (`Towns`):
+
+- **Connecticut, Massachusetts, New Jersey and Rhode Island** take `cousub.geojson` in place of
+  `place.geojson`: 169, 351, 564 and 39 towns, townships, boroughs and cities, every one of
+  which is a county subdivision, each covering its land once. The places there are those cities
+  again, but for Connecticut's boroughs inside a town, such as Stonington's, which are left out.
+  TIGER names every Connecticut town a town, so Hartford's row reads "Hartford town".
+- **New York** takes both, because a village is part of a town and its voters elect both: the
+  933 towns from `cousub.geojson`, kept by their name ending in " town", with the detail "Town",
+  then the 594 cities and villages from `place.geojson`, with the detail "City or village". The
+  county subdivisions' cities would otherwise be there twice, and their New York City boroughs,
+  Indian reservations and Chautauqua Lake's unorganized territory are left out. An address in a
+  village has two city rows, the town first; the server sorts a "City or village" after a "Town".
+  New York City is one row, "New York city".
+
+Each county subdivision layer has "County subdivisions not defined" areas, water, which the tool
+leaves out.
+
+Connecticut has no county governments, and since 2022 TIGER has its nine planning regions in the
+county layer instead, "Capitol Planning Region", GEOID `09110`; `Tiger.cs` gives their rows the
+detail "Planning region".
+
+Massachusetts names its legislative districts and numbers them only in the `GEOID`: TIGER's
+Senate districts are "Third Suffolk District", `25D25`, and its House districts "8th Suffolk
+District", `25130`. `Tiger.cs` marks both layers as named: each row's office is its name, its
+detail its chamber, "State Senate", it has no number, and its id is its level and `GEOID`,
+"state-upper-25D25", as a county's is. The tool checks a named layer has its 40 or 160 districts,
+each once. New Jersey's 40 districts each elect a senator and two members of the General
+Assembly, and TIGER has them in both layers, as Washington's.
+
+Connecticut's districts of all three levels stop at the shore of Long Island Sound, GEOID `09ZZ`
+and `09ZZZ`, and Massachusetts's House districts at its coast, `25ZZZ` in five pieces: Cape Cod
+Bay and Nantucket Sound, Massachusetts Bay off Hull and off the North Shore, Buzzards Bay, and
+Rhode Island Sound off Westport. The counties go on over the water, so a point there has a
+county and, in Massachusetts, a US House and State Senate district. The tests allow that as
+they do for the Great Lakes.
+
+Their school layers have high school districts over elementary ones besides their unified
+districts: Connecticut 8 regional districts and 44 elementary ones besides 113 unified,
+Massachusetts 30 and 64 besides 211, New Jersey 45 and 168 besides 341, New York three central
+high school districts on Long Island and 14 elementary ones besides 662, and Rhode Island
+Foster-Glocester and 5 elementary ones besides 30.
+
 ### Washington, Arizona and Idaho
 
 Each Legislature has one set of districts, 49 in Washington, 30 in Arizona and 35 in Idaho, each
@@ -280,25 +336,28 @@ District Not Defined" too, which leaves 207 points of 11,200 on the test grid wi
 - **One feature per district**, named "Congressional District 7", "State Senate District 8",
   "State House District 38" or "Assembly District 6". A few are MultiPolygons, for islands. The
   tool takes the number from the end of `NAME`, with the letter of a halved district's half or a
-  third, "State House District 4A", "State Legislative Subdistrict 1C", apart from the at-large districts of Wyoming and the Dakotas. A
+  third, "State House District 4A", "State Legislative Subdistrict 1C", apart from the at-large districts of Wyoming and the Dakotas
+  and Massachusetts's named ones, which have none. A
   layer's "not defined" area, GEOID `<FIPS>ZZ` in a US House layer and `<FIPS>ZZZ` in a
-  legislative one, is left out: Louisiana's Senate, Illinois's three layers and Wisconsin's two
-  chambers have one, for water.
+  legislative one, is left out: Louisiana's Senate, Illinois's and Connecticut's three layers,
+  Wisconsin's two chambers and Massachusetts's House have one, for water.
 - **`GEOID`**, which starts with the state's FIPS code.
 - **One feature per county, city or school district**, named in full by `NAME`, the way the
   Census writes it: "Wake County", "Raleigh city", "Wake County Schools", "Central Union High
   School District". These have no number. The tool stores each with its name as the office,
   no number, and an id made from its level and `GEOID`, "county-37183", which is stable and
   safe in the page's URL. A school layer's "School District Not Defined" is left out, so an
-  address there has no school row. Cities are incorporated places only, so an address outside
-  every city, in unincorporated county land, has no city row either.
+  address there has no school row. Cities are incorporated places only, but for the five states
+  whose towns come from the county subdivisions, so an address outside every city, in
+  unincorporated county land, has no city row either.
 - **No population.** TIGERweb's `POP100` field is empty for these layers, so the files have none
   and the map chip shows none.
 - **Longitude and latitude, WGS84,** which is what `outSR=4326` asks for. The tool thins each ring to 15 feet, taken as degrees of
   latitude, which keeps slightly more than that east to west.
 
 In every state the three layers cover the state exactly once each, but for the water TIGER
-leaves out, Lake Pontchartrain in Louisiana and the lakes in Illinois and Wisconsin: on a 0.02° grid, every point is in one district of each level, give
+leaves out, Lake Pontchartrain in Louisiana, the lakes in Illinois and Wisconsin, Long Island
+Sound in Connecticut and the bays in Massachusetts's House layer: on a 0.02° grid, every point is in one district of each level, give
 or take a point on a district line. No point is in two
 states where they meet. Several borders run along round degrees, such as 37°N between Utah and
 Arizona, so a grid line exactly on one finds points on the line itself in neither state, or,
@@ -306,15 +365,18 @@ on 49°N, in a Washington school district and no legislative district; the tests
 few hundredths off them.
 
 The counties are built from the same census blocks, so they cover the state once as well: on the
-grid, every point in every state is in exactly one county. No point is in two cities. Each
+grid, every point in every state is in exactly one county. No point is in two cities, but in
+New York a village is in its town too. Each
 point's school rows are one unified district, a high school district and the elementary district
 inside it, one of those two alone, or none where TIGER defines no district: 47 points of 4,310
 on a 0.1° grid over California, and on a 0.05° grid 627 of 11,513 over Arizona, 207 of 11,200
 over Wyoming, 2 of 11,458 over Oregon, 1 of 10,532 over Minnesota, 3 of 4,343 over
 Tennessee, 2 of 4,252 over Kentucky, and over the five Great Lakes states, mostly on the lakes,
 174 of 6,296 over Illinois, 25 of 3,941 over Indiana, 1,055 of 11,404 over Michigan, 402 of 4,941
-over Ohio and 1,049 of 7,701 over Wisconsin; 84 of 5,029 over Pennsylvania, on Lake Erie; none
-in the other twenty-seven states (Texas on a 0.1°
+over Ohio and 1,049 of 7,701 over Wisconsin; 84 of 5,029 over Pennsylvania, on Lake Erie;
+and, on the water too, 49 of 611 over Connecticut, 173 of 1,187 over Massachusetts, 93 of 952
+over New Jersey, 480 of 6,238 over New York and 15 of 171 over Rhode Island; none in the other
+twenty-seven states (Texas on a 0.1°
 grid).
 
 Where two covered states meet, each file is thinned on its own, so both can claim a strip a few
@@ -336,11 +398,11 @@ result page.
 From `YourElectionMap/`, once per state:
 
 ```powershell
-foreach ($state in 'al', 'ar', 'az', 'ca', 'co', 'de', 'fl', 'ga', 'ia',
-           'id', 'il', 'in', 'ks', 'ky', 'la', 'md', 'mi', 'mn',
-           'mo', 'ms', 'mt', 'nc', 'nd', 'ne', 'nm', 'nv', 'oh',
-           'ok', 'or', 'pa', 'sc', 'sd', 'tn', 'tx', 'ut', 'va',
-           'wa', 'wi', 'wv', 'wy') {
+foreach ($state in 'al', 'ar', 'az', 'ca', 'co', 'ct', 'de', 'fl', 'ga',
+           'ia', 'id', 'il', 'in', 'ks', 'ky', 'la', 'ma', 'md',
+           'mi', 'mn', 'mo', 'ms', 'mt', 'nc', 'nd', 'ne', 'nj',
+           'nm', 'nv', 'ny', 'oh', 'ok', 'or', 'pa', 'ri', 'sc',
+           'sd', 'tn', 'tx', 'ut', 'va', 'wa', 'wi', 'wv', 'wy') {
   dotnet run --project YourElectionMap.Tools -- tiger $state `
     "D:\VisualStudio\GitProjects\YourElectionMap\Docs\Tiger\$state" `
     "YourElectionMap.Server\Districts\Data\$state-districts.json"
@@ -356,21 +418,23 @@ file if:
 - a layer says it was cut short (`exceededTransferLimit`);
 - a feature has no `NAME` or `GEOID`, or its `GEOID` is not in the state;
 - a feature's `NAME` does not end in a district number, or a number and A, B or C, unless it is
-  a state's one at-large seat;
+  a state's one at-large seat or its layer is one `Tiger.cs` lists as named;
 - a county, city or school district's `GEOID` is in its layer twice, or its `NAME` holds a quote
   or backslash, which the file would need escaped;
 - a feature is not a Polygon or MultiPolygon, or has no shape at all;
 - a legislative layer's districts are not exactly 1 to N, each district `Tiger.cs` lists as
-  halved being an A and a B instead, and each it lists in three an A, a B and a C;
+  halved being an A and a B instead, and each it lists in three an A, a B and a C, or a named
+  layer's are not N, each `GEOID` once;
 - a coordinate is not a longitude and latitude, as a layer fetched without `outSR=4326` would be.
 
 Two runs of the same layers produce the same bytes apart from the date in the header. With the
 local layers, Texas's file is about 32 MB, California's about 19 MB and North Carolina's about
 15 MB, the last two against 7 and 6 without them. The rest run from Montana's 12 MB and South
-Carolina's 11 down to Wyoming's 3, Nevada's 1.5 and Delaware's 0.9.
+Carolina's 11 down to Wyoming's 3, Nevada's 1.5, Rhode Island's 1.0 and Delaware's 0.9.
 
 Another state needs its FIPS code, office names, district counts, any halved districts or
-districts in three, and its
-word for a county, where that is not "County", added to the table in `Tiger.cs`, and its three legislative layers downloaded into a folder of its own, with its five
-local layers alongside them for the county, city and school rows. The local layers need nothing
-in `Tiger.cs`.
+districts in three, whether its districts are named, its
+word for a county, where that is not "County", and where its towns are governments, where its
+city rows come from, added to the table in `Tiger.cs`, and its three legislative layers
+downloaded into a folder of its own, with its local layers alongside them for the county, city
+and school rows. The local layers need nothing else in `Tiger.cs`.

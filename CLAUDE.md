@@ -118,17 +118,24 @@ server's one endpoint, `GET /api/districts`. The current plan is
 [design/ElectionMapMainDesignPlanV5.md](design/ElectionMapMainDesignPlanV5.md); code comments
 refer to its numbered slices.
 
-**The data is real and covers forty states**, Alabama, Arizona, Arkansas, California,
-Colorado, Delaware, Florida, Georgia, Idaho, Illinois, Indiana, Iowa, Kansas, Kentucky, Louisiana,
-Maryland, Michigan, Minnesota, Mississippi, Missouri, Montana, Nebraska, Nevada, New Mexico, North
-Carolina, North Dakota, Ohio, Oklahoma, Oregon, Pennsylvania, South Carolina, South Dakota,
-Tennessee, Texas, Utah, Virginia, Washington, West Virginia, Wisconsin and Wyoming: each state's
-US House, State Senate and State House, Assembly or House of Delegates districts
+**The data is real and covers forty-five states**, Alabama, Arizona, Arkansas, California,
+Colorado, Connecticut, Delaware, Florida, Georgia, Idaho, Illinois, Indiana, Iowa, Kansas,
+Kentucky, Louisiana, Maryland, Massachusetts, Michigan, Minnesota, Mississippi, Missouri, Montana,
+Nebraska, Nevada, New Jersey, New Mexico, New York, North Carolina, North Dakota, Ohio, Oklahoma,
+Oregon, Pennsylvania, Rhode Island, South Carolina, South Dakota, Tennessee, Texas, Utah,
+Virginia, Washington, West Virginia, Wisconsin and Wyoming: each state's US House, State Senate
+and State House, Assembly, General Assembly or House of Delegates districts
 (Nebraska's Legislature has one chamber, so no `state-lower` row, a few lower-house districts are
-halves or thirds numbered "4A", "65B", "1C", and some water is in no district of a level: Lake Pontchartrain in Louisiana's Senate,
-Illinois's part of Lake Michigan in any, and Wisconsin's lakes in its Senate or Assembly), from the Census
-Bureau's TIGERweb layers, and its **local rows**: the county (a parish in Louisiana, whose rows'
-detail says so), the city or town, and the school district (in Arizona, California, Illinois, Montana, Wisconsin, a corner of Oregon, fifteen towns in
+halves or thirds numbered "4A", "65B", "1C", Massachusetts's districts are named, "Third Suffolk
+District", not numbered, and some water is in no district of a level: Lake Pontchartrain in Louisiana's Senate,
+Illinois's part of Lake Michigan and Connecticut's of Long Island Sound in any, Wisconsin's lakes
+in its Senate or Assembly, and Massachusetts's bays in its House), from the Census
+Bureau's TIGERweb layers, and its **local rows**: the county (a parish in Louisiana and a planning
+region in Connecticut, whose rows' detail says so), the city or town (in Connecticut,
+Massachusetts, New Jersey and Rhode Island the town, township or city from TIGER's county
+subdivisions, and in New York both the town and, inside it, the village), and the school district
+(in Arizona, California, Connecticut, Illinois, Massachusetts, Montana, New Jersey, Rhode Island,
+Wisconsin, a corner of Oregon, part of Long Island, fifteen towns in
 Tennessee, four in Kentucky and one place each in Texas, Minnesota and Georgia, sometimes a high
 school and an elementary district), each a whole government named rather
 than numbered ("Wake County", "Raleigh city"). An address is placed
@@ -138,8 +145,8 @@ The browser fetches the street tiles and the map's label fonts from OpenFreeMap 
 `src/map/style.ts`), and the page's own fonts, Fraunces and Inter, from Google Fonts
 (`index.html`). There is no County Commission, City Council or School Board district data yet,
 so the rail lists up to six rows (seven where an address has both a high school and an elementary
-district), and fewer where it has no city or school district. An address
-outside the forty states is a 404.
+district, or in New York a town and a village, and eight with both), and fewer where it has no city or school district. An address
+outside the forty-five states is a 404.
 
 **Google needs an API key, and nothing breaks without one.** The server reads
 `GoogleCivic:ApiKey` — user secrets in development, the environment variable `GoogleCivic__ApiKey`
@@ -179,11 +186,11 @@ dotnet publish YourElectionMap.Server/YourElectionMap.Server.csproj         # al
 
 # Builds each state's district file from its TIGERweb layers. Needed once per clone and again
 # when a plan changes.
-foreach ($state in 'al', 'ar', 'az', 'ca', 'co', 'de', 'fl', 'ga', 'ia',
-           'id', 'il', 'in', 'ks', 'ky', 'la', 'md', 'mi', 'mn',
-           'mo', 'ms', 'mt', 'nc', 'nd', 'ne', 'nm', 'nv', 'oh',
-           'ok', 'or', 'pa', 'sc', 'sd', 'tn', 'tx', 'ut', 'va',
-           'wa', 'wi', 'wv', 'wy') {
+foreach ($state in 'al', 'ar', 'az', 'ca', 'co', 'ct', 'de', 'fl', 'ga',
+           'ia', 'id', 'il', 'in', 'ks', 'ky', 'la', 'ma', 'md',
+           'mi', 'mn', 'mo', 'ms', 'mt', 'nc', 'nd', 'ne', 'nj',
+           'nm', 'nv', 'ny', 'oh', 'ok', 'or', 'pa', 'ri', 'sc',
+           'sd', 'tn', 'tx', 'ut', 'va', 'wa', 'wi', 'wv', 'wy') {
   dotnet run --project YourElectionMap.Tools -- tiger $state `
     "D:\VisualStudio\GitProjects\YourElectionMap\Docs\Tiger\$state" `
     "YourElectionMap.Server\Districts\Data\$state-districts.json"
@@ -260,8 +267,11 @@ changing it, know that:
   answer or anything else; only the browser cancelling propagates. The election list is the same
   for every address and is kept in `IMemoryCache` for an hour; a failed read is not kept.
 - **A county, city or school row has no unit or number** (both null on the wire); its `office` is
-  its name and its id is its level and Census GEOID, `county-37183`. Rows sort broad to local,
-  then by number, with an elementary school district after the high school district over it.
+  its name and its id is its level and Census GEOID, `county-37183`. So has a Massachusetts
+  State Senate or State House row, whose `office` is its name, "Third Suffolk District", over its
+  chamber, and whose id is `state-upper-25D25`. Rows sort broad to local, then by number, with an
+  elementary school district after the high school district over it, and a New York village
+  after its town.
 
 **Tests.** `DistrictsEndpointTests` hosts the whole app in memory (`OfflineApp`) and reads the raw
 JSON, which is the contract the client reads; new endpoints deserve the same kind of test. **No
@@ -270,7 +280,7 @@ for `FakeGeocoding` and `FakeVoterInfo` (the fake election's date is relative to
 else is real, including the district files. Stub any new outward call the same way. The converter
 has no tests of its own, since its input is not in the repository; `DistrictDataTests` checks its
 output, most strongly with the grid tests that every covered point finds one district per
-legislative level (but on the water TIGER leaves out, such as Lake Pontchartrain), one county, at most one city and a school district combination that does not
+legislative level (but on the water TIGER leaves out, such as Lake Pontchartrain), one county, at most one city (in New York, a town and a village inside it) and a school district combination that does not
 overlap. `LocalDistrictsTests` covers the
 local rows' sorting and naming on a small file it writes itself.
 On the client, `src/test/setup.ts` replaces `maplibre-gl` with `src/test/fakeMaplibre.ts`, because
