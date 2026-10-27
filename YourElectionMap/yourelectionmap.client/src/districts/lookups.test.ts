@@ -147,16 +147,8 @@ describe('openLookup', () => {
     expect(currentUrl()).toBe('/')
     expect(notice).toEqual({
       text:
-        'We could not find districts for that address in Alabama, Arizona,'
-        + ' Arkansas, California, Colorado, Connecticut, Delaware, Florida,'
-        + ' Georgia, Idaho, Illinois, Indiana, Iowa, Kansas, Kentucky,'
-        + ' Louisiana, Maryland, Massachusetts, Michigan, Minnesota,'
-        + ' Mississippi, Missouri, Montana, Nebraska, Nevada, New Jersey, New'
-        + ' Mexico, New York, North Carolina, North Dakota, Ohio, Oklahoma,'
-        + ' Oregon, Pennsylvania, Rhode Island, South Carolina, South Dakota,'
-        + ' Tennessee, Texas, Utah, Virginia, Washington, West Virginia,'
-        + ' Wisconsin or Wyoming. Check it, or try adding your city or ZIP'
-        + ' code.',
+        'We could not find districts for that address in the fifty states.'
+        + ' Check it, or try adding your city or ZIP code.',
       field: true,
     })
   })

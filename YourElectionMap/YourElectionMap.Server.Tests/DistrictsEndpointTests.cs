@@ -131,10 +131,17 @@ namespace YourElectionMap.Server.Tests
         [InlineData("125 W State St, Trenton NJ", "county-34021", "city-3474000", "school-3416290")]
         [InlineData("172 State St, Albany NY", "county-36001", "city-3601000", "school-3602460")]
         [InlineData("82 Smith St, Providence RI", "county-44007", "city-4459000", "school-4400900")]
+        [InlineData("115 State St, Montpelier VT", "county-50023", "city-5046000", "school-5000410")]
+        [InlineData("107 N Main St, Concord NH", "county-33013", "city-3314200", "school-3302460")]
+        [InlineData("210 State St, Augusta ME", "county-23011", "city-2302100", "school-2302640")]
+        // Honolulu is a county with no city in it.
+        [InlineData("415 S Beretania St, Honolulu HI", "county-15003", null, "school-1500030")]
+        // Juneau is a borough and a city in one, so TIGER has it as both.
+        [InlineData("120 4th St, Juneau AK", "county-02110", "city-0236400", "school-0200210")]
         public async Task Get_ListsTheCapitolsCountyCityAndSchoolDistricts(
             string address,
             string county,
-            string city,
+            string? city,
             params string[] rest)
         {
             // Phoenix and Helena have a high school district over an elementary one, and
@@ -144,7 +151,7 @@ namespace YourElectionMap.Server.Tests
             var lookup = await LookupAsync(AddressQuery(address));
 
             Assert.Equal(
-                new[] { county, city }.Concat(rest),
+                new[] { county, city }.OfType<string>().Concat(rest),
                 Each(lookup.GetProperty("districts"), "id")
                     .SkipWhile(id => id!.StartsWith("congressional-", StringComparison.Ordinal)
                         || id.StartsWith("state-", StringComparison.Ordinal)));
@@ -196,6 +203,8 @@ namespace YourElectionMap.Server.Tests
         [InlineData("125 W State St, Trenton NJ", 12, 15, "15", "General Assembly")]
         [InlineData("172 State St, Albany NY", 20, 46, "109", "State Assembly")]
         [InlineData("82 Smith St, Providence RI", 1, 1, "1", "State House")]
+        [InlineData("210 State St, Augusta ME", 2, 15, "59", "State House")]
+        [InlineData("415 S Beretania St, Honolulu HI", 1, 13, "25", "State House")]
         public async Task Get_PlacesEachOtherCapitolInItsStatesDistricts(
             string address,
             int congressional,
@@ -246,6 +255,61 @@ namespace YourElectionMap.Server.Tests
             Assert.Equal(new[] { "Federal", "State Senate", "State House" }, Each(districts, "detail").Take(3));
             Assert.Equal(new[] { "District", null, null }, Each(districts, "unit").Take(3));
             Assert.Equal(new[] { "8", null, null }, Each(districts, "number").Take(3));
+        }
+
+        [Fact]
+        public async Task Get_NamesVermontsDistrictsRatherThanNumberingThem()
+        {
+            // As Massachusetts's are: "Washington-4", from TIGER's "Washington-4 State House
+            // District", over its chamber.
+            var lookup = await LookupAsync(AddressQuery("115 State St, Montpelier VT"));
+            var districts = lookup.GetProperty("districts");
+
+            Assert.Equal(
+                new[] { "congressional-1", "state-upper-50WAS", "state-lower-50WA4" },
+                Each(districts, "id").Take(3));
+            Assert.Equal(
+                new[] { "U.S. House", "Washington District", "Washington-4 District" },
+                Each(districts, "office").Take(3));
+            Assert.Equal(new[] { "Federal", "State Senate", "State House" }, Each(districts, "detail").Take(3));
+            Assert.Equal(new[] { "District", null, null }, Each(districts, "unit").Take(3));
+            Assert.Equal(new[] { "1", null, null }, Each(districts, "number").Take(3));
+        }
+
+        [Fact]
+        public async Task Get_NamesNewHampshiresHouseDistrictsByTheirCounty()
+        {
+            // Its House districts are numbered within each county, so the number alone
+            // would not say which; its Senate districts are numbered across the state.
+            var lookup = await LookupAsync(AddressQuery("107 N Main St, Concord NH"));
+            var districts = lookup.GetProperty("districts");
+
+            Assert.Equal(
+                new[] { "congressional-2", "state-upper-15", "state-lower-33618" },
+                Each(districts, "id").Take(3));
+            Assert.Equal(
+                new[] { "U.S. House", "State Senate", "Merrimack District 18" },
+                Each(districts, "office").Take(3));
+            Assert.Equal(new[] { "Federal", "State", "State House" }, Each(districts, "detail").Take(3));
+            Assert.Equal(new[] { "District", "District", null }, Each(districts, "unit").Take(3));
+            Assert.Equal(new[] { "2", "15", null }, Each(districts, "number").Take(3));
+        }
+
+        [Fact]
+        public async Task Get_LettersAlaskasSenateDistricts()
+        {
+            // Senate District B is House Districts 3 and 4, and the county is a borough.
+            var lookup = await LookupAsync(AddressQuery("120 4th St, Juneau AK"));
+            var districts = lookup.GetProperty("districts");
+
+            Assert.Equal(
+                new[] { "congressional-1", "state-upper-B", "state-lower-4", "county-02110" },
+                Each(districts, "id").Take(4));
+            Assert.Equal(new[] { "1", "B", "4", null }, Each(districts, "number").Take(4));
+            Assert.Equal(
+                new[] { "U.S. House", "State Senate", "State House", "Juneau City and Borough" },
+                Each(districts, "office").Take(4));
+            Assert.Equal("Borough or census area", Each(districts, "detail")[3]);
         }
 
         [Fact]
@@ -379,28 +443,28 @@ namespace YourElectionMap.Server.Tests
         [Fact]
         public async Task Get_UsesTheFirstMatchInACoveredState()
         {
-            // The stub answers Greenville ME first and Greenville NC second, as the real
+            // The stub answers Carolina PR first and Carolina RI second, as the real
             // geocoder can for an address with no state.
-            var lookup = await LookupAsync(AddressQuery("100 Main St, Greenville"));
+            var lookup = await LookupAsync(AddressQuery("100 Main St, Carolina"));
 
             var location = Numbers(lookup.GetProperty("location"));
 
-            Assert.Equal(-77.3664, location[0], 0.0001);
-            Assert.Equal(35.6127, location[1], 0.0001);
+            Assert.Equal(-71.6662, location[0], 0.0001);
+            Assert.Equal(41.4734, location[1], 0.0001);
             Assert.Equal(6, lookup.GetProperty("districts").GetArrayLength());
         }
 
         [Fact]
         public async Task Get_AsksGoogleAboutTheAddressTheGeocoderMatchedInACoveredState()
         {
-            // Typed with no state, and matched in Maine first: Google must be
+            // Typed with no state, and matched in Puerto Rico first: Google must be
             // asked about the match the districts came from, spelled with its state.
-            await LookupAsync(AddressQuery("100 Main St, Greenville"));
+            await LookupAsync(AddressQuery("100 Main St, Carolina"));
 
             Assert.Contains(
                 FakeVoterInfo.Asked,
-                asked => asked.Contains("100 MAIN ST, GREENVILLE, NC, 27858"));
-            Assert.DoesNotContain(FakeVoterInfo.Asked, asked => asked.Contains(", ME,"));
+                asked => asked.Contains("100 MAIN ST, CAROLINA, RI, 02812"));
+            Assert.DoesNotContain(FakeVoterInfo.Asked, asked => asked.Contains(", PR,"));
         }
 
         [Fact]

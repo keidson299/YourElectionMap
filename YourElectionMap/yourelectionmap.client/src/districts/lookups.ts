@@ -93,64 +93,12 @@ export function useLookup(target: LookupTarget) {
   return { state, retry }
 }
 
-/** The states the server has districts for. */
-const STATES = [
-  'Alabama',
-  'Arizona',
-  'Arkansas',
-  'California',
-  'Colorado',
-  'Connecticut',
-  'Delaware',
-  'Florida',
-  'Georgia',
-  'Idaho',
-  'Illinois',
-  'Indiana',
-  'Iowa',
-  'Kansas',
-  'Kentucky',
-  'Louisiana',
-  'Maryland',
-  'Massachusetts',
-  'Michigan',
-  'Minnesota',
-  'Mississippi',
-  'Missouri',
-  'Montana',
-  'Nebraska',
-  'Nevada',
-  'New Jersey',
-  'New Mexico',
-  'New York',
-  'North Carolina',
-  'North Dakota',
-  'Ohio',
-  'Oklahoma',
-  'Oregon',
-  'Pennsylvania',
-  'Rhode Island',
-  'South Carolina',
-  'South Dakota',
-  'Tennessee',
-  'Texas',
-  'Utah',
-  'Virginia',
-  'Washington',
-  'West Virginia',
-  'Wisconsin',
-  'Wyoming',
-]
-
-/** The states as the page names them: "Alabama, Arizona, …, Wisconsin and Wyoming". */
-export const COVERED_STATES = `${STATES.slice(0, -1).join(', ')} and ${STATES.at(-1)}`
-
-/** The same states, for a sentence that finds none of them. */
-const ANY_STATE = `${STATES.slice(0, -1).join(', ')} or ${STATES.at(-1)}`
+/** What the server has districts for, as the page names it. */
+export const COVERED_STATES = 'the fifty states'
 
 // A 404 is either an address the server could not place or one outside the
-// states it covers, and it cannot tell us which. The second is likelier, so the
-// wording names them.
+// fifty states, in Washington, D.C., or a territory, and it cannot tell us
+// which. The wording names the limit, and what to try.
 
 /** One sentence for under the address field. Every one says what to do next. */
 export function problemNotice(
@@ -168,8 +116,8 @@ export function problemNotice(
 
   return {
     text: typed
-      ? `We could not find districts for that address in ${ANY_STATE}. Check it, or try adding your city or ZIP code.`
-      : `We could not find districts at your location. The site covers ${COVERED_STATES} so far.`,
+      ? `We could not find districts for that address in ${COVERED_STATES}. Check it, or try adding your city or ZIP code.`
+      : `We could not find districts at your location. The site covers ${COVERED_STATES}.`,
     // A location that could not be placed says nothing about the empty field.
     field: typed,
   }
@@ -190,13 +138,13 @@ export function problemCard(
   if ('address' in target) {
     return {
       heading: 'We could not place that address',
-      body: `The site covers ${COVERED_STATES} so far. Check the address, or try adding your city or ZIP code, in the search above.`,
+      body: `The site covers ${COVERED_STATES}. Check the address, or try adding your city or ZIP code, in the search above.`,
     }
   }
 
   return {
     heading: 'We could not find districts here',
-    body: `The site covers ${COVERED_STATES} so far. Enter an address in the search above.`,
+    body: `The site covers ${COVERED_STATES}. Enter an address in the search above.`,
   }
 }
 

@@ -114,13 +114,24 @@ namespace YourElectionMap.Server.Tests
             ("Albany", [new(42.6526, -73.7573, "172 STATE ST, ALBANY, NY, 12247")]),
             // The Rhode Island State House, Providence.
             ("Providence", [new(41.8309, -71.4148, "82 SMITH ST, PROVIDENCE, RI, 02903")]),
+            // The Vermont State House, Montpelier.
+            ("Montpelier", [new(44.2624, -72.5809, "115 STATE ST, MONTPELIER, VT, 05633")]),
+            // The New Hampshire State House, Concord.
+            ("Concord", [new(43.2068, -71.5383, "107 N MAIN ST, CONCORD, NH, 03301")]),
+            // The Maine State House, Augusta.
+            ("Augusta", [new(44.3072, -69.7817, "210 STATE ST, AUGUSTA, ME, 04330")]),
+            // The Hawaii State Capitol, Honolulu.
+            ("Honolulu", [new(21.3073, -157.8574, "415 S BERETANIA ST, HONOLULU, HI, 96813")]),
+            // The Alaska State Capitol, Juneau.
+            ("Juneau", [new(58.3020, -134.4104, "120 4TH ST, JUNEAU, AK, 99801")]),
             // The White House, which is in no state the site covers.
             ("Pennsylvania", [new(38.8977, -77.0365, "1600 PENNSYLVANIA AVE NW, WASHINGTON, DC, 20500")]),
-            // A town name with no state: Greenville ME first, then Greenville NC.
-            ("Greenville",
+            // A town name with no state: Carolina, Puerto Rico, which the site does not
+            // cover, first, then the village of Carolina, Rhode Island.
+            ("Carolina",
             [
-                new(45.4595, -69.5906, "100 MAIN ST, GREENVILLE, ME, 04441"),
-                new(35.6127, -77.3664, "100 MAIN ST, GREENVILLE, NC, 27858"),
+                new(18.3808, -65.9574, "100 MAIN ST, CAROLINA, PR, 00985"),
+                new(41.4734, -71.6662, "100 MAIN ST, CAROLINA, RI, 02812"),
             ]),
         ];
 

@@ -6,12 +6,7 @@ An ASP.NET Core 10 API (`YourElectionMap.Server`) serving a React 19 + Vite SPA
 (`yourelectionmap.client`), with an xUnit test project (`YourElectionMap.Server.Tests`) and a
 console project (`YourElectionMap.Tools`) that builds the district data.
 
-The data is real and covers **Alabama, Arizona, Arkansas, California, Colorado, Connecticut,
-Delaware, Florida, Georgia, Idaho, Illinois, Indiana, Iowa, Kansas, Kentucky, Louisiana, Maryland,
-Massachusetts, Michigan, Minnesota, Mississippi, Missouri, Montana, Nebraska, Nevada, New Jersey,
-New Mexico, New York, North Carolina, North Dakota, Ohio, Oklahoma, Oregon, Pennsylvania, Rhode
-Island, South Carolina, South Dakota, Tennessee, Texas, Utah, Virginia, Washington, West Virginia,
-Wisconsin and Wyoming**: each state's US House, State
+The data is real and covers **all fifty states**: each state's US House, State
 Senate and State House, Assembly, General Assembly or House of Delegates districts (Nebraska's one-chamber Legislature instead of the
 last two), and its
 county, town or township, city or town and school district too, all from
@@ -41,9 +36,8 @@ outside the repository. See [DATA-SOURCE.md](YourElectionMap/YourElectionMap.Too
 for the download query and the folder layout the tool expects. From `YourElectionMap/`:
 
 ```powershell
-# Once for each state: AL, AR, AZ, CA, CO, CT, DE, FL, GA, IA, ID, IL, IN, KS, KY, LA, MA, MD,
-# MI, MN, MO, MS, MT, NC, ND, NE, NJ, NM, NV, NY, OH, OK, OR, PA, RI, SC, SD, TN, TX, UT, VA, WA,
-# WI, WV and WY. Seventeen states have a sixth local layer, cousub.geojson, for their towns and townships, and
+# Once for each of the fifty states, by its postal code. Twenty states have a sixth local layer,
+# cousub.geojson, for their towns and townships, and
 # Missouri's US House districts come from cd-119.geojson, its 2022 map. Nebraska's folder has no sldl.geojson: its Legislature has one chamber.
 dotnet run --project YourElectionMap.Tools -- tiger <state> `
   "<folder holding the state's cd.geojson, sldu.geojson and sldl.geojson>" `

@@ -229,7 +229,7 @@ export function AddressForm({
           </button>
           <span className="address-form__divider" aria-hidden="true" />
           <p className="address-form__note">
-            {COVERED_STATES} addresses for now. Used only to look up your
+            Addresses in {COVERED_STATES}. Used only to look up your
             districts.
           </p>
         </div>

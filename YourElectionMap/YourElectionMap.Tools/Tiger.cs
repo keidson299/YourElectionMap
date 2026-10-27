@@ -26,6 +26,17 @@ namespace YourElectionMap.Tools
         /// <summary>The states this knows: FIPS code, then each layer's office and count.</summary>
         private static readonly Dictionary<string, State> States = new(StringComparer.OrdinalIgnoreCase)
         {
+            // One seat in the House, elected at large; its Senate districts are lettered, A
+            // to T, each two House districts; and its counties are boroughs and the census
+            // areas of the land no borough governs.
+            ["AK"] = new(
+                "02",
+                [
+                    new("cd.geojson", "congressional", "U.S. House", "Federal", 1),
+                    new("sldu.geojson", "state-upper", "State Senate", "State", 20, Lettered: true),
+                    new("sldl.geojson", "state-lower", "State House", "State", 40),
+                ],
+                County: "Borough or census area"),
             ["AL"] = new(
                 "01",
                 [
@@ -93,6 +104,13 @@ namespace YourElectionMap.Tools
                     new("cd.geojson", "congressional", "U.S. House", "Federal", 14),
                     new("sldu.geojson", "state-upper", "State Senate", "State", 56),
                     new("sldl.geojson", "state-lower", "State House", "State", 180),
+                ]),
+            ["HI"] = new(
+                "15",
+                [
+                    new("cd.geojson", "congressional", "U.S. House", "Federal", 2),
+                    new("sldu.geojson", "state-upper", "State Senate", "State", 25),
+                    new("sldl.geojson", "state-lower", "State House", "State", 51),
                 ]),
             // Thirty-five districts, as in Arizona.
             ["ID"] = new(
@@ -166,6 +184,13 @@ namespace YourElectionMap.Tools
                         Halved: [2, 7, 9, 11, 12, 30, 34, 35, 37, 43, 44, 47],
                         InThree: [1, 27, 29, 33, 38, 42]),
                 ]),
+            ["ME"] = new(
+                "23",
+                [
+                    new("cd.geojson", "congressional", "U.S. House", "Federal", 2),
+                    new("sldu.geojson", "state-upper", "State Senate", "State", 35),
+                    new("sldl.geojson", "state-lower", "State House", "State", 151),
+                ]),
             ["MI"] = new(
                 "26",
                 [
@@ -229,6 +254,14 @@ namespace YourElectionMap.Tools
                 [
                     new("cd.geojson", "congressional", "U.S. House", "Federal", 3),
                     new("sldu.geojson", "state-upper", "Legislature", "State", 49),
+                ]),
+            // Its House districts are numbered within each county, "Belknap 1": named here.
+            ["NH"] = new(
+                "33",
+                [
+                    new("cd.geojson", "congressional", "U.S. House", "Federal", 2),
+                    new("sldu.geojson", "state-upper", "State Senate", "State", 24),
+                    new("sldl.geojson", "state-lower", "State House", "State", 164, Named: true),
                 ]),
             // Forty districts, each electing a senator and two members of the General
             // Assembly: TIGER has them in both layers.
@@ -339,6 +372,15 @@ namespace YourElectionMap.Tools
                     new("cd.geojson", "congressional", "U.S. House", "Federal", 11),
                     new("sldu.geojson", "state-upper", "State Senate", "State", 40),
                     new("sldl.geojson", "state-lower", "House of Delegates", "State", 100),
+                ]),
+            // One seat in the House, elected at large, and its districts are named for
+            // their counties, "Addison-1", not numbered.
+            ["VT"] = new(
+                "50",
+                [
+                    new("cd.geojson", "congressional", "U.S. House", "Federal", 1),
+                    new("sldu.geojson", "state-upper", "State Senate", "State", 16, Named: true),
+                    new("sldl.geojson", "state-lower", "State House", "State", 109, Named: true),
                 ]),
             // One set of 49 districts, each electing a senator and two representatives:
             // TIGER has it in both layers.
@@ -463,8 +505,9 @@ namespace YourElectionMap.Tools
 
         /// <summary>
         /// Numbered 1 to N, each once, in order, with a halved district's two halves, or a
-        /// district in three's three parts, in its place: anything else is a plan this was
-        /// not written for. Named districts are N, each GEOID once, sorted by it. Prints a
+        /// district in three's three parts, in its place, or lettered A onwards: anything
+        /// else is a plan this was not written for. Named districts are N, each GEOID
+        /// once, sorted by it. Prints a
         /// line per district as it goes.
         /// </summary>
         private static void CheckAndSort(List<BuiltDistrict> built, Layer layer)
@@ -482,7 +525,9 @@ namespace YourElectionMap.Tools
             }
             else
             {
-                var expected = Enumerable.Range(1, layer.Count)
+                var expected = layer.Lettered
+                    ? Enumerable.Range(0, layer.Count).Select(letter => ((char)('A' + letter)).ToString()).ToList()
+                    : Enumerable.Range(1, layer.Count)
                     .SelectMany(number =>
                     {
                         var name = number.ToString(CultureInfo.InvariantCulture);
@@ -553,6 +598,13 @@ namespace YourElectionMap.Tools
 
                 number = "";
             }
+            else if (layer.Lettered)
+            {
+                // "State Senate District A".
+                number = TrailingLetter().Match(name) is { Success: true } letter
+                    ? letter.Groups[1].Value
+                    : throw new InvalidDataException($"{layer.File}: no district letter in \"{name}\".");
+            }
             else if (match.Success)
             {
                 number = int.Parse(match.Groups[1].Value, CultureInfo.InvariantCulture)
@@ -580,8 +632,27 @@ namespace YourElectionMap.Tools
             // A named district is its name over the chamber, "State Senate", as a county
             // is its name over "County", and its id is its GEOID.
             return layer.Named
-                ? new BuiltDistrict($"{layer.Level}-{geoid}", layer.Level, name, Number: "", layer.Office, points, thinned)
+                ? new BuiltDistrict($"{layer.Level}-{geoid}", layer.Level, NamedOffice(name), Number: "", layer.Office, points, thinned)
                 : new BuiltDistrict($"{layer.Level}-{number}", layer.Level, layer.Office, number, layer.Detail, points, thinned);
+        }
+
+        /// <summary>
+        /// A named district's name, without the chamber it is shown over: Massachusetts's
+        /// as TIGER has it, "Third Suffolk District"; Vermont's "Addison-1 State House
+        /// District" and "Addison Senatorial District" as "Addison-1 District" and
+        /// "Addison District"; and New Hampshire's "State House District Belknap 01" as
+        /// "Belknap District 1".
+        /// </summary>
+        private static string NamedOffice(string name)
+        {
+            var inCounty = CountyAndNumber().Match(name);
+
+            if (inCounty.Success)
+            {
+                return $"{inCounty.Groups[1].Value} District {inCounty.Groups[2].Value}";
+            }
+
+            return ChamberSuffix().Replace(name, " District");
         }
 
         /// <summary>
@@ -635,11 +706,12 @@ namespace YourElectionMap.Tools
             }
 
             // A town is a town; a township, a charter township or Kansas's "Township 4" is
-            // a township.
+            // a township; and Maine's plantations, smaller towns, are plantations.
             var detail = !layer.Towns ? layer.Detail : Field(properties, "LSADC", layer.File) switch
             {
                 "43" => "Town",
                 "44" or "45" or "49" => "Township",
+                "39" => "Plantation",
                 var other => throw new InvalidDataException(
                     $"{layer.File}: \"{name}\" is a government of a kind this does not know, LSADC {other}."),
             };
@@ -722,7 +794,11 @@ namespace YourElectionMap.Tools
                                 $"{file}: \"{name}\" is not in degrees ({longitude}, {latitude}).");
                         }
 
-                        flat[i++] = longitude;
+                        // Alaska's Near Islands are past the 180th meridian, at positive
+                        // longitudes, as nothing else the site covers is. They are kept
+                        // west of it, below -180, so that a district reaching them is one
+                        // piece rather than the width of the globe.
+                        flat[i++] = longitude > 0 ? longitude - 360 : longitude;
                         flat[i++] = latitude;
                     }
 
@@ -736,13 +812,23 @@ namespace YourElectionMap.Tools
         [GeneratedRegex(@"(\d+)([ABC]?)\s*$")]
         private static partial Regex TrailingNumber();
 
+        [GeneratedRegex(@" ([A-Z])\s*$")]
+        private static partial Regex TrailingLetter();
+
+        [GeneratedRegex(@"^State House District (.+) 0*(\d+)$")]
+        private static partial Regex CountyAndNumber();
+
+        [GeneratedRegex(@" (State House|Senatorial) District$")]
+        private static partial Regex ChamberSuffix();
+
         /// <param name="County">The county rows' detail: "Parish" in Louisiana.</param>
         private sealed record State(string Fips, Layer[] Layers, string County = "County");
 
         /// <summary>
         /// A legislative layer: districts 1 to <paramref name="Count"/>, each of those in
         /// <paramref name="Halved"/> as two, an A and a B, and each in <paramref name="InThree"/>
-        /// as three, an A, a B and a C; or, <paramref name="Named"/>, <paramref name="Count"/>
+        /// as three, an A, a B and a C; or, <paramref name="Lettered"/>, <paramref name="Count"/>
+        /// districts lettered from A; or, <paramref name="Named"/>, <paramref name="Count"/>
         /// districts known by name.
         /// </summary>
         private sealed record Layer(
@@ -753,7 +839,8 @@ namespace YourElectionMap.Tools
             int Count,
             int[]? Halved = null,
             int[]? InThree = null,
-            bool Named = false);
+            bool Named = false,
+            bool Lettered = false);
 
         /// <param name="Towns">
         /// The county subdivisions: only the towns and townships that are governments

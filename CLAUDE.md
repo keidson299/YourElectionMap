@@ -118,26 +118,26 @@ server's one endpoint, `GET /api/districts`. The current plan is
 [design/ElectionMapMainDesignPlanV5.md](design/ElectionMapMainDesignPlanV5.md); code comments
 refer to its numbered slices.
 
-**The data is real and covers forty-five states**, Alabama, Arizona, Arkansas, California,
-Colorado, Connecticut, Delaware, Florida, Georgia, Idaho, Illinois, Indiana, Iowa, Kansas,
-Kentucky, Louisiana, Maryland, Massachusetts, Michigan, Minnesota, Mississippi, Missouri, Montana,
-Nebraska, Nevada, New Jersey, New Mexico, New York, North Carolina, North Dakota, Ohio, Oklahoma,
-Oregon, Pennsylvania, Rhode Island, South Carolina, South Dakota, Tennessee, Texas, Utah,
-Virginia, Washington, West Virginia, Wisconsin and Wyoming: each state's US House, State Senate
+**The data is real and covers all fifty states** (not Washington, D.C., or the territories):
+each state's US House, State Senate
 and State House, Assembly, General Assembly or House of Delegates districts
 (Nebraska's Legislature has one chamber, so no `state-lower` row, a few lower-house districts are
-halves or thirds numbered "4A", "65B", "1C", Massachusetts's districts are named, "Third Suffolk
-District", not numbered, and some water is in no district of a level: Lake Pontchartrain in Louisiana's Senate,
-Illinois's part of Lake Michigan and Connecticut's of Long Island Sound in any, Wisconsin's lakes
-in its Senate or Assembly, and Massachusetts's bays in its House; Missouri's US House districts
+halves or thirds numbered "4A", "65B", "1C", Alaska's Senate districts are lettered, "B",
+Massachusetts's and Vermont's districts and New Hampshire's House districts are named, "Third
+Suffolk District", "Addison-1 District", "Merrimack District 18", not numbered, New Hampshire's
+floterial House districts are missing from TIGER, and some water is in no district of a level:
+Lake Pontchartrain in Louisiana's Senate, Illinois's part of Lake Michigan, Connecticut's of Long
+Island Sound and New Hampshire's coast in any, Wisconsin's lakes in its Senate or Assembly, and
+Massachusetts's bays in its House; Missouri's US House districts
 are its 2022 map, TIGER's 119th Congress layer, because the courts kept TIGER's current one out of
 2026), from the Census
-Bureau's TIGERweb layers, and its **local rows**: the county (a parish in Louisiana and a planning
-region in Connecticut, whose rows' detail says so), the town or township, in the seventeen
-states where TIGER's county subdivisions mark them governments of their own, the city or town,
+Bureau's TIGERweb layers, and its **local rows**: the county (a parish in Louisiana, a planning
+region in Connecticut and a borough or census area in Alaska, whose rows' detail says so), the
+town, township or Maine plantation, in the twenty states where TIGER's county subdivisions mark
+them governments of their own, the city or town (none in Hawaii, where Honolulu is a county),
 after the township where one is inside the other, and the school district
-(in Arizona, California, Connecticut, Illinois, Massachusetts, Montana, New Jersey, Rhode Island,
-Wisconsin, a corner of Oregon, part of Long Island, fifteen towns in
+(in Arizona, California, Connecticut, Illinois, Maine, Massachusetts, Montana, New Hampshire, New
+Jersey, Rhode Island, Vermont, Wisconsin, a corner of Oregon, part of Long Island, fifteen towns in
 Tennessee, four in Kentucky and one place each in Texas, Minnesota and Georgia, sometimes a high
 school and an elementary district), each a whole government named rather
 than numbered ("Wake County", "Raleigh city"). An address is placed
@@ -148,7 +148,7 @@ The browser fetches the street tiles and the map's label fonts from OpenFreeMap 
 (`index.html`). There is no County Commission, City Council or School Board district data yet,
 so the rail lists up to six rows (seven where an address has both a high school and an elementary
 district, or a township and a city or village inside it, and eight with both), and fewer where it has no city or school district. An address
-outside the forty-five states is a 404.
+outside the fifty states is a 404.
 
 **Google needs an API key, and nothing breaks without one.** The server reads
 `GoogleCivic:ApiKey` — user secrets in development, the environment variable `GoogleCivic__ApiKey`
@@ -188,11 +188,12 @@ dotnet publish YourElectionMap.Server/YourElectionMap.Server.csproj         # al
 
 # Builds each state's district file from its TIGERweb layers. Needed once per clone and again
 # when a plan changes.
-foreach ($state in 'al', 'ar', 'az', 'ca', 'co', 'ct', 'de', 'fl', 'ga',
-           'ia', 'id', 'il', 'in', 'ks', 'ky', 'la', 'ma', 'md',
-           'mi', 'mn', 'mo', 'ms', 'mt', 'nc', 'nd', 'ne', 'nj',
-           'nm', 'nv', 'ny', 'oh', 'ok', 'or', 'pa', 'ri', 'sc',
-           'sd', 'tn', 'tx', 'ut', 'va', 'wa', 'wi', 'wv', 'wy') {
+foreach ($state in 'ak', 'al', 'ar', 'az', 'ca', 'co', 'ct', 'de', 'fl',
+           'ga', 'hi', 'ia', 'id', 'il', 'in', 'ks', 'ky', 'la',
+           'ma', 'md', 'me', 'mi', 'mn', 'mo', 'ms', 'mt', 'nc',
+           'nd', 'ne', 'nh', 'nj', 'nm', 'nv', 'ny', 'oh', 'ok',
+           'or', 'pa', 'ri', 'sc', 'sd', 'tn', 'tx', 'ut', 'va',
+           'vt', 'wa', 'wi', 'wv', 'wy') {
   dotnet run --project YourElectionMap.Tools -- tiger $state `
     "D:\VisualStudio\GitProjects\YourElectionMap\Docs\Tiger\$state" `
     "YourElectionMap.Server\Districts\Data\$state-districts.json"
@@ -269,11 +270,14 @@ changing it, know that:
   answer or anything else; only the browser cancelling propagates. The election list is the same
   for every address and is kept in `IMemoryCache` for an hour; a failed read is not kept.
 - **A county, city or school row has no unit or number** (both null on the wire); its `office` is
-  its name and its id is its level and Census GEOID, `county-37183`. So has a Massachusetts
-  State Senate or State House row, whose `office` is its name, "Third Suffolk District", over its
-  chamber, and whose id is `state-upper-25D25`. Rows sort broad to local, then by number, with an
+  its name and its id is its level and Census GEOID, `county-37183`. So has a named
+  legislative row, Massachusetts's, Vermont's or a New Hampshire State House one, whose `office`
+  is its name, "Third Suffolk District", over its chamber, and whose id is `state-upper-25D25`.
+  Alaska's State Senate rows are numbered with a letter, `state-upper-B`, which sorts after any
+  number. Its districts reach past the 180th meridian, and the files keep those longitudes below
+  -180 so a district is one piece. Rows sort broad to local, then by number, with an
   elementary school district after the high school district over it, and a city or village
-  after the town or township it is in.
+  after the town, township or plantation it is in.
 
 **Tests.** `DistrictsEndpointTests` hosts the whole app in memory (`OfflineApp`) and reads the raw
 JSON, which is the contract the client reads; new endpoints deserve the same kind of test. **No

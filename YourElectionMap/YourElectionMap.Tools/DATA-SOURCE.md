@@ -54,13 +54,20 @@ holds its rings in longitude and latitude, to six decimal places, thinned to 15 
 | `nj-districts.json` | New Jersey | 34 | `Tiger\nj` | 2026-10-25 |
 | `ny-districts.json` | New York | 36 | `Tiger\ny` | 2026-10-25 |
 | `ri-districts.json` | Rhode Island | 44 | `Tiger\ri` | 2026-10-25 |
+| `vt-districts.json` | Vermont | 50 | `Tiger\vt` | 2026-10-27 |
+| `nh-districts.json` | New Hampshire | 33 | `Tiger\nh` | 2026-10-27 |
+| `me-districts.json` | Maine | 23 | `Tiger\me` | 2026-10-27 |
+| `hi-districts.json` | Hawaii | 15 | `Tiger\hi` | 2026-10-27 |
+| `ak-districts.json` | Alaska | 02 | `Tiger\ak` | 2026-10-27 |
 
 Every state's folder holds its five local layers too, downloaded on the same day, apart from
-those of Arizona, Idaho, Montana, Utah and Wyoming, downloaded on 2026-10-12. The seventeen
-states with towns or townships of their own (see below) hold a sixth, their county subdivisions,
+those of Arizona, Idaho, Montana, Utah and Wyoming, downloaded on 2026-10-12. The states
+with towns or townships of their own (see below) hold a sixth, their county subdivisions,
 downloaded on 2026-10-26. Every folder holds the previous vintage's legislative layers as well,
 downloaded on 2026-10-25 to check the current ones against (see **Are the plans current?**), and
-Missouri's file is built from one of them.
+Missouri's file is built from one of them. The five states added last, Vermont, New Hampshire,
+Maine, Hawaii and Alaska, had all of their layers, county subdivisions and previous vintage
+included, downloaded on 2026-10-27.
 
 ## The source
 
@@ -94,8 +101,8 @@ https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/<service>/MapServe
 ```
 
 A state with no high school or elementary districts gets a file with no features in it, which
-is fine: the school districts of Alabama, Arkansas, Colorado, Delaware, Florida, Idaho, Indiana,
-Iowa, Kansas, Louisiana, Maryland, Mississippi, Nebraska, Nevada, New Mexico, North Carolina,
+is fine: the school districts of Alabama, Alaska, Arkansas, Colorado, Delaware, Florida, Hawaii,
+Idaho, Indiana, Iowa, Kansas, Louisiana, Maryland, Mississippi, Nebraska, Nevada, New Mexico, North Carolina,
 Ohio, Pennsylvania, South Carolina, South Dakota, Utah, Washington and West Virginia are all
 unified.
 
@@ -275,33 +282,40 @@ Pennsylvania's across its part of Lake Erie, which only its school layer leaves 
 
 ### Towns and townships
 
-In seventeen of the states a town or township can govern itself, as a city does, with officers
-its voters elect: Connecticut, Illinois, Indiana, Kansas, Massachusetts, Michigan, Minnesota, Missouri, Nebraska, New Jersey, New York, North Dakota, Ohio, Pennsylvania, Rhode Island, South Dakota and Wisconsin. TIGER keeps them in its county subdivisions,
-`cousub.geojson`, and most of them are not places. In the other twenty-eight states the county
-subdivisions are statistical areas with nothing to keep, so their folders do without the layer.
+In twenty of the states a town or township can govern itself, as a city does, with officers
+its voters elect: Connecticut, Illinois, Indiana, Kansas, Maine, Massachusetts, Michigan,
+Minnesota, Missouri, Nebraska, New Hampshire, New Jersey, New York, North Dakota, Ohio,
+Pennsylvania, Rhode Island, South Dakota, Vermont and Wisconsin. TIGER keeps them in its county
+subdivisions, `cousub.geojson`, and most of them are not places. In the other thirty states the
+county subdivisions are statistical areas with nothing to keep, so their folders do without the
+layer, but for Hawaii's and Alaska's, which have it and keep none.
 
 The tool keeps a county subdivision whose functional status, `FUNCSTAT`, is A, an active
-government, or B, one that shares some of its work with another, 15,243 in all:
+government, or B, one that shares some of its work with another, 16,160 in all:
 
 | State | Kept | State | Kept | State | Kept |
 | --- | --- | --- | --- | --- | --- |
 | Connecticut | 149 towns | Minnesota | 1,776 townships | North Dakota | 1,305 townships |
 | Illinois | 1,425 townships | Missouri | 283 townships | Ohio | 1,308 townships |
 | Indiana | 1,003 townships | Nebraska | 319 townships | Pennsylvania | 1,543 townships |
-| Kansas | 1,258 townships | New Jersey | 240 townships | Rhode Island | 31 towns |
-| Massachusetts | 293 towns | New York | 930 towns | South Dakota | 898 townships |
+| Kansas | 1,258 townships | New Hampshire | 221 towns | Rhode Island | 31 towns |
+| Maine | 430 towns, 29 plantations | New Jersey | 240 townships | South Dakota | 898 townships |
+| Massachusetts | 293 towns | New York | 930 towns | Vermont | 237 towns |
 | Michigan | 1,240 townships | | | Wisconsin | 1,242 towns |
 
 It leaves out the rest: F, a city, borough or village the layer has again, which the places
 give; C, a town that is one with its city, as Hartford is, whose row is the city's; G, New York
 City's five boroughs; I and N, inactive or not functioning, as 1,094 of Missouri's townships
-and Illinois's precincts are; and S, unorganized territory, as in Minnesota and the Dakotas.
-The legal type, `LSADC`, gives the row's detail: 43 is "Town", and 44, 45 (Kansas's and
-Nebraska's numbered "Township 4") and 49 (Michigan's charter townships) are "Township". Any other
-type among those kept stops the tool.
+and Illinois's precincts are, and Vermont's gores and grants and New Hampshire's grants,
+locations and purchases, the unincorporated land of their mountains; and S, unorganized
+territory, as in Minnesota, the Dakotas and Maine, and Hawaii's and Alaska's census divisions.
+The legal type, `LSADC`, gives the row's detail: 43 is "Town", 44, 45 (Kansas's and
+Nebraska's numbered "Township 4") and 49 (Michigan's charter townships) are "Township", and 39
+is "Plantation", Maine's smaller towns, "Monhegan plantation". Any other type among those kept
+stops the tool.
 
-Where a city or village is inside a township, as Michigan's, Ohio's and New York's villages, a
-Connecticut borough and every city in Indiana and most of Illinois are, an address has both
+Where a city or village is inside a township, as Michigan's, Ohio's, New York's and Vermont's
+villages, a Connecticut borough and every city in Indiana and most of Illinois are, an address has both
 rows, and the server lists the town or township first: "Capital township", then "Springfield
 city". Elsewhere, in Pennsylvania, Wisconsin, Minnesota and New Jersey and for any city that
 stands apart from the townships, an address has one. On a 0.05° grid the points with no city
@@ -341,6 +355,56 @@ Massachusetts 30 and 64 besides 211, New Jersey 45 and 168 besides 341, New York
 high school districts on Long Island and 14 elementary ones besides 662, and Rhode Island
 Foster-Glocester and 5 elementary ones besides 30.
 
+### Vermont, New Hampshire and Maine
+
+Vermont names its legislative districts for their counties, as Massachusetts names its own:
+TIGER's Senate districts are "Addison Senatorial District", `50ADD`, and its House districts
+"Addison-1 State House District", `50A-1`. New Hampshire numbers its House districts within each
+county, "State House District Belknap 01", `33001`, so the number alone does not say which.
+`Tiger.cs` marks Vermont's two layers and New Hampshire's House layer as named, and the tool
+drops the chamber from a named district's name, since the row shows it underneath: "Addison
+District", "Addison-1 District" and "Belknap District 1". Vermont has one House seat, at large,
+numbered 1 as Wyoming's is.
+
+New Hampshire's House layer has 164 districts and none of the floterial districts the state
+draws over groups of others, to share out one more seat among them: Hillsborough's numbers skip
+37 to 41, 44 and 45, presumably those. An address in a floterial district elects its
+representative too, and the site does not show it; the outlines would have to come from the
+state rather than TIGER. New Hampshire's three legislative layers have a "not defined" area,
+`33ZZ` and `33ZZZ`, the Atlantic off Rye and Hampton, which the tool leaves out, as
+Connecticut's; only the county goes on over it.
+
+Their towns govern themselves, and so do Maine's plantations; Vermont's villages are inside its
+towns, as New York's are, "Johnson town", then "Johnson village". Their school layers have high
+school districts over elementary ones besides their unified districts: Vermont 11 and 56 besides
+64, New Hampshire 8 and 90 besides 81, and Maine 3 and 74 besides 187, among them the districts
+of Maine's unorganized territories, "Somerset Unorganized Territory". New Hampshire's "School
+District Not Defined" is its mountain grants and locations and its coastal water.
+
+### Hawaii and Alaska
+
+Hawaii has no cities: TIGER has no incorporated places there, and its county subdivisions are
+statistical. Honolulu is a county, "Honolulu County", governed as the City and County of
+Honolulu, so an address there has a county row and no city row. Kalawao County, the Kalaupapa
+peninsula on Molokai, is a county of its own. Hawaii's one school district is the state's,
+"Hawaii Department of Education". Its layers reach out along the Northwestern Hawaiian Islands to
+178°W.
+
+Alaska has one House seat, at large, numbered 1. Its 20 Senate districts are lettered, "State
+Senate District A", each two House districts, A being 1 and 2; `Tiger.cs` marks the layer as
+lettered, the tool keeps the letter as the district's number, checks the layer runs A to T, and
+the page shows "State Senate · District B". Its counties are boroughs, a municipality and, in
+the land no borough governs, census areas, "Bethel Census Area"; `Tiger.cs` gives their rows the
+detail "Borough or census area". Juneau, Sitka and Anchorage are a borough and a city in one, as
+Carson City is, and TIGER has each in both layers. Its 52 school districts are unified: the
+boroughs', the cities', and the regional districts of the unorganized land.
+
+The Near Islands, at the west end of the Aleutians, are across the 180th meridian, at 172° to
+180° east. The tool keeps them west of it, 360° less, so that Alaska's districts reach from
+-187.7° to -130.0° rather than round the world, their boxes are not the globe's width, and the
+page's map frames them. An address there, which the geocoder would place at a positive
+longitude, would find nothing; the islands have no town, only the air station on Shemya.
+
 ### Washington, Arizona and Idaho
 
 Each Legislature has one set of districts, 49 in Washington, 30 in Arizona and 35 in Idaho, each
@@ -368,11 +432,13 @@ District Not Defined" too, which leaves 207 points of 11,200 on the test grid wi
 - **One feature per district**, named "Congressional District 7", "State Senate District 8",
   "State House District 38" or "Assembly District 6". A few are MultiPolygons, for islands. The
   tool takes the number from the end of `NAME`, with the letter of a halved district's half or a
-  third, "State House District 4A", "State Legislative Subdistrict 1C", apart from the at-large districts of Wyoming and the Dakotas
-  and Massachusetts's named ones, which have none. A
+  third, "State House District 4A", "State Legislative Subdistrict 1C", or, in Alaska's Senate,
+  the letter, "State Senate District A", apart from a state's one at-large seat and the named
+  districts of Massachusetts, Vermont and New Hampshire's House, which have none. A
   layer's "not defined" area, GEOID `<FIPS>ZZ` in a US House layer and `<FIPS>ZZZ` in a
-  legislative one, is left out: Louisiana's Senate, Illinois's and Connecticut's three layers,
-  Wisconsin's two chambers and Massachusetts's House have one, for water.
+  legislative one, is left out: Louisiana's Senate, Illinois's, Connecticut's and New
+  Hampshire's three layers, Wisconsin's two chambers and Massachusetts's House have one, for
+  water.
 - **`GEOID`**, which starts with the state's FIPS code.
 - **One feature per county, city or school district**, named in full by `NAME`, the way the
   Census writes it: "Wake County", "Raleigh city", "Wake County Schools", "Central Union High
@@ -389,7 +455,8 @@ District Not Defined" too, which leaves 207 points of 11,200 on the test grid wi
 
 In every state the three layers cover the state exactly once each, but for the water TIGER
 leaves out, Lake Pontchartrain in Louisiana, the lakes in Illinois and Wisconsin, Long Island
-Sound in Connecticut and the bays in Massachusetts's House layer: on a 0.02° grid, every point is in one district of each level, give
+Sound in Connecticut, the bays in Massachusetts's House layer and New Hampshire's coast: on a
+0.02° grid, every point is in one district of each level, give
 or take a point on a district line. No point is in two
 states where they meet. Several borders run along round degrees, such as 37°N between Utah and
 Arizona, so a grid line exactly on one finds points on the line itself in neither state, or,
@@ -407,9 +474,9 @@ Tennessee, 2 of 4,252 over Kentucky, and over the five Great Lakes states, mostl
 174 of 6,296 over Illinois, 25 of 3,941 over Indiana, 1,055 of 11,404 over Michigan, 402 of 4,941
 over Ohio and 1,049 of 7,701 over Wisconsin; 84 of 5,029 over Pennsylvania, on Lake Erie;
 and, on the water too, 49 of 611 over Connecticut, 173 of 1,187 over Massachusetts, 93 of 952
-over New Jersey, 480 of 6,238 over New York and 15 of 171 over Rhode Island; none in the other
-twenty-seven states (Texas on a 0.1°
-grid).
+over New Jersey, 480 of 6,238 over New York and 15 of 171 over Rhode Island; 47 of 1,076 over
+New Hampshire, in its mountains and on its coast; none in the other thirty-one states (Texas on
+a 0.1° grid, and Alaska on a 0.25° one).
 
 Where two covered states meet, each file is thinned on its own, so both can claim a strip a few
 feet wide along the border, as two neighbouring districts can. One point of the grids falls in
@@ -442,9 +509,10 @@ Of the legislative layers only Michigan's Senate (0.9%, the Detroit-area distric
 court order) and Mississippi's Senate and House (4.1% and 0.7%, the court-ordered 2025 redraw)
 changed, both the plans in use. Alabama's Senate layer is its 2021 map, which the 11th Circuit
 restored for 2026, and North Dakota's is the court's 2024 map, kept for 2026. Each of these was
-checked against news of the plans in use for 2026 as of 2026-10-25. Suits still open in
-Louisiana, Tennessee and Alabama could change a map; checking again is a download of these three
-layers and the same comparison.
+checked against news of the plans in use for 2026 as of 2026-10-25. Vermont, New Hampshire,
+Maine, Hawaii and Alaska, added on 2026-10-27, were compared the same way that day, and none of
+their three layers had changed. Suits still open in Louisiana, Tennessee and Alabama could change
+a map; checking again is a download of these three layers and the same comparison.
 
 ## Credit
 
@@ -458,11 +526,12 @@ result page.
 From `YourElectionMap/`, once per state:
 
 ```powershell
-foreach ($state in 'al', 'ar', 'az', 'ca', 'co', 'ct', 'de', 'fl', 'ga',
-           'ia', 'id', 'il', 'in', 'ks', 'ky', 'la', 'ma', 'md',
-           'mi', 'mn', 'mo', 'ms', 'mt', 'nc', 'nd', 'ne', 'nj',
-           'nm', 'nv', 'ny', 'oh', 'ok', 'or', 'pa', 'ri', 'sc',
-           'sd', 'tn', 'tx', 'ut', 'va', 'wa', 'wi', 'wv', 'wy') {
+foreach ($state in 'ak', 'al', 'ar', 'az', 'ca', 'co', 'ct', 'de', 'fl',
+           'ga', 'hi', 'ia', 'id', 'il', 'in', 'ks', 'ky', 'la',
+           'ma', 'md', 'me', 'mi', 'mn', 'mo', 'ms', 'mt', 'nc',
+           'nd', 'ne', 'nh', 'nj', 'nm', 'nv', 'ny', 'oh', 'ok',
+           'or', 'pa', 'ri', 'sc', 'sd', 'tn', 'tx', 'ut', 'va',
+           'vt', 'wa', 'wi', 'wv', 'wy') {
   dotnet run --project YourElectionMap.Tools -- tiger $state `
     "D:\VisualStudio\GitProjects\YourElectionMap\Docs\Tiger\$state" `
     "YourElectionMap.Server\Districts\Data\$state-districts.json"
@@ -478,24 +547,25 @@ file if:
 - a layer says it was cut short (`exceededTransferLimit`);
 - a feature has no `NAME` or `GEOID`, or its `GEOID` is not in the state;
 - a feature's `NAME` does not end in a district number, or a number and A, B or C, unless it is
-  a state's one at-large seat or its layer is one `Tiger.cs` lists as named;
+  a state's one at-large seat or its layer is one `Tiger.cs` lists as named, or, in a layer it
+  lists as lettered, in a letter;
 - a county, city or school district's `GEOID` is in its layer twice, or its `NAME` holds a quote
   or backslash, which the file would need escaped;
 - a feature is not a Polygon or MultiPolygon, or has no shape at all;
 - a legislative layer's districts are not exactly 1 to N, each district `Tiger.cs` lists as
-  halved being an A and a B instead, and each it lists in three an A, a B and a C, or a named
-  layer's are not N, each `GEOID` once;
+  halved being an A and a B instead, and each it lists in three an A, a B and a C, a lettered
+  layer's are not A onwards, or a named layer's are not N, each `GEOID` once;
 - a county subdivision has no `FUNCSTAT`, or one kept as a government has no `LSADC`, or one of a
-  type other than a town or township;
+  type other than a town, township or plantation;
 - a coordinate is not a longitude and latitude, as a layer fetched without `outSR=4326` would be.
 
 Two runs of the same layers produce the same bytes apart from the date in the header. With the
 local layers, Texas's file is about 32 MB, California's about 19 MB and North Carolina's about
 15 MB, the last two against 7 and 6 without them. The rest run from Georgia's 17 MB, Pennsylvania's 14 and
-Illinois's 13 down to Wyoming's 3, Nevada's 1.5, Rhode Island's 1.0 and Delaware's 0.9.
+Illinois's 13 down to Maine's 5, Alaska's 4.4, Wyoming's 3, New Hampshire's 2.1, Vermont's 1.6,
+Nevada's 1.5, Hawaii's and Rhode Island's 1.0 and Delaware's 0.9.
 
-Another state needs its FIPS code, office names, district counts, any halved districts or
-districts in three, whether its districts are named, its
-word for a county, where that is not "County", added to the table in `Tiger.cs`, and its three legislative layers
-downloaded into a folder of its own, with its local layers alongside them for the county, city
-and school rows. The local layers need nothing else in `Tiger.cs`.
+Each state's entry in the table in `Tiger.cs` holds its FIPS code, office names, district
+counts, any halved districts or districts in three, whether its districts are named or lettered,
+and its word for a county, where that is not "County"; its folder holds its three legislative
+layers, with its local layers alongside them for the county, city and school rows. The local layers need nothing else in `Tiger.cs`.

@@ -94,9 +94,11 @@ namespace YourElectionMap.Server.Districts
 
             // Two of a kind, where there can only be one: an elementary district inside
             // a high school district is a different kind, and stays, as does a city or
-            // village inside a township.
+            // village inside a township. A town, township and plantation are one kind,
+            // since two of them can meet, as Vinalhaven town and Matinicus Isle
+            // plantation do off Maine.
             var settled = found
-                .GroupBy(district => (district.Level, district.Detail))
+                .GroupBy(district => (district.Level, district.Level == "city" ? Inner(district).ToString() : district.Detail))
                 .Select(kind => kind.Count() == 1 ? kind.First() : kind.MaxBy(Depth)!)
                 .ToList();
 
@@ -234,11 +236,11 @@ namespace YourElectionMap.Server.Districts
         /// <summary>
         /// 1 for the more local of two at one level: the converter's "Elementary school
         /// district", inside a high school district, and a city, town or village, which
-        /// can be inside a "Town" or "Township".
+        /// can be inside a "Town", "Township" or Maine's "Plantation".
         /// </summary>
         private static int Inner(Stored district) =>
             district.Detail.StartsWith("Elementary", StringComparison.Ordinal)
-                || (district.Level == "city" && district.Detail is not ("Town" or "Township"))
+                || (district.Level == "city" && district.Detail is not ("Town" or "Township" or "Plantation"))
                 ? 1
                 : 0;
 
