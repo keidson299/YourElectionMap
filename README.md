@@ -14,7 +14,7 @@ Island, South Carolina, South Dakota, Tennessee, Texas, Utah, Virginia, Washingt
 Wisconsin and Wyoming**: each state's US House, State
 Senate and State House, Assembly, General Assembly or House of Delegates districts (Nebraska's one-chamber Legislature instead of the
 last two), and its
-county, city or town and school district too, all from
+county, town or township, city or town and school district too, all from
 the Census Bureau's TIGERweb, drawn with [MapLibre GL](https://maplibre.org/) over a street map from
 [OpenFreeMap](https://openfreemap.org/), with the next election at the address — its date and how
 many candidates and ballot measures are on the ballot — from Google's voter lookup. Four things
@@ -43,7 +43,8 @@ for the download query and the folder layout the tool expects. From `YourElectio
 ```powershell
 # Once for each state: AL, AR, AZ, CA, CO, CT, DE, FL, GA, IA, ID, IL, IN, KS, KY, LA, MA, MD,
 # MI, MN, MO, MS, MT, NC, ND, NE, NJ, NM, NV, NY, OH, OK, OR, PA, RI, SC, SD, TN, TX, UT, VA, WA,
-# WI, WV and WY. CT, MA, NJ, NY and RI have a sixth local layer, cousub.geojson, for their towns. Nebraska's folder has no sldl.geojson: its Legislature has one chamber.
+# WI, WV and WY. Seventeen states have a sixth local layer, cousub.geojson, for their towns and townships, and
+# Missouri's US House districts come from cd-119.geojson, its 2022 map. Nebraska's folder has no sldl.geojson: its Legislature has one chamber.
 dotnet run --project YourElectionMap.Tools -- tiger <state> `
   "<folder holding the state's cd.geojson, sldu.geojson and sldl.geojson>" `
   YourElectionMap.Server\Districts\Data\<state>-districts.json

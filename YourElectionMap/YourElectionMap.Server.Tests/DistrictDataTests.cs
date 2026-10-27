@@ -136,9 +136,9 @@ namespace YourElectionMap.Server.Tests
             // Per state, in the order of States above: its US House, State Senate and
             // State House districts together (the counts are in Tiger.cs, a halved
             // district counting twice and one in three three times), then its
-            // counties, cities and towns (in New York its towns, then its cities and
-            // villages), and unified school districts, and where it has them its
-            // elementary and then high school districts.
+            // counties, towns or townships where they govern themselves, cities and towns,
+            // and unified school districts, and where it has them its elementary and then
+            // high school districts.
             Assert.Equal(
                 [
                     "AL", "AR", "AZ", "CA", "CO", "CT", "DE", "FL", "GA", "IA", "ID", "IL", "IN",
@@ -172,9 +172,13 @@ namespace YourElectionMap.Server.Tests
                     + (88 + 923 + 611) + (72 + 608 + 368 + 43 + 10)
                     + (3 + 57 + 16) + (24 + 157 + 24) + (67 + 1012 + 500)
                     + (133 + 227 + 135 + 1) + (55 + 229 + 55)
-                    + (9 + 169 + 113 + 44 + 8) + (14 + 351 + 211 + 64 + 30)
-                    + (21 + 564 + 341 + 168 + 45) + (62 + 933 + 594 + 662 + 14 + 3)
-                    + (5 + 39 + 30 + 5 + 1),
+                    + (9 + 149 + 30 + 113 + 44 + 8) + (14 + 293 + 58 + 211 + 64 + 30)
+                    + (21 + 240 + 324 + 341 + 168 + 45) + (62 + 930 + 594 + 662 + 14 + 3)
+                    + (5 + 31 + 8 + 30 + 5 + 1)
+                    // The townships of IL, IN, KS, MI, MN, MO, NE, ND, OH, PA and SD, and
+                    // Wisconsin's towns.
+                    + 1425 + 1003 + 1258 + 1240 + 1776 + 283 + 319 + 1305 + 1308 + 1543 + 898
+                    + 1242,
                 Data.Count);
         }
 
@@ -257,11 +261,15 @@ namespace YourElectionMap.Server.Tests
                     legislative.Select(district => district.Detail));
             }
 
-            // The capitol is in a city, so it has a county and a city row, then its school
-            // district, or a high school and an elementary district.
-            Assert.Equal(["county", "city"], local.Take(2).Select(district => district.Level));
-            Assert.NotEmpty(local.Skip(2));
-            Assert.All(local.Skip(2), district => Assert.Equal("school", district.Level));
+            // The capitol is in a city, so it has a county and a city row, with a township's
+            // before it in Illinois and Indiana, then its school district, or a high school
+            // and an elementary district.
+            var cities = local.Skip(1).TakeWhile(district => district.Level == "city").Count();
+
+            Assert.Equal("county", local[0].Level);
+            Assert.InRange(cities, 1, 2);
+            Assert.NotEmpty(local.Skip(1 + cities));
+            Assert.All(local.Skip(1 + cities), district => Assert.Equal("school", district.Level));
             Assert.Null(Disagreement(found.Districts, state.Longitude, state.Latitude));
 
             var county = local[0].Office;
@@ -611,17 +619,27 @@ namespace YourElectionMap.Server.Tests
             Assert.Null(Data.Covering(longitude, latitude));
         }
 
-        [Fact]
-        public void Covering_ListsANewYorkVillageAfterItsTown()
+        /// <summary>
+        /// A town or township that governs itself is a row of its own, and a city or
+        /// village inside one, whose voters elect both, comes after it.
+        /// </summary>
+        [Theory]
+        [InlineData(40.7268, -73.6343, "Hempstead town", "Town", "Garden City village")] // Garden City, New York
+        [InlineData(42.5934, -83.5994, "Milford charter township", "Township", "Milford village")] // Milford, Michigan
+        [InlineData(40.0068, -75.2852, "Lower Merion township", "Township")] // Ardmore, Pennsylvania, in no city
+        public void Covering_ListsATownOrTownshipBeforeTheCityInIt(
+            double latitude,
+            double longitude,
+            string town,
+            string kind,
+            params string[] city)
         {
-            // A village is part of a town, and its voters elect both: Garden City is in
-            // the Town of Hempstead.
-            var found = Covering(40.7268, -73.6343);
+            var found = Covering(latitude, longitude);
             var cities = found.Where(district => district.Level == "city").ToArray();
 
-            Assert.Equal(["Hempstead town", "Garden City village"], cities.Select(district => district.Office));
-            Assert.Equal(["Town", "City or village"], cities.Select(district => district.Detail));
-            Assert.Null(Disagreement(found, -73.6343, 40.7268));
+            Assert.Equal([town, .. city], cities.Select(district => district.Office));
+            Assert.Equal([kind, .. city.Select(_ => "City or town")], cities.Select(district => district.Detail));
+            Assert.Null(Disagreement(found, longitude, latitude));
         }
 
         [Fact]
@@ -640,7 +658,7 @@ namespace YourElectionMap.Server.Tests
         [Theory]
         [InlineData(41.9, -87.5, "county-17031")] // Lake Michigan, off Chicago
         [InlineData(43.05, -87.7, "congressional-4", "county-55079")] // Lake Michigan, off Milwaukee
-        [InlineData(44.0, -88.4, "congressional-6", "county-55015")] // Lake Winnebago
+        [InlineData(44.0, -88.4, "congressional-6", "county-55015", "city-5501510350")] // Lake Winnebago, in the Town of Brothertown
         [InlineData(41.15, -73.0, "county-09170")] // Long Island Sound, off Milford
         [InlineData(41.85, -70.3, "congressional-9", "state-upper-25D40", "county-25001")] // Cape Cod Bay
         public void Covering_FindsNoLegislatorsOnTheWaterTigerLeavesOut(
@@ -917,8 +935,9 @@ namespace YourElectionMap.Server.Tests
         /// <summary>
         /// What is wrong with the districts covering one point, or null. One county; one
         /// district per legislative level of the county's state, but on the water TIGER
-        /// leaves out of some levels (<see cref="Waters"/>); at most one city
-        /// (unincorporated land has none), or in New York a town and a village in it; and either a unified school district, a high
+        /// leaves out of some levels (<see cref="Waters"/>); at most one city or town
+        /// (unincorporated land has none), or a town or township and a city or village in
+        /// it; and either a unified school district, a high
         /// school district and the elementary one inside it, one of those two alone, or
         /// none, where TIGER defines no district.
         /// </summary>
@@ -932,9 +951,9 @@ namespace YourElectionMap.Server.Tests
                 .ToArray();
 
             if (levels.Count(level => level == "county") != 1
-                || cities is not ([] or [_] or ["Town", "City or village"]))
+                || cities is not ([] or [_] or ["Town" or "Township", "City or town"]))
             {
-                return "not one county and at most one city, or a town and its village";
+                return "not one county and at most one city, or a township and a city in it";
             }
 
             // The county's Census code begins with its state's, which says whether there

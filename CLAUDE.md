@@ -129,11 +129,13 @@ and State House, Assembly, General Assembly or House of Delegates districts
 halves or thirds numbered "4A", "65B", "1C", Massachusetts's districts are named, "Third Suffolk
 District", not numbered, and some water is in no district of a level: Lake Pontchartrain in Louisiana's Senate,
 Illinois's part of Lake Michigan and Connecticut's of Long Island Sound in any, Wisconsin's lakes
-in its Senate or Assembly, and Massachusetts's bays in its House), from the Census
+in its Senate or Assembly, and Massachusetts's bays in its House; Missouri's US House districts
+are its 2022 map, TIGER's 119th Congress layer, because the courts kept TIGER's current one out of
+2026), from the Census
 Bureau's TIGERweb layers, and its **local rows**: the county (a parish in Louisiana and a planning
-region in Connecticut, whose rows' detail says so), the city or town (in Connecticut,
-Massachusetts, New Jersey and Rhode Island the town, township or city from TIGER's county
-subdivisions, and in New York both the town and, inside it, the village), and the school district
+region in Connecticut, whose rows' detail says so), the town or township, in the seventeen
+states where TIGER's county subdivisions mark them governments of their own, the city or town,
+after the township where one is inside the other, and the school district
 (in Arizona, California, Connecticut, Illinois, Massachusetts, Montana, New Jersey, Rhode Island,
 Wisconsin, a corner of Oregon, part of Long Island, fifteen towns in
 Tennessee, four in Kentucky and one place each in Texas, Minnesota and Georgia, sometimes a high
@@ -145,7 +147,7 @@ The browser fetches the street tiles and the map's label fonts from OpenFreeMap 
 `src/map/style.ts`), and the page's own fonts, Fraunces and Inter, from Google Fonts
 (`index.html`). There is no County Commission, City Council or School Board district data yet,
 so the rail lists up to six rows (seven where an address has both a high school and an elementary
-district, or in New York a town and a village, and eight with both), and fewer where it has no city or school district. An address
+district, or a township and a city or village inside it, and eight with both), and fewer where it has no city or school district. An address
 outside the forty-five states is a 404.
 
 **Google needs an API key, and nothing breaks without one.** The server reads
@@ -270,8 +272,8 @@ changing it, know that:
   its name and its id is its level and Census GEOID, `county-37183`. So has a Massachusetts
   State Senate or State House row, whose `office` is its name, "Third Suffolk District", over its
   chamber, and whose id is `state-upper-25D25`. Rows sort broad to local, then by number, with an
-  elementary school district after the high school district over it, and a New York village
-  after its town.
+  elementary school district after the high school district over it, and a city or village
+  after the town or township it is in.
 
 **Tests.** `DistrictsEndpointTests` hosts the whole app in memory (`OfflineApp`) and reads the raw
 JSON, which is the contract the client reads; new endpoints deserve the same kind of test. **No
@@ -280,7 +282,7 @@ for `FakeGeocoding` and `FakeVoterInfo` (the fake election's date is relative to
 else is real, including the district files. Stub any new outward call the same way. The converter
 has no tests of its own, since its input is not in the repository; `DistrictDataTests` checks its
 output, most strongly with the grid tests that every covered point finds one district per
-legislative level (but on the water TIGER leaves out, such as Lake Pontchartrain), one county, at most one city (in New York, a town and a village inside it) and a school district combination that does not
+legislative level (but on the water TIGER leaves out, such as Lake Pontchartrain), one county, at most one city (or a town or township and a city inside it) and a school district combination that does not
 overlap. `LocalDistrictsTests` covers the
 local rows' sorting and naming on a small file it writes itself.
 On the client, `src/test/setup.ts` replaces `maplibre-gl` with `src/test/fakeMaplibre.ts`, because

@@ -115,8 +115,8 @@ namespace YourElectionMap.Server.Tests
         [InlineData("206 Washington St SW, Atlanta GA", "county-13121", "city-1304000", "school-1300120")]
         [InlineData("700 Capital Ave, Frankfort KY", "county-21073", "city-2128900", "school-2101980")]
         [InlineData("600 Dr Martin L King Jr Blvd, Nashville TN", "county-47037", "city-4752006", "school-4703180")]
-        [InlineData("401 S 2nd St, Springfield IL", "county-17167", "city-1772000", "school-1737080")]
-        [InlineData("200 W Washington St, Indianapolis IN", "county-18097", "city-1836003", "school-1804770")]
+        [InlineData("401 S 2nd St, Springfield IL", "county-17167", "city-1716711046", "city-1772000", "school-1737080")]
+        [InlineData("200 W Washington St, Indianapolis IN", "county-18097", "city-1809711512", "city-1836003", "school-1804770")]
         [InlineData("100 N Capitol Ave, Lansing MI", "county-26065", "city-2646000", "school-2621150")]
         [InlineData("1 Capitol Sq, Columbus OH", "county-39049", "city-3918000", "school-3904380")]
         [InlineData("2 E Main St, Madison WI", "county-55025", "city-5548000", "school-5508520")]
@@ -126,26 +126,25 @@ namespace YourElectionMap.Server.Tests
         // Richmond is a city outside any county, as St. Louis is, so TIGER has it as both.
         [InlineData("1000 Bank St, Richmond VA", "county-51760", "city-5167000", "school-5103240")]
         [InlineData("1900 Kanawha Blvd E, Charleston WV", "county-54039", "city-5414600", "school-5400600")]
-        // In Connecticut, Massachusetts, New Jersey and Rhode Island the city row is a
-        // town or city from TIGER's county subdivisions, whose codes are longer.
-        [InlineData("210 Capitol Ave, Hartford CT", "county-09110", "city-0911037070", "school-0901920")]
-        [InlineData("24 Beacon St, Boston MA", "county-25025", "city-2502507000", "school-2502790")]
-        [InlineData("125 W State St, Trenton NJ", "county-34021", "city-3402174000", "school-3416290")]
+        [InlineData("210 Capitol Ave, Hartford CT", "county-09110", "city-0937000", "school-0901920")]
+        [InlineData("24 Beacon St, Boston MA", "county-25025", "city-2507000", "school-2502790")]
+        [InlineData("125 W State St, Trenton NJ", "county-34021", "city-3474000", "school-3416290")]
         [InlineData("172 State St, Albany NY", "county-36001", "city-3601000", "school-3602460")]
-        [InlineData("82 Smith St, Providence RI", "county-44007", "city-4400759000", "school-4400900")]
+        [InlineData("82 Smith St, Providence RI", "county-44007", "city-4459000", "school-4400900")]
         public async Task Get_ListsTheCapitolsCountyCityAndSchoolDistricts(
             string address,
             string county,
             string city,
-            params string[] schools)
+            params string[] rest)
         {
             // Phoenix and Helena have a high school district over an elementary one, and
-            // list both, high school first. Nebraska has one chamber, so two legislative
-            // rows rather than three come before them.
+            // list both, high school first; Springfield and Indianapolis are in a township
+            // as well as a city, and list both, township first. Nebraska has one chamber,
+            // so two legislative rows rather than three come before them.
             var lookup = await LookupAsync(AddressQuery(address));
 
             Assert.Equal(
-                new[] { county, city }.Concat(schools),
+                new[] { county, city }.Concat(rest),
                 Each(lookup.GetProperty("districts"), "id")
                     .SkipWhile(id => id!.StartsWith("congressional-", StringComparison.Ordinal)
                         || id.StartsWith("state-", StringComparison.Ordinal)));
@@ -174,7 +173,8 @@ namespace YourElectionMap.Server.Tests
         [InlineData("500 Woodlane St, Little Rock AR", 2, 14, "74", "State House")]
         [InlineData("1007 E Grand Ave, Des Moines IA", 3, 17, "33", "State House")]
         [InlineData("900 N 3rd St, Baton Rouge LA", 2, 14, "67", "State House")]
-        [InlineData("201 W Capitol Ave, Jefferson City Missouri", 5, 6, "60", "State House")]
+        // Missouri's 2022 map, which the courts kept for 2026.
+        [InlineData("201 W Capitol Ave, Jefferson City Missouri", 3, 6, "60", "State House")]
         [InlineData("400 High St, Jackson MS", 2, 29, "67", "State House")]
         [InlineData("600 Dexter Ave, Montgomery AL", 2, 26, "77", "State House")]
         [InlineData("400 S Monroe St, Tallahassee FL", 2, 3, "9", "State House")]

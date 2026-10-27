@@ -9,8 +9,8 @@ namespace YourElectionMap.Tools
     /// A state's districts from the Census Bureau's TIGERweb layers, saved as GeoJSON in
     /// longitude and latitude: <c>cd.geojson</c>, <c>sldu.geojson</c> and, but for
     /// Nebraska's one chamber, <c>sldl.geojson</c> in the folder given, and, where the folder has them, the
-    /// county, city or town (places or county subdivisions, <see cref="Towns"/>) and school
-    /// district layers (<see cref="LocalLayers"/>). DATA-SOURCE.md
+    /// county, town or township, city and school district layers (<see cref="LocalLayers"/>).
+    /// DATA-SOURCE.md
     /// has the query that fetches them. TIGER carries no population, so the file has none.
     /// </summary>
     public static partial class Tiger
@@ -63,8 +63,7 @@ namespace YourElectionMap.Tools
                     new("sldu.geojson", "state-upper", "State Senate", "State", 35),
                     new("sldl.geojson", "state-lower", "State House", "State", 65),
                 ]),
-            // Its counties are nine planning regions, and its towns, not places, are its
-            // governments.
+            // Its counties are nine planning regions.
             ["CT"] = new(
                 "09",
                 [
@@ -72,8 +71,7 @@ namespace YourElectionMap.Tools
                     new("sldu.geojson", "state-upper", "State Senate", "State", 36),
                     new("sldl.geojson", "state-lower", "State House", "State", 151),
                 ],
-                County: "Planning region",
-                Towns: Towns.Instead),
+                County: "Planning region"),
             // One seat in the House, elected at large, as in Wyoming.
             ["DE"] = new(
                 "10",
@@ -148,16 +146,14 @@ namespace YourElectionMap.Tools
                     new("sldl.geojson", "state-lower", "State House", "State", 105),
                 ],
                 County: "Parish"),
-            // Its districts are named, "Second Middlesex District", not numbered, and its
-            // towns, not places, are its governments.
+            // Its districts are named, "Second Middlesex District", not numbered.
             ["MA"] = new(
                 "25",
                 [
                     new("cd.geojson", "congressional", "U.S. House", "Federal", 9),
                     new("sldu.geojson", "state-upper", "State Senate", "State", 40, Named: true),
                     new("sldl.geojson", "state-lower", "State House", "State", 160, Named: true),
-                ],
-                Towns: Towns.Instead),
+                ]),
             // Forty-seven districts, each electing a senator and three delegates: some from
             // the whole district, some from its halves, 2A and 2B, or its thirds, 1A, 1B and
             // 1C, as the Legislature drew them.
@@ -185,10 +181,13 @@ namespace YourElectionMap.Tools
                     new("sldu.geojson", "state-upper", "State Senate", "State", 67),
                     new("sldl.geojson", "state-lower", "State House", "State", 67, Halved: [.. Enumerable.Range(1, 67)]),
                 ]),
+            // The 2022 map, which is TIGER's 119th Congress layer: the courts kept the 2025
+            // map, which its 120th Congress layer holds, out of the 2026 elections, and
+            // Proposition A on the November 2026 ballot decides whether it is used after.
             ["MO"] = new(
                 "29",
                 [
-                    new("cd.geojson", "congressional", "U.S. House", "Federal", 8),
+                    new("cd-119.geojson", "congressional", "U.S. House", "Federal", 8),
                     new("sldu.geojson", "state-upper", "State Senate", "State", 34),
                     new("sldl.geojson", "state-lower", "State House", "State", 163),
                 ]),
@@ -232,16 +231,14 @@ namespace YourElectionMap.Tools
                     new("sldu.geojson", "state-upper", "Legislature", "State", 49),
                 ]),
             // Forty districts, each electing a senator and two members of the General
-            // Assembly: TIGER has them in both layers. Its townships, not places, are
-            // governments as much as its cities and boroughs.
+            // Assembly: TIGER has them in both layers.
             ["NJ"] = new(
                 "34",
                 [
                     new("cd.geojson", "congressional", "U.S. House", "Federal", 12),
                     new("sldu.geojson", "state-upper", "State Senate", "State", 40),
                     new("sldl.geojson", "state-lower", "General Assembly", "State", 40),
-                ],
-                Towns: Towns.Instead),
+                ]),
             ["NM"] = new(
                 "35",
                 [
@@ -256,15 +253,13 @@ namespace YourElectionMap.Tools
                     new("sldu.geojson", "state-upper", "State Senate", "State", 21),
                     new("sldl.geojson", "state-lower", "State Assembly", "State", 42),
                 ]),
-            // Its land outside a city is in a town, and a village is part of a town.
             ["NY"] = new(
                 "36",
                 [
                     new("cd.geojson", "congressional", "U.S. House", "Federal", 26),
                     new("sldu.geojson", "state-upper", "State Senate", "State", 63),
                     new("sldl.geojson", "state-lower", "State Assembly", "State", 150),
-                ],
-                Towns: Towns.AsWell),
+                ]),
             ["OH"] = new(
                 "39",
                 [
@@ -293,15 +288,13 @@ namespace YourElectionMap.Tools
                     new("sldu.geojson", "state-upper", "State Senate", "State", 50),
                     new("sldl.geojson", "state-lower", "State House", "State", 203),
                 ]),
-            // Its towns, not places, are its governments, as in Connecticut.
             ["RI"] = new(
                 "44",
                 [
                     new("cd.geojson", "congressional", "U.S. House", "Federal", 2),
                     new("sldu.geojson", "state-upper", "State Senate", "State", 38),
                     new("sldl.geojson", "state-lower", "State House", "State", 75),
-                ],
-                Towns: Towns.Instead),
+                ]),
             ["SC"] = new(
                 "45",
                 [
@@ -393,24 +386,14 @@ namespace YourElectionMap.Tools
             // The detail is the rail's second line under the name. A county's is the
             // state's own word for one.
             new("county.geojson", "county", state.County),
-            .. Cities(state.Towns),
+            // The towns and townships that are governments of their own, whose detail is
+            // "Town" or "Township" by their kind, then the cities, towns and villages.
+            new("cousub.geojson", "city", "Town", Towns: true),
+            new("place.geojson", "city", "City or town"),
             new("unsd.geojson", "school", "School district"),
             new("elsd.geojson", "school", "Elementary school district"),
             new("scsd.geojson", "school", "High school district"),
         ];
-
-        private static NamedLayer[] Cities(Towns towns) => towns switch
-        {
-            Towns.Instead => [new("cousub.geojson", "city", "City or town")],
-            // Cities and villages from the places, towns from the county subdivisions,
-            // whose cities would be there twice.
-            Towns.AsWell =>
-            [
-                new("cousub.geojson", "city", "Town", OnlyEndingIn: " town"),
-                new("place.geojson", "city", "City or village"),
-            ],
-            _ => [new("place.geojson", "city", "City or town")],
-        };
 
         public static Built Build(string state, string source)
         {
@@ -645,11 +628,21 @@ namespace YourElectionMap.Tools
             }
 
             if (name.Contains("Not Defined", StringComparison.OrdinalIgnoreCase)
-                || (layer.OnlyEndingIn is { } ending && !name.EndsWith(ending, StringComparison.Ordinal)))
+                || (layer.Towns && !IsGovernment(properties, layer.File)))
             {
                 Console.WriteLine($"  {geoid,-18} skipped: \"{name}\"");
                 return null;
             }
+
+            // A town is a town; a township, a charter township or Kansas's "Township 4" is
+            // a township.
+            var detail = !layer.Towns ? layer.Detail : Field(properties, "LSADC", layer.File) switch
+            {
+                "43" => "Town",
+                "44" or "45" or "49" => "Township",
+                var other => throw new InvalidDataException(
+                    $"{layer.File}: \"{name}\" is a government of a kind this does not know, LSADC {other}."),
+            };
 
             // Written into the file as it is, between quotes.
             if (name.Contains('"') || name.Contains('\\'))
@@ -669,10 +662,21 @@ namespace YourElectionMap.Tools
                 layer.Level,
                 name,
                 Number: "",
-                layer.Detail,
+                detail,
                 parts.Sum(part => part.Length / 2),
                 parts.Select(part => Geometry.Thin(part, ToleranceDegrees)).ToList());
         }
+
+        /// <summary>
+        /// Whether a county subdivision is a town or township governing itself, by
+        /// TIGER's functional status: A, active, or B, active but sharing some of its
+        /// work with another government. The rest are left out: F, a city or borough the
+        /// layer has again, which the places have; C, a town one with its city, as
+        /// Hartford is; G, a borough of New York City; I and N, inactive or not
+        /// functioning, as most of Missouri's townships are; and S, unorganized territory.
+        /// </summary>
+        private static bool IsGovernment(JsonElement properties, string file) =>
+            Field(properties, "FUNCSTAT", file) is "A" or "B";
 
         private static string Field(JsonElement properties, string name, string file) =>
             properties.TryGetProperty(name, out var value)
@@ -680,7 +684,7 @@ namespace YourElectionMap.Tools
                 && value.GetString() is { Length: > 0 } text
                 ? text
                 : throw new InvalidDataException(
-                    $"{file}: a feature has no {name}. Fetch it with outFields=NAME,GEOID.");
+                    $"{file}: a feature has no {name}. Fetch it with {name} in outFields (DATA-SOURCE.md).");
 
         /// <summary>
         /// Every ring of a Polygon or MultiPolygon, loose: the server works out which is
@@ -733,31 +737,7 @@ namespace YourElectionMap.Tools
         private static partial Regex TrailingNumber();
 
         /// <param name="County">The county rows' detail: "Parish" in Louisiana.</param>
-        /// <param name="Towns">Where the city rows come from.</param>
-        private sealed record State(string Fips, Layer[] Layers, string County = "County", Towns Towns = Towns.Places);
-
-        /// <summary>
-        /// Where a state's city rows come from. TIGER's places are its cities, towns and
-        /// villages; its county subdivisions are the towns and townships counties are
-        /// divided into, which in a few states are governments as much as any city.
-        /// </summary>
-        private enum Towns
-        {
-            /// <summary><c>place.geojson</c>.</summary>
-            Places,
-
-            /// <summary>
-            /// <c>cousub.geojson</c>, which has every town and city once: the places there
-            /// are those cities again, and a few boroughs inside a town.
-            /// </summary>
-            Instead,
-
-            /// <summary>
-            /// Both, as in New York, where a village is part of a town: the towns from
-            /// <c>cousub.geojson</c>, then the cities and villages from <c>place.geojson</c>.
-            /// </summary>
-            AsWell,
-        }
+        private sealed record State(string Fips, Layer[] Layers, string County = "County");
 
         /// <summary>
         /// A legislative layer: districts 1 to <paramref name="Count"/>, each of those in
@@ -775,7 +755,10 @@ namespace YourElectionMap.Tools
             int[]? InThree = null,
             bool Named = false);
 
-        /// <param name="OnlyEndingIn">Keeps only the features whose name ends in this: " town".</param>
-        private sealed record NamedLayer(string File, string Level, string Detail, string? OnlyEndingIn = null);
+        /// <param name="Towns">
+        /// The county subdivisions: only the towns and townships that are governments
+        /// (<see cref="IsGovernment"/>), each with the detail its kind gives it.
+        /// </param>
+        private sealed record NamedLayer(string File, string Level, string Detail, bool Towns = false);
     }
 }

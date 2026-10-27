@@ -56,9 +56,11 @@ holds its rings in longitude and latitude, to six decimal places, thinned to 15 
 | `ri-districts.json` | Rhode Island | 44 | `Tiger\ri` | 2026-10-25 |
 
 Every state's folder holds its five local layers too, downloaded on the same day, apart from
-those of Arizona, Idaho, Montana, Utah and Wyoming, downloaded on 2026-10-12. Connecticut's,
-Massachusetts's, New Jersey's, New York's and Rhode Island's hold a sixth, their county
-subdivisions.
+those of Arizona, Idaho, Montana, Utah and Wyoming, downloaded on 2026-10-12. The seventeen
+states with towns or townships of their own (see below) hold a sixth, their county subdivisions,
+downloaded on 2026-10-26. Every folder holds the previous vintage's legislative layers as well,
+downloaded on 2026-10-25 to check the current ones against (see **Are the plans current?**), and
+Missouri's file is built from one of them.
 
 ## The source
 
@@ -71,7 +73,7 @@ TIGERweb's current layers are the January 1, 2026 vintage. TIGER data is public 
 | State House / Assembly | `Legislative`, 2, 2026 State Legislative Districts – Lower | `sldl.geojson` |
 | County | `State_County`, 1, Counties | `county.geojson` |
 | City or town | `Places_CouSub_ConCity_SubMCD`, 4, Incorporated Places | `place.geojson` |
-| Town (CT, MA, NJ, NY and RI) | `Places_CouSub_ConCity_SubMCD`, 1, County Subdivisions | `cousub.geojson` |
+| Town or township | `Places_CouSub_ConCity_SubMCD`, 1, County Subdivisions | `cousub.geojson` |
 | School district | `School`, 0, Unified School Districts | `unsd.geojson` |
 | High school district | `School`, 1, Secondary School Districts | `scsd.geojson` |
 | Elementary school district | `School`, 2, Elementary School Districts | `elsd.geojson` |
@@ -102,6 +104,8 @@ pages with `resultOffset` and `resultRecordCount`, and join the features into on
 unified school districts are too big even to say so: the one request comes back empty. Fetch
 them in pages from the start, 100 at a time, ordered with `orderByFields=GEOID`, and check the
 total against the same query with `returnCountOnly=true`, which counts 1,016.
+
+The county subdivisions need two fields more, `outFields=NAME,GEOID,FUNCSTAT,LSADC`.
 
 ### North Carolina
 
@@ -208,6 +212,14 @@ TIGER puts nothing over them for the upper grades, as in Oklahoma. St. Louis is 
 any county, so TIGER has it in the county layer as "St. Louis city" as well as in the place
 layer, and its county and city rows read the same, as Carson City's do.
 
+Its US House districts are not TIGER's current ones. The 120th Congress layer holds the map the
+Legislature drew in 2025 (HB 1), which the Missouri Supreme Court and then the U.S. Supreme Court
+kept out of the 2026 elections, pending a referendum on it, Proposition A, on the November 2026
+ballot. The 2022 map is used instead, and that is the 119th Congress layer, layer 4, saved as
+`Tiger\mo\cd-119.geojson`, which `Tiger.cs` reads in place of `cd.geojson`; the Jefferson City
+capitol is in District 3. If Proposition A passes, the 2025 map is used from 2028, and `Tiger.cs`
+should read `cd.geojson` again.
+
 ### Tennessee, Kentucky and Georgia
 
 Tennessee has 15 towns with an elementary district of their own, such as "Franklin Special
@@ -261,28 +273,48 @@ The districts and counties of Maryland and Virginia reach across the Chesapeake 
 Pennsylvania's across its part of Lake Erie, which only its school layer leaves out, as a
 "School District Not Defined".
 
+### Towns and townships
+
+In seventeen of the states a town or township can govern itself, as a city does, with officers
+its voters elect: Connecticut, Illinois, Indiana, Kansas, Massachusetts, Michigan, Minnesota, Missouri, Nebraska, New Jersey, New York, North Dakota, Ohio, Pennsylvania, Rhode Island, South Dakota and Wisconsin. TIGER keeps them in its county subdivisions,
+`cousub.geojson`, and most of them are not places. In the other twenty-eight states the county
+subdivisions are statistical areas with nothing to keep, so their folders do without the layer.
+
+The tool keeps a county subdivision whose functional status, `FUNCSTAT`, is A, an active
+government, or B, one that shares some of its work with another, 15,243 in all:
+
+| State | Kept | State | Kept | State | Kept |
+| --- | --- | --- | --- | --- | --- |
+| Connecticut | 149 towns | Minnesota | 1,776 townships | North Dakota | 1,305 townships |
+| Illinois | 1,425 townships | Missouri | 283 townships | Ohio | 1,308 townships |
+| Indiana | 1,003 townships | Nebraska | 319 townships | Pennsylvania | 1,543 townships |
+| Kansas | 1,258 townships | New Jersey | 240 townships | Rhode Island | 31 towns |
+| Massachusetts | 293 towns | New York | 930 towns | South Dakota | 898 townships |
+| Michigan | 1,240 townships | | | Wisconsin | 1,242 towns |
+
+It leaves out the rest: F, a city, borough or village the layer has again, which the places
+give; C, a town that is one with its city, as Hartford is, whose row is the city's; G, New York
+City's five boroughs; I and N, inactive or not functioning, as 1,094 of Missouri's townships
+and Illinois's precincts are; and S, unorganized territory, as in Minnesota and the Dakotas.
+The legal type, `LSADC`, gives the row's detail: 43 is "Town", and 44, 45 (Kansas's and
+Nebraska's numbered "Township 4") and 49 (Michigan's charter townships) are "Township". Any other
+type among those kept stops the tool.
+
+Where a city or village is inside a township, as Michigan's, Ohio's and New York's villages, a
+Connecticut borough and every city in Indiana and most of Illinois are, an address has both
+rows, and the server lists the town or township first: "Capital township", then "Springfield
+city". Elsewhere, in Pennsylvania, Wisconsin, Minnesota and New Jersey and for any city that
+stands apart from the townships, an address has one. On a 0.05° grid the points with no city
+row fall from 4,902 to 90 over Pennsylvania, 11,150 to 4,200 over Michigan, 7,280 to 846 over
+Wisconsin and 8,914 to 4,927 over South Dakota; what is left is water, unorganized land and the
+parts of Missouri, Nebraska and the Dakotas whose townships do not govern. The files grow by up
+to 5 MB each, Pennsylvania's from 9 to 14.
+
+Each county subdivision layer has "County subdivisions not defined" areas, water, which are F
+and left out. Wisconsin's towns reach over Lake Winnebago, so a point on it has a town though no
+legislators.
+
 ### Connecticut, Massachusetts, New Jersey, New York and Rhode Island
-
-In these five a town or township is a government as much as any city. TIGER keeps them in its
-county subdivisions, and most are not places as well. Connecticut's places layer
-has 30 cities and boroughs against 169 towns, and Massachusetts's 58 cities against 351 cities
-and towns. `Tiger.cs` says where each state's city rows come from (`Towns`):
-
-- **Connecticut, Massachusetts, New Jersey and Rhode Island** take `cousub.geojson` in place of
-  `place.geojson`: 169, 351, 564 and 39 towns, townships, boroughs and cities, every one of
-  which is a county subdivision, each covering its land once. The places there are those cities
-  again, but for Connecticut's boroughs inside a town, such as Stonington's, which are left out.
-  TIGER names every Connecticut town a town, so Hartford's row reads "Hartford town".
-- **New York** takes both, because a village is part of a town and its voters elect both: the
-  933 towns from `cousub.geojson`, kept by their name ending in " town", with the detail "Town",
-  then the 594 cities and villages from `place.geojson`, with the detail "City or village". The
-  county subdivisions' cities would otherwise be there twice, and their New York City boroughs,
-  Indian reservations and Chautauqua Lake's unorganized territory are left out. An address in a
-  village has two city rows, the town first; the server sorts a "City or village" after a "Town".
-  New York City is one row, "New York city".
-
-Each county subdivision layer has "County subdivisions not defined" areas, water, which the tool
-leaves out.
 
 Connecticut has no county governments, and since 2022 TIGER has its nine planning regions in the
 county layer instead, "Capitol Planning Region", GEOID `09110`; `Tiger.cs` gives their rows the
@@ -347,9 +379,9 @@ District Not Defined" too, which leaves 207 points of 11,200 on the test grid wi
   School District". These have no number. The tool stores each with its name as the office,
   no number, and an id made from its level and `GEOID`, "county-37183", which is stable and
   safe in the page's URL. A school layer's "School District Not Defined" is left out, so an
-  address there has no school row. Cities are incorporated places only, but for the five states
-  whose towns come from the county subdivisions, so an address outside every city, in
-  unincorporated county land, has no city row either.
+  address there has no school row. Cities are incorporated places, and towns and townships the
+  county subdivisions that govern themselves, so an address outside both, in unincorporated
+  county land, has no city row either.
 - **No population.** TIGERweb's `POP100` field is empty for these layers, so the files have none
   and the map chip shows none.
 - **Longitude and latitude, WGS84,** which is what `outSR=4326` asks for. The tool thins each ring to 15 feet, taken as degrees of
@@ -365,8 +397,8 @@ on 49°N, in a Washington school district and no legislative district; the tests
 few hundredths off them.
 
 The counties are built from the same census blocks, so they cover the state once as well: on the
-grid, every point in every state is in exactly one county. No point is in two cities, but in
-New York a village is in its town too. Each
+grid, every point in every state is in exactly one county. No point is in two cities or two
+townships, but a city or village can be in a township. Each
 point's school rows are one unified district, a high school district and the elementary district
 inside it, one of those two alone, or none where TIGER defines no district: 47 points of 4,310
 on a 0.1° grid over California, and on a 0.05° grid 627 of 11,513 over Arizona, 207 of 11,200
@@ -385,6 +417,34 @@ one: (-94.87, 33.77), on the Red River, 7 feet inside Texas in TIGER, is 2 feet 
 Oklahoma's file, and Texas's file reaches it only by taking the nearest district within 50 feet.
 The lookup answers there with whichever state's file it reads first, Oklahoma. The tests allow
 such a point only within thirty feet of both states' US House edges.
+
+## Are the plans current?
+
+TIGERweb labels its current layers the January 1, 2026 vintage, but its 120th Congress layer has
+been updated since: on 2026-10-25 it held maps signed as late as May 2026. The layers' `CDSESSN`
+and `LSY` fields read 120 and 2026 in every state, so only the outlines tell. Each state's
+folder holds the previous layers to compare with: `cd-119.geojson` (layer 4, the 119th Congress's
+districts) and `sldu-prev.geojson` and `sldl-prev.geojson` (layers 5 and 6, the 2024 plans). On a
+0.05° grid, the current US House layer puts these shares of points in a different district:
+
+- Alabama, 15%: the Legislature's 2023 map, which the Supreme Court let the state use in 2026.
+  All of Mobile is in District 1, where the court's map put part of it in District 2.
+- Florida, 23%: the map signed on 2026-05-04.
+- Louisiana, 23%: SB 121, signed on 2026-05-29. Shreveport is in District 4, with no diagonal
+  District 6.
+- Missouri, 21%: the 2025 map, which the courts kept out of 2026 (see **Missouri**).
+- North Carolina 15%, Ohio 21%, Texas 17% and Utah 62%: their 2025 maps.
+- Tennessee, 40%: the 2026 map, which splits Memphis between Districts 5, 8 and 9.
+- Every other state, 0%. Virginia's 2026 amendment was struck down, Maryland's Question 3 would
+  only allow a new map from 2028, and New York's court-ordered redraw was stayed.
+
+Of the legislative layers only Michigan's Senate (0.9%, the Detroit-area districts redrawn by
+court order) and Mississippi's Senate and House (4.1% and 0.7%, the court-ordered 2025 redraw)
+changed, both the plans in use. Alabama's Senate layer is its 2021 map, which the 11th Circuit
+restored for 2026, and North Dakota's is the court's 2024 map, kept for 2026. Each of these was
+checked against news of the plans in use for 2026 as of 2026-10-25. Suits still open in
+Louisiana, Tennessee and Alabama could change a map; checking again is a download of these three
+layers and the same comparison.
 
 ## Credit
 
@@ -425,16 +485,17 @@ file if:
 - a legislative layer's districts are not exactly 1 to N, each district `Tiger.cs` lists as
   halved being an A and a B instead, and each it lists in three an A, a B and a C, or a named
   layer's are not N, each `GEOID` once;
+- a county subdivision has no `FUNCSTAT`, or one kept as a government has no `LSADC`, or one of a
+  type other than a town or township;
 - a coordinate is not a longitude and latitude, as a layer fetched without `outSR=4326` would be.
 
 Two runs of the same layers produce the same bytes apart from the date in the header. With the
 local layers, Texas's file is about 32 MB, California's about 19 MB and North Carolina's about
-15 MB, the last two against 7 and 6 without them. The rest run from Montana's 12 MB and South
-Carolina's 11 down to Wyoming's 3, Nevada's 1.5, Rhode Island's 1.0 and Delaware's 0.9.
+15 MB, the last two against 7 and 6 without them. The rest run from Georgia's 17 MB, Pennsylvania's 14 and
+Illinois's 13 down to Wyoming's 3, Nevada's 1.5, Rhode Island's 1.0 and Delaware's 0.9.
 
 Another state needs its FIPS code, office names, district counts, any halved districts or
 districts in three, whether its districts are named, its
-word for a county, where that is not "County", and where its towns are governments, where its
-city rows come from, added to the table in `Tiger.cs`, and its three legislative layers
+word for a county, where that is not "County", added to the table in `Tiger.cs`, and its three legislative layers
 downloaded into a folder of its own, with its local layers alongside them for the county, city
 and school rows. The local layers need nothing else in `Tiger.cs`.
