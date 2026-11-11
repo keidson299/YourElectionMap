@@ -107,8 +107,8 @@ function parseCoordinates(
   return { lat, lon }
 }
 
-// Five decimal places is about a metre: as fine as the district files, and
-// no more exact about where a visitor stood than a shared link needs to be.
+// Five decimal places is about a metre: finer than the district files' fifteen
+// feet, and no more exact about where a visitor stood than a link needs to be.
 function formatCoordinate(value: number): string {
   return String(Math.round(value * 1e5) / 1e5)
 }

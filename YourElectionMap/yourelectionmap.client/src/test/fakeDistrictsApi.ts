@@ -5,7 +5,7 @@ import { resetLookups } from '../districts/lookups'
 // Stands in for GET /api/districts with the invented fixture, and can be told to
 // fail, so tests can drive the page's flows: waiting, a match, a miss, a failure.
 //
-// Statuses mirror DistrictsController exactly: 400 for a query it cannot use, 404
+// Statuses follow DistrictsController: 400 for a query it cannot use, 404
 // for no districts, anything else a failure. What counts as a match does not: here
 // it is an address with a digit, or a point roughly in North America.
 // DistrictsEndpointTests pins what the server really answers.

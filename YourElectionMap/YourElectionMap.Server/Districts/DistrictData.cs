@@ -5,11 +5,10 @@ namespace YourElectionMap.Server.Districts
     /// <summary>
     /// Every district the site knows, held in memory for the life of the process.
     /// <para>
-    /// There is one file per state, <c>nc-districts.json</c> and so on, each built by
-    /// YourElectionMap.Tools — see that project's DATA-SOURCE.md. Every one in the data
-    /// folder is read once, at startup, because they are megabytes that never change
-    /// while the app runs. Each holds its rings in longitude and latitude, which is
-    /// what an address is tested against and what the page is sent.
+    /// One file per state, <c>nc-districts.json</c> and so on, built by
+    /// YourElectionMap.Tools (see its DATA-SOURCE.md) and read once, at startup. Rings
+    /// are in longitude and latitude, which is what an address is tested against and
+    /// what the page is sent.
     /// </para>
     /// </summary>
     public sealed class DistrictData
@@ -201,16 +200,16 @@ namespace YourElectionMap.Server.Districts
                     $"{path} is not in degrees. Rebuild it with YourElectionMap.Tools.");
             }
 
-            // Broad to local, which is the order the rail lists them in, so the lookup
-            // never has to sort. Within a level, by number; an elementary school
-            // district after the secondary one covering it, and a city or village after
-            // the town or township it is in; then by id, so the order never depends on
-            // the sort.
+            // In the rail's order (see Compare).
             Array.Sort(document.Districts, Compare);
 
             return document;
         }
 
+        /// <summary>
+        /// Broad to local, then by number, then the outer of two at one level before the
+        /// inner (<see cref="Inner"/>), then by id, so the order never depends on the sort.
+        /// </summary>
         private static int Compare(Stored left, Stored right)
         {
             var byLevel = Rank(left.Level) - Rank(right.Level);
@@ -288,15 +287,13 @@ namespace YourElectionMap.Server.Districts
                     Id,
                     Level,
                     Office,
-                    // A county, city or school district is stored with no number: it is
-                    // named, "Wake County", not numbered.
+                    // A district known by name, "Wake County", is stored with no number.
                     Unit: Number.Length == 0 ? null : "District",
                     Number: Number.Length == 0 ? null : Number,
                     Detail,
                     // Filled from the county by Covering, where the file has counties.
                     Area: null,
-                    // Worked out the first time the district is asked for and kept, since
-                    // the data never changes while the app runs.
+                    // Built the first time it is asked for, then kept.
                     Boundary: _boundary ??= Boundary());
 
             /// <summary>

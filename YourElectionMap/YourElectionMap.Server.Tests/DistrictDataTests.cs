@@ -37,9 +37,9 @@ namespace YourElectionMap.Server.Tests
             ["OR"] = new("41", 44.9385, -123.0301, "State House", (-124.75, -116.4), (41.95, 46.35)),
             // The State House, 1100 Gervais Street, Columbia.
             ["SC"] = new("45", 34.0004, -81.0330, "State House", (-83.4, -78.45), (31.95, 35.25)),
-            // The rest have straight borders along round degrees, so their boxes start a few
-            // hundredths off them: a grid row on 37°N would be on the Utah–Arizona line, and
-            // one on 49°N finds a Washington school district on the Canadian line itself.
+            // From here on the boxes start a few hundredths off any border on a round degree:
+            // a grid row on 37°N would be on the Utah–Arizona line, and one on 49°N finds a
+            // Washington school district on the Canadian line itself.
             // The Legislative Building, 416 Sid Snyder Avenue SW, Olympia.
             ["WA"] = new("53", 47.0358, -122.9048, "State House", (-124.9, -116.9), (45.52, 49.1)),
             // The State Capitol, 1700 W Washington Street, Phoenix.
@@ -191,9 +191,8 @@ namespace YourElectionMap.Server.Tests
                 }
             }
 
-            // The capitol is in a city, but for Honolulu, which is a county, so it has a
-            // county and a city row, with a township's before it in Illinois and Indiana,
-            // then its school district, or a high school and an elementary district.
+            // A county row, then a city row (none in Honolulu, which is a county, and a
+            // township's before it in Illinois and Indiana), then one or two school rows.
             var cities = local.Skip(1).TakeWhile(district => district.Level == "city").Count();
 
             Assert.Equal("county", local[0].Level);
@@ -321,12 +320,9 @@ namespace YourElectionMap.Server.Tests
             double longitude,
             params string[] ids)
         {
-            // Illinois's districts of all three levels stop at the shore of Lake Michigan,
-            // Connecticut's at the shore of Long Island Sound, and New Hampshire's at its
-            // coast, where only its county goes on; Wisconsin's State Senate
-            // and Assembly districts stop at the shores of its lakes, Massachusetts's
-            // State House districts at its coast, and Louisiana's Senate districts at the
-            // shore of Lake Pontchartrain, where the other levels and the counties go on.
+            // At the shore, all three levels stop in Illinois, Connecticut and New
+            // Hampshire, leaving the county; both chambers in Wisconsin; the State House in
+            // Massachusetts; and the Senate on Lake Pontchartrain.
             var found = Covering(latitude, longitude);
 
             Assert.Equal(ids, found.Select(district => district.Id));
@@ -334,15 +330,12 @@ namespace YourElectionMap.Server.Tests
         }
 
         /// <summary>
-        /// The one check on the file that needs no outside authority. The three plans were
-        /// drawn separately, but each is built from the same 2020 census blocks and
-        /// covers the whole state exactly once, so anywhere one of them places you the
-        /// other two have to as well — and never twice. A plan read wrongly, a district
-        /// missing, or a conversion that put one layer off by a few feet along the coast
-        /// would have to show up here. So would two states' files overlapping, where a
-        /// border runs through the grid. The counties are built from the same blocks, so
-        /// they hold to the same rule; cities and school districts do as far as
-        /// <see cref="Disagreement"/> says.
+        /// The one check on the files that needs no outside authority. Every plan, and the
+        /// counties, is built from the same 2020 census blocks and covers the state exactly
+        /// once, so every covered point must find one district per level, never two. A plan
+        /// read wrongly, a missing district, a layer shifted along the coast or two states'
+        /// files overlapping would show up here. Cities and school districts are held to
+        /// what <see cref="Disagreement"/> allows.
         /// </summary>
         [Theory]
         [InlineData("NC", 0.05, 4_000, 7_000)]
@@ -409,9 +402,10 @@ namespace YourElectionMap.Server.Tests
 
         /// <summary>
         /// Points a few feet either side of State House edges (in Nebraska, the
-        /// Legislature's), where addresses on a boundary street land, and where thinning each district on its own leaves
-        /// slivers two districts cover, or none. Every one must still find one district
-        /// per level. Every hundredth edge, to keep the suite quick.
+        /// Legislature's), where addresses on a boundary street land, and where thinning
+        /// each district on its own leaves slivers two districts cover, or none. Every one
+        /// must still find one district per level. Every hundredth edge, to keep the suite
+        /// quick.
         /// </summary>
         [Theory]
         [MemberData(nameof(EveryState))]
@@ -554,9 +548,9 @@ namespace YourElectionMap.Server.Tests
         /// district per legislative level of the county's state, but on the water TIGER
         /// leaves out of some levels (<see cref="Waters"/>); at most one city or town
         /// (unincorporated land has none), or a town or township and a city or village in
-        /// it; and either a unified school district, a high
-        /// school district and the elementary one inside it, one of those two alone, or
-        /// none, where TIGER defines no district.
+        /// it; and either a unified school district, a high school district and the
+        /// elementary one inside it, one of those two alone, or none, where TIGER defines
+        /// no district.
         /// </summary>
         private static string? Disagreement(List<District> found, double longitude, double latitude)
         {

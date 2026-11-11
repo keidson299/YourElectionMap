@@ -52,8 +52,7 @@ export function DistrictRail({
   const baseId = useId()
   const titleId = `${baseId}-title`
   const listId = `${baseId}-list`
-  // Name the data the boundaries were drawn from, so a visitor can tell which
-  // maps they are looking at — districts are redrawn, and have been recently.
+  // Districts get redrawn, so say which data these came from.
   const sourceTag =
     source === null ? null : <span className="source-tag">{source}</span>
 

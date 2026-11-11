@@ -84,9 +84,10 @@ export function AddressForm({
   }
 
   /**
-   * Waits on the caller's lookup and shows what it says, if the form is still
-   * on the page. finally, so a caller that throws cannot leave the form stuck
-   * on "Checking…" or "Finding you…" with nothing to do but reload.
+   * Waits on the caller's lookup and passes on any problem it reports, or says
+   * CALLER_FAILED if it throws, while the form is still on the page. The busy
+   * flag is cleared in finally, so a throwing caller cannot leave the form stuck
+   * on "Checking…" or "Finding you…".
    */
   async function runCaller(
     call: () => Promise<LookupNotice | null | undefined>,
@@ -111,7 +112,6 @@ export function AddressForm({
   }
 
   function handleLocate() {
-    // aria-disabled rather than disabled, so focus stays on the button.
     if (busy) {
       return
     }

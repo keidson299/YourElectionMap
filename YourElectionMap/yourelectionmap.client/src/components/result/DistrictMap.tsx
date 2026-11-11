@@ -42,11 +42,9 @@ import './DistrictMap.css'
 // draws comes from buildStyle, so a new selection or theme is one setStyle,
 // which MapLibre diffs rather than reloads.
 
-// MapLibre parses tiles and GeoJSON in a web worker, which it finds by building
-// the worker's URL beside its own file at runtime. Bundled, its own file is our
-// chunk and the worker was never emitted, so nothing but the background would
-// ever draw. Importing the worker with ?url makes Vite emit it and hand over
-// where it ended up.
+// MapLibre looks for its web worker beside its own file, which bundling breaks:
+// the worker is never emitted and only the background draws. Importing it with
+// ?url makes Vite emit it and gives its URL.
 setWorkerUrl(workerUrl)
 
 type DistrictMapProps = {
@@ -94,8 +92,8 @@ export function DistrictMap({
     () => buildStyle({ layers, colors, compact }),
     [layers, colors, compact],
   )
-  // Kept, because the map re-renders on every frame of a drag, and this reads
-  // every point of the boundary.
+  // Memoized: the map re-renders on every frame of a drag, and this reads every
+  // point of the boundary.
   const selectedBoundary = layers.selected.boundary
   const bounds = useMemo(
     () => openingBounds(location, selectedBoundary, minimumSpan(compact)),

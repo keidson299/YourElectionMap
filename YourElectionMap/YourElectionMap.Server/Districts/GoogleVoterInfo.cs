@@ -37,10 +37,10 @@ namespace YourElectionMap.Server.Districts
         private const string Nationwide = "ocd-division/country:us";
 
         /// <summary>
-        /// Where "today" is decided: the westernmost time zone the site covers, the Pacific
-        /// coast's, so an election counts as over once its day has ended in every state. The
-        /// Carolinas' stays up until 3 a.m. there, which does no harm. A host with no
-        /// time zone data gets Pacific standard time all year, an hour off in summer.
+        /// Where "today" is decided: the Pacific coast's time zone, whose midnight comes after
+        /// every state's polls have closed, Alaska's and Hawaii's included. In the East an
+        /// election stays up until 3 a.m., which does no harm. A host with no time zone
+        /// data gets Pacific standard time all year, an hour off in summer.
         /// </summary>
         private static readonly TimeZoneInfo LastToClose =
             TimeZoneInfo.TryFindSystemTimeZoneById("America/Los_Angeles", out var pacific)

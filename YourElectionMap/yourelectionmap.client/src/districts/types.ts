@@ -26,9 +26,9 @@ export type District = {
   /** URL-safe and stable, e.g. 'state-lower-44', or 'county-37183' for a county. */
   id: string
   level: DistrictLevel
-  /** 'State House', or a whole government's name: 'Wake County'. */
+  /** 'State House', or a named district's name: 'Wake County'. */
   office: string
-  /** Null for a county, city or school district, which is named, not numbered. */
+  /** Null for a district known by name rather than number, such as a county. */
   unit: 'District' | 'Ward' | 'Zone' | null
   /** '44', or null on the same terms as the unit. */
   number: string | null

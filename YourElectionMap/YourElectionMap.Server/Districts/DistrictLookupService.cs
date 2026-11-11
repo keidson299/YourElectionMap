@@ -3,13 +3,9 @@ namespace YourElectionMap.Server.Districts
     /// <summary>
     /// Turns an address or a point into the districts covering it: an address is placed
     /// by the Census geocoder, then the point is handed to <see cref="DistrictData"/>.
-    /// An address that lands in a state the site covers is then sent to Google for its
-    /// next election.
-    /// <para>
-    /// The data covers only some states, so an address in another state is
-    /// placed and then found in no district — the same null as an address that could not
-    /// be placed.
-    /// </para>
+    /// A typed address that finds districts is then sent to Google for its next election.
+    /// An address outside the fifty states is placed and then found in no district: the
+    /// same null as one that could not be placed.
     /// </summary>
     public class DistrictLookupService
     {

@@ -69,8 +69,6 @@ namespace YourElectionMap.Server.Districts
             catch (Exception failure) when (
                 failure is HttpRequestException or TaskCanceledException or JsonException)
             {
-                // A DNS failure, a timeout, a reply that was not JSON. None of them say
-                // anything about the address.
                 throw new GeocoderUnavailableException("The geocoder could not be reached.", failure);
             }
         }

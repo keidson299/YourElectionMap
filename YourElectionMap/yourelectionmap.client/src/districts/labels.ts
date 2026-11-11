@@ -9,8 +9,8 @@ import type { District } from './types'
  * - legend: 'State House 44', for the map legend
  *
  * Wards and zones keep their unit in every form ('City Council · Ward 2'),
- * because a bare number would not say which kind it is. A county, city or
- * school district has no number, and is its name in every form: 'Wake County'.
+ * because a bare number would not say which kind it is. A district with no
+ * number is its name in every form: 'Wake County'.
  */
 export type NameForm = 'full' | 'short' | 'legend'
 

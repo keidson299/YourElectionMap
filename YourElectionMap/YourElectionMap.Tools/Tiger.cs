@@ -8,10 +8,10 @@ namespace YourElectionMap.Tools
     /// <summary>
     /// A state's districts from the Census Bureau's TIGERweb layers, saved as GeoJSON in
     /// longitude and latitude: <c>cd.geojson</c>, <c>sldu.geojson</c> and, but for
-    /// Nebraska's one chamber, <c>sldl.geojson</c> in the folder given, and, where the folder has them, the
-    /// county, town or township, city and school district layers (<see cref="LocalLayers"/>).
-    /// DATA-SOURCE.md
-    /// has the query that fetches them. TIGER carries no population, so the file has none.
+    /// Nebraska's one chamber, <c>sldl.geojson</c> in the folder given, and, where the
+    /// folder has them, the county, town or township, city and school district layers
+    /// (<see cref="LocalLayers"/>). DATA-SOURCE.md has the query that fetches them. TIGER
+    /// carries no population, so the file has none.
     /// </summary>
     public static partial class Tiger
     {
@@ -44,7 +44,7 @@ namespace YourElectionMap.Tools
             ["FL"] = new("12", [UsHouse(28), Senate(40), House(120)]),
             ["GA"] = new("13", [UsHouse(14), Senate(56), House(180)]),
             ["HI"] = new("15", [UsHouse(2), Senate(25), House(51)]),
-            // Thirty-five districts, as in Arizona.
+            // Thirty-five districts in both layers, as in Arizona.
             ["ID"] = new("16", [UsHouse(2), Senate(35), House(35)]),
             ["IA"] = new("19", [UsHouse(4), Senate(50), House(100)]),
             ["IL"] = new("17", [UsHouse(17), Senate(59), House(118)]),
@@ -101,8 +101,8 @@ namespace YourElectionMap.Tools
             ["PA"] = new("42", [UsHouse(17), Senate(50), House(203)]),
             ["RI"] = new("44", [UsHouse(2), Senate(38), House(75)]),
             ["SC"] = new("45", [UsHouse(7), Senate(46), House(124)]),
-            // Thirty-five districts, as in North Dakota, but for Districts 26 and 28, each
-            // halved.
+            // Thirty-five districts in both layers, but for Districts 26 and 28, each
+            // halved, as in North Dakota.
             ["SD"] = new("46", [UsHouse(1), Senate(35), House(35) with { Halved = [26, 28] }]),
             ["TN"] = new("47", [UsHouse(9), Senate(33), House(99)]),
             ["TX"] = new("48", [UsHouse(38), Senate(31), House(150)]),
@@ -222,8 +222,7 @@ namespace YourElectionMap.Tools
         /// Numbered 1 to N, each once, in order, with a halved district's two halves, or a
         /// district in three's three parts, in its place, or lettered A onwards: anything
         /// else is a plan this was not written for. Named districts are N, each GEOID
-        /// once, sorted by it. Prints a
-        /// line per district as it goes.
+        /// once, sorted by it. Then prints a line per district.
         /// </summary>
         private static void CheckAndSort(List<BuiltDistrict> built, Layer layer)
         {
@@ -292,8 +291,8 @@ namespace YourElectionMap.Tools
             }
 
             // "Congressional District 7", "Assembly District 7", part of a district,
-            // "State House District 4A" or "State Legislative Subdistrict 1C", or a state's one seat, "Congressional District
-            // (at Large)".
+            // "State House District 4A" or "State Legislative Subdistrict 1C", or a
+            // state's one seat, "Congressional District (at Large)".
             var match = TrailingNumber().Match(name);
             string number;
 
@@ -352,8 +351,8 @@ namespace YourElectionMap.Tools
         }
 
         /// <summary>
-        /// Each GEOID once, sorted by it so two runs write the same bytes. Prints a line
-        /// per government as it goes.
+        /// Each GEOID once, sorted by it so two runs write the same bytes. Then prints a
+        /// line per government.
         /// </summary>
         private static void CheckAndSort(List<BuiltDistrict> built, NamedLayer layer)
         {
@@ -370,7 +369,7 @@ namespace YourElectionMap.Tools
             Console.WriteLine($"{layer.File}: {built.Count} {layer.Level} areas");
         }
 
-        /// <summary>A line per district: its id, and how far thinning took it.</summary>
+        /// <summary>A line per district: its id, how far thinning took it and, withOffice, its name.</summary>
         private static void Print(List<BuiltDistrict> built, bool withOffice)
         {
             foreach (var district in built)

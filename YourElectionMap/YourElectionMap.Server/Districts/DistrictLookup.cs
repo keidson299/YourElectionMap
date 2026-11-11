@@ -17,8 +17,7 @@ namespace YourElectionMap.Server.Districts
     /// </param>
     /// <param name="Source">
     /// What the boundaries were drawn from, for the page to name: "U.S. Census Bureau
-    /// TIGER".
-    /// Null when there is nothing to credit.
+    /// TIGER". Null when there is nothing to credit.
     /// </param>
     public sealed record DistrictLookup(
         string Label,
@@ -29,13 +28,13 @@ namespace YourElectionMap.Server.Districts
 
     /// <param name="Id">
     /// URL-safe and stable, because the page URL carries it: "state-lower-44", or for a
-    /// county, city or school district its Census code, "county-37183".
+    /// district known by name its Census code, "county-37183".
     /// </param>
     /// <param name="Level">One of the client's DISTRICT_LEVELS: "state-lower".</param>
-    /// <param name="Office">"State House", or a whole government's name: "Wake County".</param>
+    /// <param name="Office">"State House", or a named district's name: "Wake County".</param>
     /// <param name="Unit">
-    /// "District", "Ward" or "Zone"; null for a county, city or school district, which
-    /// has a name rather than a number.
+    /// "District", "Ward" or "Zone"; null for a district known by name: a county, city
+    /// or school district, or a named legislative district such as Massachusetts's.
     /// </param>
     /// <param name="Number">
     /// "44", or half of a district, "65B"; null on the same terms as the unit.
