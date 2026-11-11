@@ -78,18 +78,16 @@ export function MapLegend({ layers }: { layers: MapLayers }) {
           <LineSwatch role="selected" width={24} />
           <span>{districtName(layers.selected, 'legend')} — selected</span>
         </li>
-        {layers.dashed === null ? null : (
-          <li className="map-legend__item">
-            <LineSwatch role="dashed" width={24} />
-            <span>{districtName(layers.dashed, 'legend')}</span>
-          </li>
-        )}
-        {layers.dotted === null ? null : (
-          <li className="map-legend__item">
-            <LineSwatch role="dotted" width={24} />
-            <span>{districtName(layers.dotted, 'legend')}</span>
-          </li>
-        )}
+        {(['dashed', 'dotted'] as const).map((role) => {
+          const district = layers[role]
+
+          return district === null ? null : (
+            <li key={role} className="map-legend__item">
+              <LineSwatch role={role} width={24} />
+              <span>{districtName(district, 'legend')}</span>
+            </li>
+          )
+        })}
       </ul>
     </div>
   )

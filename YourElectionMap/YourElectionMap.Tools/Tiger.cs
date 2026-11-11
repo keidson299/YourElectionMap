@@ -29,392 +29,107 @@ namespace YourElectionMap.Tools
             // One seat in the House, elected at large; its Senate districts are lettered, A
             // to T, each two House districts; and its counties are boroughs and the census
             // areas of the land no borough governs.
-            ["AK"] = new(
-                "02",
-                [
-                    new("cd.geojson", "congressional", "U.S. House", "Federal", 1),
-                    new("sldu.geojson", "state-upper", "State Senate", "State", 20, Lettered: true),
-                    new("sldl.geojson", "state-lower", "State House", "State", 40),
-                ],
-                County: "Borough or census area"),
-            ["AL"] = new(
-                "01",
-                [
-                    new("cd.geojson", "congressional", "U.S. House", "Federal", 7),
-                    new("sldu.geojson", "state-upper", "State Senate", "State", 35),
-                    new("sldl.geojson", "state-lower", "State House", "State", 105),
-                ]),
-            ["AR"] = new(
-                "05",
-                [
-                    new("cd.geojson", "congressional", "U.S. House", "Federal", 4),
-                    new("sldu.geojson", "state-upper", "State Senate", "State", 35),
-                    new("sldl.geojson", "state-lower", "State House", "State", 100),
-                ]),
+            ["AK"] = new("02", [UsHouse(1), Senate(20) with { Lettered = true }, House(40)], County: "Borough or census area"),
+            ["AL"] = new("01", [UsHouse(7), Senate(35), House(105)]),
+            ["AR"] = new("05", [UsHouse(4), Senate(35), House(100)]),
             // Thirty districts, each electing a senator and two representatives: TIGER
             // has them in both layers.
-            ["AZ"] = new(
-                "04",
-                [
-                    new("cd.geojson", "congressional", "U.S. House", "Federal", 9),
-                    new("sldu.geojson", "state-upper", "State Senate", "State", 30),
-                    new("sldl.geojson", "state-lower", "State House", "State", 30),
-                ]),
-            ["CA"] = new(
-                "06",
-                [
-                    new("cd.geojson", "congressional", "U.S. House", "Federal", 52),
-                    new("sldu.geojson", "state-upper", "State Senate", "State", 40),
-                    new("sldl.geojson", "state-lower", "State Assembly", "State", 80),
-                ]),
-            ["CO"] = new(
-                "08",
-                [
-                    new("cd.geojson", "congressional", "U.S. House", "Federal", 8),
-                    new("sldu.geojson", "state-upper", "State Senate", "State", 35),
-                    new("sldl.geojson", "state-lower", "State House", "State", 65),
-                ]),
+            ["AZ"] = new("04", [UsHouse(9), Senate(30), House(30)]),
+            ["CA"] = new("06", [UsHouse(52), Senate(40), House(80, "State Assembly")]),
+            ["CO"] = new("08", [UsHouse(8), Senate(35), House(65)]),
             // Its counties are nine planning regions.
-            ["CT"] = new(
-                "09",
-                [
-                    new("cd.geojson", "congressional", "U.S. House", "Federal", 5),
-                    new("sldu.geojson", "state-upper", "State Senate", "State", 36),
-                    new("sldl.geojson", "state-lower", "State House", "State", 151),
-                ],
-                County: "Planning region"),
+            ["CT"] = new("09", [UsHouse(5), Senate(36), House(151)], County: "Planning region"),
             // One seat in the House, elected at large, as in Wyoming.
-            ["DE"] = new(
-                "10",
-                [
-                    new("cd.geojson", "congressional", "U.S. House", "Federal", 1),
-                    new("sldu.geojson", "state-upper", "State Senate", "State", 21),
-                    new("sldl.geojson", "state-lower", "State House", "State", 41),
-                ]),
-            ["FL"] = new(
-                "12",
-                [
-                    new("cd.geojson", "congressional", "U.S. House", "Federal", 28),
-                    new("sldu.geojson", "state-upper", "State Senate", "State", 40),
-                    new("sldl.geojson", "state-lower", "State House", "State", 120),
-                ]),
-            ["GA"] = new(
-                "13",
-                [
-                    new("cd.geojson", "congressional", "U.S. House", "Federal", 14),
-                    new("sldu.geojson", "state-upper", "State Senate", "State", 56),
-                    new("sldl.geojson", "state-lower", "State House", "State", 180),
-                ]),
-            ["HI"] = new(
-                "15",
-                [
-                    new("cd.geojson", "congressional", "U.S. House", "Federal", 2),
-                    new("sldu.geojson", "state-upper", "State Senate", "State", 25),
-                    new("sldl.geojson", "state-lower", "State House", "State", 51),
-                ]),
+            ["DE"] = new("10", [UsHouse(1), Senate(21), House(41)]),
+            ["FL"] = new("12", [UsHouse(28), Senate(40), House(120)]),
+            ["GA"] = new("13", [UsHouse(14), Senate(56), House(180)]),
+            ["HI"] = new("15", [UsHouse(2), Senate(25), House(51)]),
             // Thirty-five districts, as in Arizona.
-            ["ID"] = new(
-                "16",
-                [
-                    new("cd.geojson", "congressional", "U.S. House", "Federal", 2),
-                    new("sldu.geojson", "state-upper", "State Senate", "State", 35),
-                    new("sldl.geojson", "state-lower", "State House", "State", 35),
-                ]),
-            ["IA"] = new(
-                "19",
-                [
-                    new("cd.geojson", "congressional", "U.S. House", "Federal", 4),
-                    new("sldu.geojson", "state-upper", "State Senate", "State", 50),
-                    new("sldl.geojson", "state-lower", "State House", "State", 100),
-                ]),
-            ["IL"] = new(
-                "17",
-                [
-                    new("cd.geojson", "congressional", "U.S. House", "Federal", 17),
-                    new("sldu.geojson", "state-upper", "State Senate", "State", 59),
-                    new("sldl.geojson", "state-lower", "State House", "State", 118),
-                ]),
-            ["IN"] = new(
-                "18",
-                [
-                    new("cd.geojson", "congressional", "U.S. House", "Federal", 9),
-                    new("sldu.geojson", "state-upper", "State Senate", "State", 50),
-                    new("sldl.geojson", "state-lower", "State House", "State", 100),
-                ]),
-            ["KS"] = new(
-                "20",
-                [
-                    new("cd.geojson", "congressional", "U.S. House", "Federal", 4),
-                    new("sldu.geojson", "state-upper", "State Senate", "State", 40),
-                    new("sldl.geojson", "state-lower", "State House", "State", 125),
-                ]),
-            ["KY"] = new(
-                "21",
-                [
-                    new("cd.geojson", "congressional", "U.S. House", "Federal", 6),
-                    new("sldu.geojson", "state-upper", "State Senate", "State", 38),
-                    new("sldl.geojson", "state-lower", "State House", "State", 100),
-                ]),
+            ["ID"] = new("16", [UsHouse(2), Senate(35), House(35)]),
+            ["IA"] = new("19", [UsHouse(4), Senate(50), House(100)]),
+            ["IL"] = new("17", [UsHouse(17), Senate(59), House(118)]),
+            ["IN"] = new("18", [UsHouse(9), Senate(50), House(100)]),
+            ["KS"] = new("20", [UsHouse(4), Senate(40), House(125)]),
+            ["KY"] = new("21", [UsHouse(6), Senate(38), House(100)]),
             // Its counties are parishes.
-            ["LA"] = new(
-                "22",
-                [
-                    new("cd.geojson", "congressional", "U.S. House", "Federal", 6),
-                    new("sldu.geojson", "state-upper", "State Senate", "State", 39),
-                    new("sldl.geojson", "state-lower", "State House", "State", 105),
-                ],
-                County: "Parish"),
+            ["LA"] = new("22", [UsHouse(6), Senate(39), House(105)], County: "Parish"),
             // Its districts are named, "Second Middlesex District", not numbered.
-            ["MA"] = new(
-                "25",
-                [
-                    new("cd.geojson", "congressional", "U.S. House", "Federal", 9),
-                    new("sldu.geojson", "state-upper", "State Senate", "State", 40, Named: true),
-                    new("sldl.geojson", "state-lower", "State House", "State", 160, Named: true),
-                ]),
+            ["MA"] = new("25", [UsHouse(9), Senate(40) with { Named = true }, House(160) with { Named = true }]),
             // Forty-seven districts, each electing a senator and three delegates: some from
             // the whole district, some from its halves, 2A and 2B, or its thirds, 1A, 1B and
             // 1C, as the Legislature drew them.
             ["MD"] = new(
                 "24",
                 [
-                    new("cd.geojson", "congressional", "U.S. House", "Federal", 8),
-                    new("sldu.geojson", "state-upper", "State Senate", "State", 47),
-                    new("sldl.geojson", "state-lower", "House of Delegates", "State", 47,
-                        Halved: [2, 7, 9, 11, 12, 30, 34, 35, 37, 43, 44, 47],
-                        InThree: [1, 27, 29, 33, 38, 42]),
+                    UsHouse(8),
+                    Senate(47),
+                    House(47, "House of Delegates") with
+                    {
+                        Halved = [2, 7, 9, 11, 12, 30, 34, 35, 37, 43, 44, 47],
+                        InThree = [1, 27, 29, 33, 38, 42],
+                    },
                 ]),
-            ["ME"] = new(
-                "23",
-                [
-                    new("cd.geojson", "congressional", "U.S. House", "Federal", 2),
-                    new("sldu.geojson", "state-upper", "State Senate", "State", 35),
-                    new("sldl.geojson", "state-lower", "State House", "State", 151),
-                ]),
-            ["MI"] = new(
-                "26",
-                [
-                    new("cd.geojson", "congressional", "U.S. House", "Federal", 13),
-                    new("sldu.geojson", "state-upper", "State Senate", "State", 38),
-                    new("sldl.geojson", "state-lower", "State House", "State", 110),
-                ]),
+            ["ME"] = new("23", [UsHouse(2), Senate(35), House(151)]),
+            ["MI"] = new("26", [UsHouse(13), Senate(38), House(110)]),
             // Each Senate district is halved into two House districts, 1A and 1B.
-            ["MN"] = new(
-                "27",
-                [
-                    new("cd.geojson", "congressional", "U.S. House", "Federal", 8),
-                    new("sldu.geojson", "state-upper", "State Senate", "State", 67),
-                    new("sldl.geojson", "state-lower", "State House", "State", 67, Halved: [.. Enumerable.Range(1, 67)]),
-                ]),
+            ["MN"] = new("27", [UsHouse(8), Senate(67), House(67) with { Halved = [.. Enumerable.Range(1, 67)] }]),
             // The 2022 map, which is TIGER's 119th Congress layer: the courts kept the 2025
             // map, which its 120th Congress layer holds, out of the 2026 elections, and
             // Proposition A on the November 2026 ballot decides whether it is used after.
-            ["MO"] = new(
-                "29",
-                [
-                    new("cd-119.geojson", "congressional", "U.S. House", "Federal", 8),
-                    new("sldu.geojson", "state-upper", "State Senate", "State", 34),
-                    new("sldl.geojson", "state-lower", "State House", "State", 163),
-                ]),
-            ["MS"] = new(
-                "28",
-                [
-                    new("cd.geojson", "congressional", "U.S. House", "Federal", 4),
-                    new("sldu.geojson", "state-upper", "State Senate", "State", 52),
-                    new("sldl.geojson", "state-lower", "State House", "State", 122),
-                ]),
-            ["MT"] = new(
-                "30",
-                [
-                    new("cd.geojson", "congressional", "U.S. House", "Federal", 2),
-                    new("sldu.geojson", "state-upper", "State Senate", "State", 50),
-                    new("sldl.geojson", "state-lower", "State House", "State", 100),
-                ]),
-            ["NC"] = new(
-                "37",
-                [
-                    new("cd.geojson", "congressional", "U.S. House", "Federal", 14),
-                    new("sldu.geojson", "state-upper", "State Senate", "State", 50),
-                    new("sldl.geojson", "state-lower", "State House", "State", 120),
-                ]),
+            ["MO"] = new("29", [UsHouse(8, "cd-119.geojson"), Senate(34), House(163)]),
+            ["MS"] = new("28", [UsHouse(4), Senate(52), House(122)]),
+            ["MT"] = new("30", [UsHouse(2), Senate(50), House(100)]),
+            ["NC"] = new("37", [UsHouse(14), Senate(50), House(120)]),
             // Forty-seven districts, each electing a senator and two representatives, as in
             // Washington, but for District 4, whose representatives are elected from its
             // halves, 4A and 4B.
-            ["ND"] = new(
-                "38",
-                [
-                    new("cd.geojson", "congressional", "U.S. House", "Federal", 1),
-                    new("sldu.geojson", "state-upper", "State Senate", "State", 47),
-                    new("sldl.geojson", "state-lower", "State House", "State", 47, Halved: [4]),
-                ]),
+            ["ND"] = new("38", [UsHouse(1), Senate(47), House(47) with { Halved = [4] }]),
             // One chamber, the Legislature, with no lower house: TIGER has its districts
             // in the upper layer and nothing in the lower, so there is no sldl.geojson.
-            ["NE"] = new(
-                "31",
-                [
-                    new("cd.geojson", "congressional", "U.S. House", "Federal", 3),
-                    new("sldu.geojson", "state-upper", "Legislature", "State", 49),
-                ]),
+            ["NE"] = new("31", [UsHouse(3), Senate(49, "Legislature")]),
             // Its House districts are numbered within each county, "Belknap 1": named here.
-            ["NH"] = new(
-                "33",
-                [
-                    new("cd.geojson", "congressional", "U.S. House", "Federal", 2),
-                    new("sldu.geojson", "state-upper", "State Senate", "State", 24),
-                    new("sldl.geojson", "state-lower", "State House", "State", 164, Named: true),
-                ]),
+            ["NH"] = new("33", [UsHouse(2), Senate(24), House(164) with { Named = true }]),
             // Forty districts, each electing a senator and two members of the General
             // Assembly: TIGER has them in both layers.
-            ["NJ"] = new(
-                "34",
-                [
-                    new("cd.geojson", "congressional", "U.S. House", "Federal", 12),
-                    new("sldu.geojson", "state-upper", "State Senate", "State", 40),
-                    new("sldl.geojson", "state-lower", "General Assembly", "State", 40),
-                ]),
-            ["NM"] = new(
-                "35",
-                [
-                    new("cd.geojson", "congressional", "U.S. House", "Federal", 3),
-                    new("sldu.geojson", "state-upper", "State Senate", "State", 42),
-                    new("sldl.geojson", "state-lower", "State House", "State", 70),
-                ]),
-            ["NV"] = new(
-                "32",
-                [
-                    new("cd.geojson", "congressional", "U.S. House", "Federal", 4),
-                    new("sldu.geojson", "state-upper", "State Senate", "State", 21),
-                    new("sldl.geojson", "state-lower", "State Assembly", "State", 42),
-                ]),
-            ["NY"] = new(
-                "36",
-                [
-                    new("cd.geojson", "congressional", "U.S. House", "Federal", 26),
-                    new("sldu.geojson", "state-upper", "State Senate", "State", 63),
-                    new("sldl.geojson", "state-lower", "State Assembly", "State", 150),
-                ]),
-            ["OH"] = new(
-                "39",
-                [
-                    new("cd.geojson", "congressional", "U.S. House", "Federal", 15),
-                    new("sldu.geojson", "state-upper", "State Senate", "State", 33),
-                    new("sldl.geojson", "state-lower", "State House", "State", 99),
-                ]),
-            ["OK"] = new(
-                "40",
-                [
-                    new("cd.geojson", "congressional", "U.S. House", "Federal", 5),
-                    new("sldu.geojson", "state-upper", "State Senate", "State", 48),
-                    new("sldl.geojson", "state-lower", "State House", "State", 101),
-                ]),
-            ["OR"] = new(
-                "41",
-                [
-                    new("cd.geojson", "congressional", "U.S. House", "Federal", 6),
-                    new("sldu.geojson", "state-upper", "State Senate", "State", 30),
-                    new("sldl.geojson", "state-lower", "State House", "State", 60),
-                ]),
-            ["PA"] = new(
-                "42",
-                [
-                    new("cd.geojson", "congressional", "U.S. House", "Federal", 17),
-                    new("sldu.geojson", "state-upper", "State Senate", "State", 50),
-                    new("sldl.geojson", "state-lower", "State House", "State", 203),
-                ]),
-            ["RI"] = new(
-                "44",
-                [
-                    new("cd.geojson", "congressional", "U.S. House", "Federal", 2),
-                    new("sldu.geojson", "state-upper", "State Senate", "State", 38),
-                    new("sldl.geojson", "state-lower", "State House", "State", 75),
-                ]),
-            ["SC"] = new(
-                "45",
-                [
-                    new("cd.geojson", "congressional", "U.S. House", "Federal", 7),
-                    new("sldu.geojson", "state-upper", "State Senate", "State", 46),
-                    new("sldl.geojson", "state-lower", "State House", "State", 124),
-                ]),
+            ["NJ"] = new("34", [UsHouse(12), Senate(40), House(40, "General Assembly")]),
+            ["NM"] = new("35", [UsHouse(3), Senate(42), House(70)]),
+            ["NV"] = new("32", [UsHouse(4), Senate(21), House(42, "State Assembly")]),
+            ["NY"] = new("36", [UsHouse(26), Senate(63), House(150, "State Assembly")]),
+            ["OH"] = new("39", [UsHouse(15), Senate(33), House(99)]),
+            ["OK"] = new("40", [UsHouse(5), Senate(48), House(101)]),
+            ["OR"] = new("41", [UsHouse(6), Senate(30), House(60)]),
+            ["PA"] = new("42", [UsHouse(17), Senate(50), House(203)]),
+            ["RI"] = new("44", [UsHouse(2), Senate(38), House(75)]),
+            ["SC"] = new("45", [UsHouse(7), Senate(46), House(124)]),
             // Thirty-five districts, as in North Dakota, but for Districts 26 and 28, each
             // halved.
-            ["SD"] = new(
-                "46",
-                [
-                    new("cd.geojson", "congressional", "U.S. House", "Federal", 1),
-                    new("sldu.geojson", "state-upper", "State Senate", "State", 35),
-                    new("sldl.geojson", "state-lower", "State House", "State", 35, Halved: [26, 28]),
-                ]),
-            ["TN"] = new(
-                "47",
-                [
-                    new("cd.geojson", "congressional", "U.S. House", "Federal", 9),
-                    new("sldu.geojson", "state-upper", "State Senate", "State", 33),
-                    new("sldl.geojson", "state-lower", "State House", "State", 99),
-                ]),
-            ["TX"] = new(
-                "48",
-                [
-                    new("cd.geojson", "congressional", "U.S. House", "Federal", 38),
-                    new("sldu.geojson", "state-upper", "State Senate", "State", 31),
-                    new("sldl.geojson", "state-lower", "State House", "State", 150),
-                ]),
+            ["SD"] = new("46", [UsHouse(1), Senate(35), House(35) with { Halved = [26, 28] }]),
+            ["TN"] = new("47", [UsHouse(9), Senate(33), House(99)]),
+            ["TX"] = new("48", [UsHouse(38), Senate(31), House(150)]),
             // The court-ordered map of November 2025: TIGER has it in layer 0.
-            ["UT"] = new(
-                "49",
-                [
-                    new("cd.geojson", "congressional", "U.S. House", "Federal", 4),
-                    new("sldu.geojson", "state-upper", "State Senate", "State", 29),
-                    new("sldl.geojson", "state-lower", "State House", "State", 75),
-                ]),
-            ["VA"] = new(
-                "51",
-                [
-                    new("cd.geojson", "congressional", "U.S. House", "Federal", 11),
-                    new("sldu.geojson", "state-upper", "State Senate", "State", 40),
-                    new("sldl.geojson", "state-lower", "House of Delegates", "State", 100),
-                ]),
+            ["UT"] = new("49", [UsHouse(4), Senate(29), House(75)]),
+            ["VA"] = new("51", [UsHouse(11), Senate(40), House(100, "House of Delegates")]),
             // One seat in the House, elected at large, and its districts are named for
             // their counties, "Addison-1", not numbered.
-            ["VT"] = new(
-                "50",
-                [
-                    new("cd.geojson", "congressional", "U.S. House", "Federal", 1),
-                    new("sldu.geojson", "state-upper", "State Senate", "State", 16, Named: true),
-                    new("sldl.geojson", "state-lower", "State House", "State", 109, Named: true),
-                ]),
+            ["VT"] = new("50", [UsHouse(1), Senate(16) with { Named = true }, House(109) with { Named = true }]),
             // One set of 49 districts, each electing a senator and two representatives:
             // TIGER has it in both layers.
-            ["WA"] = new(
-                "53",
-                [
-                    new("cd.geojson", "congressional", "U.S. House", "Federal", 10),
-                    new("sldu.geojson", "state-upper", "State Senate", "State", 49),
-                    new("sldl.geojson", "state-lower", "State House", "State", 49),
-                ]),
-            ["WI"] = new(
-                "55",
-                [
-                    new("cd.geojson", "congressional", "U.S. House", "Federal", 8),
-                    new("sldu.geojson", "state-upper", "State Senate", "State", 33),
-                    new("sldl.geojson", "state-lower", "State Assembly", "State", 99),
-                ]),
+            ["WA"] = new("53", [UsHouse(10), Senate(49), House(49)]),
+            ["WI"] = new("55", [UsHouse(8), Senate(33), House(99, "State Assembly")]),
             // Seventeen Senate districts, each electing two senators.
-            ["WV"] = new(
-                "54",
-                [
-                    new("cd.geojson", "congressional", "U.S. House", "Federal", 2),
-                    new("sldu.geojson", "state-upper", "State Senate", "State", 17),
-                    new("sldl.geojson", "state-lower", "House of Delegates", "State", 100),
-                ]),
+            ["WV"] = new("54", [UsHouse(2), Senate(17), House(100, "House of Delegates")]),
             // One seat in the House, elected at large: numbered 1 here.
-            ["WY"] = new(
-                "56",
-                [
-                    new("cd.geojson", "congressional", "U.S. House", "Federal", 1),
-                    new("sldu.geojson", "state-upper", "State Senate", "State", 31),
-                    new("sldl.geojson", "state-lower", "State House", "State", 62),
-                ]),
+            ["WY"] = new("56", [UsHouse(1), Senate(31), House(62)]),
         };
+
+        private static Layer UsHouse(int count, string file = "cd.geojson") =>
+            new(file, "congressional", "U.S. House", "Federal", count);
+
+        private static Layer Senate(int count, string office = "State Senate") =>
+            new("sldu.geojson", "state-upper", office, "State", count);
+
+        private static Layer House(int count, string office = "State House") =>
+            new("sldl.geojson", "state-lower", office, "State", count);
 
         /// <summary>
         /// A state's local layers: governments with a name rather than numbered
@@ -447,12 +162,15 @@ namespace YourElectionMap.Tools
 
             var districts = new List<BuiltDistrict>();
 
-            foreach (var layer in known.Layers)
-            {
-                var built = Features(Path.Combine(source, layer.File), layer.File, required: true)
-                    .Select(feature => Build(layer, known.Fips, feature))
+            List<BuiltDistrict> Read(string file, bool required, Func<JsonElement, BuiltDistrict?> build) =>
+                Features(Path.Combine(source, file), file, required)
+                    .Select(build)
                     .OfType<BuiltDistrict>()
                     .ToList();
+
+            foreach (var layer in known.Layers)
+            {
+                var built = Read(layer.File, required: true, feature => Build(layer, known.Fips, feature));
 
                 CheckAndSort(built, layer);
                 districts.AddRange(built);
@@ -460,10 +178,7 @@ namespace YourElectionMap.Tools
 
             foreach (var layer in LocalLayers(known))
             {
-                var built = Features(Path.Combine(source, layer.File), layer.File, required: false)
-                    .Select(feature => Build(layer, known.Fips, feature))
-                    .OfType<BuiltDistrict>()
-                    .ToList();
+                var built = Read(layer.File, required: false, feature => Build(layer, known.Fips, feature));
 
                 CheckAndSort(built, layer);
                 districts.AddRange(built);
@@ -548,13 +263,7 @@ namespace YourElectionMap.Tools
                 }
             }
 
-            foreach (var district in built)
-            {
-                Console.WriteLine(
-                    $"  {district.Id,-18} {district.RawPoints,8:N0} points -> "
-                    + $"{district.Rings.Sum(ring => ring.Length / 2),6:N0}");
-            }
-
+            Print(built, withOffice: false);
             Console.WriteLine($"{layer.Level}: {built.Count} districts");
         }
 
@@ -567,8 +276,8 @@ namespace YourElectionMap.Tools
         private static BuiltDistrict? Build(Layer layer, string fips, JsonElement feature)
         {
             var properties = feature.GetProperty("properties");
-            var name = properties.GetProperty("NAME").GetString() ?? "";
-            var geoid = properties.GetProperty("GEOID").GetString() ?? "";
+            var name = Field(properties, "NAME", layer.File);
+            var geoid = Field(properties, "GEOID", layer.File);
 
             if (!geoid.StartsWith(fips, StringComparison.Ordinal))
             {
@@ -590,12 +299,6 @@ namespace YourElectionMap.Tools
 
             if (layer.Named)
             {
-                // Written into the file as it is, between quotes.
-                if (name.Contains('"') || name.Contains('\\'))
-                {
-                    throw new InvalidDataException($"{layer.File}: \"{name}\" needs escaping.");
-                }
-
                 number = "";
             }
             else if (layer.Lettered)
@@ -619,15 +322,8 @@ namespace YourElectionMap.Tools
                 throw new InvalidDataException($"{layer.File}: no district number in \"{name}\".");
             }
 
-            var parts = Rings(feature.GetProperty("geometry"), layer.File, name);
-
-            if (parts.Count == 0)
-            {
-                throw new InvalidDataException($"{layer.File}: \"{name}\" has no shape.");
-            }
-
-            var points = parts.Sum(part => part.Length / 2);
-            var thinned = parts.Select(part => Geometry.Thin(part, ToleranceDegrees)).ToList();
+            // Only a named district's name goes into the file, so only it must be quotable.
+            var (points, thinned) = Shape(feature, layer.File, name, quotable: layer.Named);
 
             // A named district is its name over the chamber, "State Senate", as a county
             // is its name over "County", and its id is its GEOID.
@@ -670,14 +366,20 @@ namespace YourElectionMap.Tools
 
             built.Sort((left, right) => string.CompareOrdinal(left.Id, right.Id));
 
+            Print(built, withOffice: true);
+            Console.WriteLine($"{layer.File}: {built.Count} {layer.Level} areas");
+        }
+
+        /// <summary>A line per district: its id, and how far thinning took it.</summary>
+        private static void Print(List<BuiltDistrict> built, bool withOffice)
+        {
             foreach (var district in built)
             {
                 Console.WriteLine(
                     $"  {district.Id,-18} {district.RawPoints,8:N0} points -> "
-                    + $"{district.Rings.Sum(ring => ring.Length / 2),6:N0}  {district.Office}");
+                    + $"{district.Rings.Sum(ring => ring.Length / 2),6:N0}"
+                    + (withOffice ? $"  {district.Office}" : ""));
             }
-
-            Console.WriteLine($"{layer.File}: {built.Count} {layer.Level} areas");
         }
 
         /// <summary>
@@ -716,25 +418,34 @@ namespace YourElectionMap.Tools
                     $"{layer.File}: \"{name}\" is a government of a kind this does not know, LSADC {other}."),
             };
 
-            // Written into the file as it is, between quotes.
-            if (name.Contains('"') || name.Contains('\\'))
+            var (points, thinned) = Shape(feature, layer.File, name, quotable: true);
+
+            return new BuiltDistrict($"{layer.Level}-{geoid}", layer.Level, name, Number: "", detail, points, thinned);
+        }
+
+        /// <summary>
+        /// A feature's rings, thinned, with how many points they had before. A name that
+        /// is written into the file as it is, between quotes, must need no escaping.
+        /// </summary>
+        private static (int RawPoints, List<double[]> Rings) Shape(
+            JsonElement feature,
+            string file,
+            string name,
+            bool quotable)
+        {
+            if (quotable && (name.Contains('"') || name.Contains('\\')))
             {
-                throw new InvalidDataException($"{layer.File}: \"{name}\" needs escaping.");
+                throw new InvalidDataException($"{file}: \"{name}\" needs escaping.");
             }
 
-            var parts = Rings(feature.GetProperty("geometry"), layer.File, name);
+            var parts = Rings(feature.GetProperty("geometry"), file, name);
 
             if (parts.Count == 0)
             {
-                throw new InvalidDataException($"{layer.File}: \"{name}\" has no shape.");
+                throw new InvalidDataException($"{file}: \"{name}\" has no shape.");
             }
 
-            return new BuiltDistrict(
-                $"{layer.Level}-{geoid}",
-                layer.Level,
-                name,
-                Number: "",
-                detail,
+            return (
                 parts.Sum(part => part.Length / 2),
                 parts.Select(part => Geometry.Thin(part, ToleranceDegrees)).ToList());
         }

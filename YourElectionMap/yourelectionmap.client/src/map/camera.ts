@@ -56,12 +56,9 @@ export function openingBounds(
   let reachLng = 0
   let reachLat = 0
 
-  // Holes lie inside their outer ring, so the outers alone set the reach.
-  for (const [outer] of boundary) {
-    for (const [x, y] of outer ?? []) {
-      reachLng = Math.max(reachLng, Math.abs(x - lng))
-      reachLat = Math.max(reachLat, Math.abs(y - lat))
-    }
+  for (const [x, y] of outerPoints(boundary)) {
+    reachLng = Math.max(reachLng, Math.abs(x - lng))
+    reachLat = Math.max(reachLat, Math.abs(y - lat))
   }
 
   const milesPerDegreeLng =
@@ -93,13 +90,11 @@ export function maxBoundsFor(districts: readonly District[]): Bounds {
   let north = -Infinity
 
   for (const district of districts) {
-    for (const [outer] of district.boundary) {
-      for (const [x, y] of outer ?? []) {
-        west = Math.min(west, x)
-        east = Math.max(east, x)
-        south = Math.min(south, y)
-        north = Math.max(north, y)
-      }
+    for (const [x, y] of outerPoints(district.boundary)) {
+      west = Math.min(west, x)
+      east = Math.max(east, x)
+      south = Math.min(south, y)
+      north = Math.max(north, y)
     }
   }
 
@@ -139,6 +134,13 @@ function pickScaleBar(pixelsPerMile: number): ScaleBar {
   }
 
   return { miles: best, width: Math.round(best * pixelsPerMile * 100) / 100 }
+}
+
+/** Every point of every outer ring: holes lie inside them, so add no reach. */
+function* outerPoints(boundary: readonly Polygon[]) {
+  for (const [outer] of boundary) {
+    yield* outer ?? []
+  }
 }
 
 function radians(degrees: number): number {

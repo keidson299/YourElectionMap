@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState, type FormEvent } from 'react'
 import { CrosshairIcon, PinIcon, SpinnerIcon } from './icons'
 import type { Coordinates } from '../routing/routes'
-import { COVERED_STATES } from '../districts/lookups'
+import { COVERED_STATES, type LookupNotice } from '../districts/lookups'
 import './AddressForm.css'
 
 // One form serves the home card and the result header; only the sizes differ.
@@ -16,19 +16,16 @@ type AddressFormProps = {
   submitLabel: string
   initialAddress?: string
   /** Resolves to the message to show, or null once the page has moved on. */
-  onSubmit: (address: string) => Promise<Message | null>
+  onSubmit: (address: string) => Promise<LookupNotice | null>
   /** Passing this shows the "Use my current location" button. */
-  onLocate?: (coords: Coordinates) => Promise<Message | null>
+  onLocate?: (coords: Coordinates) => Promise<LookupNotice | null>
 }
-
-/** `field` marks a problem with the address itself, which flags the input. */
-type Message = { text: string; field: boolean }
 
 /** The server's cap, from DistrictsController.MaxAddressLength. */
 const MAX_ADDRESS_LENGTH = 200
 
 /** When the caller itself threw, which leaves nothing more specific to say. */
-const CALLER_FAILED: Message = {
+const CALLER_FAILED: LookupNotice = {
   text: 'Something went wrong. Try again.',
   field: false,
 }
@@ -47,7 +44,7 @@ export function AddressForm({
   const mounted = useRef(false)
 
   const [address, setAddress] = useState(initialAddress)
-  const [message, setMessage] = useState<Message | null>(null)
+  const [message, setMessage] = useState<LookupNotice | null>(null)
   const [locating, setLocating] = useState(false)
   const [checking, setChecking] = useState(false)
 
@@ -80,14 +77,27 @@ export function AddressForm({
     setMessage(null)
     setChecking(true)
 
-    // finally, so a caller that throws cannot leave the form stuck on "Checking…"
-    // with nothing the visitor can do but reload.
+    await runCaller(() => onSubmit(trimmed), setChecking, (problem) => {
+      setMessage(problem)
+      inputRef.current?.focus()
+    })
+  }
+
+  /**
+   * Waits on the caller's lookup and shows what it says, if the form is still
+   * on the page. finally, so a caller that throws cannot leave the form stuck
+   * on "Checking…" or "Finding you…" with nothing to do but reload.
+   */
+  async function runCaller(
+    call: () => Promise<LookupNotice | null | undefined>,
+    setBusy: (busy: boolean) => void,
+    onProblem: (problem: LookupNotice) => void,
+  ) {
     try {
-      const problem = await onSubmit(trimmed)
+      const problem = await call()
 
       if (mounted.current && problem) {
-        setMessage(problem)
-        inputRef.current?.focus()
+        onProblem(problem)
       }
     } catch {
       if (mounted.current) {
@@ -95,7 +105,7 @@ export function AddressForm({
       }
     } finally {
       if (mounted.current) {
-        setChecking(false)
+        setBusy(false)
       }
     }
   }
@@ -124,25 +134,16 @@ export function AddressForm({
         }
 
         // Still "Finding you…" while the fix is looked up: to the visitor it is
-        // one action. Guarded like handleSubmit, and for the same reason.
-        try {
-          const problem = await onLocate?.({
-            lat: position.coords.latitude,
-            lon: position.coords.longitude,
-          })
-
-          if (mounted.current && problem) {
-            setMessage(problem)
-          }
-        } catch {
-          if (mounted.current) {
-            setMessage(CALLER_FAILED)
-          }
-        } finally {
-          if (mounted.current) {
-            setLocating(false)
-          }
-        }
+        // one action.
+        await runCaller(
+          async () =>
+            onLocate?.({
+              lat: position.coords.latitude,
+              lon: position.coords.longitude,
+            }),
+          setLocating,
+          setMessage,
+        )
       },
       () => {
         if (!mounted.current) {

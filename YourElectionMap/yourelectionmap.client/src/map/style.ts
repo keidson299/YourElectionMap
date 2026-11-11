@@ -10,6 +10,7 @@ import type { District } from '../districts/types'
 
 export type StyleSpecification = Exclude<MapOptions['style'], string | undefined>
 type LayerSpecification = StyleSpecification['layers'][number]
+type SymbolLayer = Extract<LayerSpecification, { type: 'symbol' }>
 
 /**
  * OpenFreeMap: OpenStreetMap streets as vector tiles, free, with no key, no
@@ -124,9 +125,24 @@ export function buildStyle({
 }): StyleSpecification {
   const lines = LINES[compact ? 'phone' : 'desktop']
 
-  // MapLibre measures dashes in line widths, the spec in pixels.
-  const inWidths = (pattern: number[]) =>
-    pattern.map((length) => length / lines.context)
+  // A neighbour's boundary, fainter than the selection's. MapLibre measures
+  // dashes in line widths, the spec in pixels; a dot is a short dash with
+  // round caps.
+  const contextLine = (role: 'dashed' | 'dotted'): LayerSpecification => ({
+    id: `${role}-line`,
+    type: 'line',
+    source: role,
+    layout:
+      role === 'dotted'
+        ? { 'line-join': 'round', 'line-cap': 'round' }
+        : { 'line-join': 'round' },
+    paint: {
+      'line-color': colors.accent,
+      'line-width': lines.context,
+      'line-opacity': lines.contextOpacity,
+      'line-dasharray': lines[role].map((length) => length / lines.context),
+    },
+  })
 
   return {
     version: 8,
@@ -160,30 +176,8 @@ export function buildStyle({
         },
       },
       ...labelLayers(colors),
-      {
-        id: 'dashed-line',
-        type: 'line',
-        source: 'dashed',
-        layout: { 'line-join': 'round' },
-        paint: {
-          'line-color': colors.accent,
-          'line-width': lines.context,
-          'line-opacity': lines.contextOpacity,
-          'line-dasharray': inWidths(lines.dashed),
-        },
-      },
-      {
-        id: 'dotted-line',
-        type: 'line',
-        source: 'dotted',
-        layout: { 'line-join': 'round', 'line-cap': 'round' },
-        paint: {
-          'line-color': colors.accent,
-          'line-width': lines.context,
-          'line-opacity': lines.contextOpacity,
-          'line-dasharray': inWidths(lines.dotted),
-        },
-      },
+      contextLine('dashed'),
+      contextLine('dotted'),
       {
         id: 'selected-line',
         type: 'line',
@@ -280,84 +274,77 @@ function groundLayers(colors: MapColors): LayerSpecification[] {
  * numbers, neighbourhoods, and towns, which win any collision.
  */
 function labelLayers(colors: MapColors): LayerSpecification[] {
-  const halo = {
-    'text-halo-color': colors.paper,
-    'text-halo-width': 1.5,
-  }
+  // A name from the street tiles, in the tiles' font, haloed in paper unless
+  // the layer says otherwise.
+  const label = (
+    id: string,
+    sourceLayer: string,
+    color: string,
+    layout: SymbolLayer['layout'],
+    { paint, ...rest }: Pick<SymbolLayer, 'minzoom' | 'filter' | 'paint'> = {},
+  ): SymbolLayer => ({
+    id,
+    type: 'symbol',
+    source: 'streets',
+    'source-layer': sourceLayer,
+    ...rest,
+    layout: {
+      'text-field': ['get', 'name'],
+      'text-font': [TILE_SOURCE.font],
+      ...layout,
+    },
+    paint: {
+      'text-color': color,
+      'text-halo-color': colors.paper,
+      'text-halo-width': 1.5,
+      ...paint,
+    },
+  })
 
   return [
-    {
-      id: 'water-names',
-      type: 'symbol',
-      source: 'streets',
-      'source-layer': 'water_name',
-      layout: {
-        'text-field': ['get', 'name'],
-        'text-font': [TILE_SOURCE.font],
-        'text-size': ['interpolate', ['linear'], ['zoom'], 8, 10.5, 15, 13],
-        'text-letter-spacing': 0.05,
-        'text-max-width': 8,
-      },
-      paint: { 'text-color': colors.waterLabel, ...halo },
-    },
-    {
-      id: 'river-names',
-      type: 'symbol',
-      source: 'streets',
-      'source-layer': 'waterway',
-      minzoom: 11,
-      filter: ['==', ['get', 'class'], 'river'],
-      layout: {
+    label('water-names', 'water_name', colors.waterLabel, {
+      'text-size': ['interpolate', ['linear'], ['zoom'], 8, 10.5, 15, 13],
+      'text-letter-spacing': 0.05,
+      'text-max-width': 8,
+    }),
+    label(
+      'river-names',
+      'waterway',
+      colors.waterLabel,
+      {
         'symbol-placement': 'line',
-        'text-field': ['get', 'name'],
-        'text-font': [TILE_SOURCE.font],
         'text-size': ['interpolate', ['linear'], ['zoom'], 11, 10.5, 17, 13],
         'text-letter-spacing': 0.05,
       },
-      paint: { 'text-color': colors.waterLabel, ...halo },
-    },
-    {
-      // The park layer's named points, one per park, rather than its shapes.
-      id: 'park-names',
-      type: 'symbol',
-      source: 'streets',
-      'source-layer': 'park',
-      minzoom: 9,
-      filter: ['==', ['geometry-type'], 'Point'],
-      layout: {
-        'text-field': ['get', 'name'],
-        'text-font': [TILE_SOURCE.font],
+      { minzoom: 11, filter: ['==', ['get', 'class'], 'river'] },
+    ),
+    // The park layer's named points, one per park, rather than its shapes.
+    label(
+      'park-names',
+      'park',
+      colors.label,
+      {
         'text-size': ['interpolate', ['linear'], ['zoom'], 9, 10.5, 15, 12.5],
         'text-max-width': 8,
         'symbol-sort-key': ['get', 'rank'],
       },
-      paint: { 'text-color': colors.label, ...halo },
-    },
-    {
-      id: 'street-names',
-      type: 'symbol',
-      source: 'streets',
-      'source-layer': 'transportation_name',
-      minzoom: 13,
-      layout: {
+      { minzoom: 9, filter: ['==', ['geometry-type'], 'Point'] },
+    ),
+    label(
+      'street-names',
+      'transportation_name',
+      colors.label,
+      {
         'symbol-placement': 'line',
-        'text-field': ['get', 'name'],
-        'text-font': [TILE_SOURCE.font],
         'text-size': ['interpolate', ['linear'], ['zoom'], 13, 10.5, 17, 13],
       },
-      paint: { 'text-color': colors.label, ...halo },
-    },
-    {
-      id: 'highway-numbers',
-      type: 'symbol',
-      source: 'streets',
-      'source-layer': 'transportation_name',
-      filter: [
-        'all',
-        ['has', 'ref'],
-        ['in', ['get', 'class'], ['literal', ['motorway', 'trunk', 'primary']]],
-      ],
-      layout: {
+      { minzoom: 13 },
+    ),
+    label(
+      'highway-numbers',
+      'transportation_name',
+      colors.placeLabel,
+      {
         'symbol-placement': 'line',
         'symbol-spacing': 400,
         // As people say it: "I-5", "US 93". Where the tiles give a bare number
@@ -379,45 +366,41 @@ function labelLayers(colors: MapColors): LayerSpecification[] {
           ['concat', 'US ', ['get', 'ref']],
           ['get', 'ref'],
         ],
-        'text-font': [TILE_SOURCE.font],
         'text-size': ['interpolate', ['linear'], ['zoom'], 6, 10, 14, 12],
         'text-letter-spacing': 0.05,
       },
-      paint: {
-        'text-color': colors.placeLabel,
-        'text-halo-color': colors.roadMajor,
-        'text-halo-width': 2.5,
+      {
+        filter: [
+          'all',
+          ['has', 'ref'],
+          ['in', ['get', 'class'], ['literal', ['motorway', 'trunk', 'primary']]],
+        ],
+        paint: { 'text-halo-color': colors.roadMajor, 'text-halo-width': 2.5 },
       },
-    },
-    {
-      id: 'neighbourhood-names',
-      type: 'symbol',
-      source: 'streets',
-      'source-layer': 'place',
-      minzoom: 10,
-      filter: [
-        'in',
-        ['get', 'class'],
-        ['literal', ['village', 'hamlet', 'suburb', 'quarter', 'neighbourhood']],
-      ],
-      layout: {
-        'text-field': ['get', 'name'],
-        'text-font': [TILE_SOURCE.font],
+    ),
+    label(
+      'neighbourhood-names',
+      'place',
+      colors.label,
+      {
         'text-size': ['interpolate', ['linear'], ['zoom'], 10, 10.5, 15, 13],
         'text-max-width': 8,
         'symbol-sort-key': ['get', 'rank'],
       },
-      paint: { 'text-color': colors.label, ...halo },
-    },
-    {
-      id: 'town-names',
-      type: 'symbol',
-      source: 'streets',
-      'source-layer': 'place',
-      filter: ['in', ['get', 'class'], ['literal', ['city', 'town']]],
-      layout: {
-        'text-field': ['get', 'name'],
-        'text-font': [TILE_SOURCE.font],
+      {
+        minzoom: 10,
+        filter: [
+          'in',
+          ['get', 'class'],
+          ['literal', ['village', 'hamlet', 'suburb', 'quarter', 'neighbourhood']],
+        ],
+      },
+    ),
+    label(
+      'town-names',
+      'place',
+      colors.placeLabel,
+      {
         'text-size': [
           'interpolate',
           ['linear'],
@@ -432,12 +415,11 @@ function labelLayers(colors: MapColors): LayerSpecification[] {
         'text-max-width': 8,
         'symbol-sort-key': ['get', 'rank'],
       },
-      paint: {
-        'text-color': colors.placeLabel,
-        'text-halo-color': colors.paper,
-        'text-halo-width': 2,
+      {
+        filter: ['in', ['get', 'class'], ['literal', ['city', 'town']]],
+        paint: { 'text-halo-width': 2 },
       },
-    },
+    ),
   ]
 }
 

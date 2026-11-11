@@ -260,9 +260,7 @@ namespace YourElectionMap.Server.Districts
             if (root.ValueKind != JsonValueKind.Object
                 || !root.TryGetProperty("election", out var election)
                 || election.ValueKind != JsonValueKind.Object
-                || !election.TryGetProperty("electionDay", out var day)
-                || day.ValueKind != JsonValueKind.String
-                || !TryParseDay(day.GetString(), out var date)
+                || !TryParseDay(Text(election, "electionDay"), out var date)
                 || date < today)
             {
                 return null;
@@ -304,9 +302,7 @@ namespace YourElectionMap.Server.Districts
         /// has a <c>referendumTitle</c>.
         /// </summary>
         private static bool IsReferendum(JsonElement contest) =>
-            (contest.TryGetProperty("type", out var type)
-                && type.ValueKind == JsonValueKind.String
-                && string.Equals(type.GetString(), "Referendum", StringComparison.OrdinalIgnoreCase))
+            string.Equals(Text(contest, "type"), "Referendum", StringComparison.OrdinalIgnoreCase)
             || contest.TryGetProperty("referendumTitle", out _);
 
         /// <summary>One election in Google's list, as kept between lookups.</summary>
