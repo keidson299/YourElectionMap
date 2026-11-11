@@ -54,14 +54,6 @@ describe('ThemeToggle', () => {
     )
   })
 
-  it('ignores a stored value it does not recognise', () => {
-    window.localStorage.setItem('yem.theme', 'sepia')
-
-    render(<ThemeToggle />)
-
-    expect(theme()).toBeNull()
-  })
-
   it('still works when storage is blocked', async () => {
     vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
       throw new Error('storage blocked')

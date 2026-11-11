@@ -28,6 +28,9 @@ namespace YourElectionMap.Server.Tests
 
             // x is the longitude, which is the way round it is easy to get wrong.
             Assert.Equal(-78.6398, found[1].Longitude);
+
+            // Each match carries the geocoder's spelling of it, not what was typed.
+            Assert.Equal("16 W JONES ST, RALEIGH, NC, 27601", found[1].Address);
         }
 
         [Fact]
@@ -50,17 +53,6 @@ namespace YourElectionMap.Server.Tests
             {
                 CultureInfo.CurrentCulture = saved;
             }
-        }
-
-        [Fact]
-        public async Task FindAsync_GivesEachMatchTheGeocodersSpellingOfIt()
-        {
-            var geocoder = Geocoder((_, _) => Task.FromResult(FakeGeocoding.Reply(
-                FakeGeocoding.Match(new FakeGeocoding.Place(35.7822, -78.6398, "16 W JONES ST, RALEIGH, NC, 27601")))));
-
-            var found = await geocoder.FindAsync("16 w jones", default);
-
-            Assert.Equal("16 W JONES ST, RALEIGH, NC, 27601", Assert.Single(found).Address);
         }
 
         [Fact]
@@ -89,16 +81,8 @@ namespace YourElectionMap.Server.Tests
             Assert.Contains("benchmark=Public_AR_Current", handler.LastQuery);
         }
 
-        [Fact]
-        public async Task FindAsync_ReturnsNothingWhenTheAddressCannotBePlaced()
-        {
-            var geocoder = Geocoder(
-                (_, _) => Task.FromResult(FakeGeocoding.Reply(FakeGeocoding.NoMatch)));
-
-            Assert.Empty(await geocoder.FindAsync("nowhere at all", default));
-        }
-
         [Theory]
+        [InlineData(FakeGeocoding.NoMatch)] // an address it cannot place
         [InlineData("{ \"result\": {} }")]
         [InlineData("{ \"result\": { \"addressMatches\": \"none\" } }")]
         [InlineData("{ \"result\": { \"addressMatches\": [ {} ] } }")]

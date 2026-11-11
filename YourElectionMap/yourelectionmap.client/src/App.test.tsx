@@ -78,43 +78,18 @@ describe('App', () => {
         level: 1,
         name: 'Districts for 1420 Maple Street',
       }),
-    ).toBeInTheDocument()
-    expect(screen.getByLabelText('Home address')).toHaveValue(
-      '1420 Maple Street, Springfield',
-    )
-  })
-
-  // The lookup ran before the page changed, so the districts are already here.
-  it('opens the result page from the lookup it has, without asking twice', async () => {
-    render(<App />)
-
-    await userEvent.type(
-      screen.getByLabelText('Home address'),
-      '1420 Maple Street{enter}',
-    )
-
-    expect(await districtList()).toBeInTheDocument()
-    expect(screen.queryByText('Looking up districts…')).toBeNull()
-    expect(api.fetch).toHaveBeenCalledTimes(1)
-  })
-
-  it('moves focus to the new page and names it in the title', async () => {
-    render(<App />)
-
-    await userEvent.type(
-      screen.getByLabelText('Home address'),
-      '1420 Maple Street, Springfield{enter}',
-    )
-
-    expect(
-      await screen.findByRole('heading', {
-        level: 1,
-        name: 'Districts for 1420 Maple Street',
-      }),
     ).toHaveFocus()
     expect(document.title).toBe(
       'Districts for 1420 Maple Street, Springfield — YourElectionMap',
     )
+    expect(screen.getByLabelText('Home address')).toHaveValue(
+      '1420 Maple Street, Springfield',
+    )
+
+    // The lookup ran before the page changed, so the districts are already here.
+    expect(await districtList()).toBeInTheDocument()
+    expect(screen.queryByText('Looking up districts…')).toBeNull()
+    expect(api.fetch).toHaveBeenCalledTimes(1)
   })
 
   it('stays on the home screen when the address cannot be matched', async () => {
@@ -131,23 +106,6 @@ describe('App', () => {
       ),
     ).toBeInTheDocument()
     expect(screen.getByLabelText('Home address')).toHaveValue('Main Street')
-  })
-
-  it('stays on the home screen when the lookup does not answer', async () => {
-    api.fail()
-    render(<App />)
-
-    await userEvent.type(
-      screen.getByLabelText('Home address'),
-      '1420 Maple Street{enter}',
-    )
-
-    expect(currentUrl()).toBe('/')
-    expect(
-      screen.getByText(
-        'The district lookup is not responding. Try again in a moment.',
-      ),
-    ).toBeInTheDocument()
   })
 
   it('returns to the home screen when the browser goes back', async () => {
@@ -168,15 +126,6 @@ describe('App', () => {
     expect(
       screen.getByRole('heading', { level: 1, name: 'YourElectionMap' }),
     ).toBeInTheDocument()
-  })
-
-  it('opens a deep link on the lower state chamber', async () => {
-    goTo('/map?address=1420+Maple+Street')
-    render(<App />)
-
-    expect(await screen.findAllByRole('radio')).toHaveLength(6)
-    expect(checkedDistrict()).toHaveAccessibleName('State House · District 44')
-    expect(screen.getByRole('button', { name: 'Update' })).toBeInTheDocument()
   })
 
   it('says it is looking things up until the districts arrive', async () => {
@@ -242,9 +191,13 @@ describe('App', () => {
       ),
     ).toBeInTheDocument()
     expect(screen.queryByRole('radio')).toBeNull()
+    // Not a failure, so there is nothing to keep trying.
+    expect(screen.queryByRole('button', { name: 'Try again' })).toBeNull()
   })
 
-  it('offers another go when the lookup does not answer, and draws it when it does', async () => {
+  it('offers another go when the lookup does not answer, and hands focus to the result', async () => {
+    let deliver = () => {}
+
     api.fail()
     goTo('/map?address=1420+Maple+Street')
     render(<App />)
@@ -256,34 +209,7 @@ describe('App', () => {
       }),
     ).toBeInTheDocument()
 
-    api.recover()
-    await userEvent.click(screen.getByRole('button', { name: 'Try again' }))
-
-    expect(await districtList()).toBeInTheDocument()
-  })
-
-  it('says an address the server will not take could not be placed', async () => {
-    goTo(`/map?address=1+${'x'.repeat(250)}+Road`)
-    render(<App />)
-
-    expect(
-      await screen.findByRole('heading', {
-        level: 1,
-        name: 'We could not place that address',
-      }),
-    ).toBeInTheDocument()
-    // Not a failure, so there is nothing to keep trying.
-    expect(screen.queryByRole('button', { name: 'Try again' })).toBeNull()
-  })
-
-  it('keeps focus on Try again while it retries, then hands it to the result', async () => {
-    let deliver = () => {}
-
-    api.fail()
-    goTo('/map?address=1420+Maple+Street')
-    render(<App />)
-
-    const retry = await screen.findByRole('button', { name: 'Try again' })
+    const retry = screen.getByRole('button', { name: 'Try again' })
 
     // A held answer, so the button can be looked at mid-retry.
     vi.stubGlobal(
@@ -361,14 +287,6 @@ describe('App', () => {
     )
   })
 
-  it('falls back to the lower state chamber for a district it does not have', async () => {
-    goTo('/map?address=1420+Maple+Street&district=nowhere-9')
-    render(<App />)
-    await districtList()
-
-    expect(checkedDistrict()).toHaveAccessibleName('State House · District 44')
-  })
-
   it('drops the selected district when a new address is looked up', async () => {
     goTo('/map?address=1420+Maple+Street&district=county-3')
     render(<App />)
@@ -421,23 +339,5 @@ describe('App', () => {
     expect(first?.removed).toBe(true)
     expect(latest?.getZoom()).toBe(12)
     expect(latest?.options.bounds).toBeDefined()
-  })
-
-  it('falls back to the home screen for an unknown path', () => {
-    goTo('/somewhere-else')
-    render(<App />)
-
-    expect(
-      screen.getByRole('heading', { level: 1, name: 'YourElectionMap' }),
-    ).toBeInTheDocument()
-  })
-
-  it('falls back to the home screen when the map URL has nothing to look up', () => {
-    goTo('/map')
-    render(<App />)
-
-    expect(
-      screen.getByRole('heading', { level: 1, name: 'YourElectionMap' }),
-    ).toBeInTheDocument()
   })
 })

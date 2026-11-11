@@ -50,30 +50,18 @@ describe('AddressForm', () => {
     expect(screen.getByText('Home address')).toHaveClass('visually-hidden')
   })
 
-  it('hands the trimmed address to the caller', async () => {
+  it('hands the trimmed address to the caller when Enter is pressed', async () => {
     const { onSubmit } = renderForm()
 
     await userEvent.type(
       screen.getByLabelText('Home address'),
-      '  1420 Maple Street  ',
-    )
-    await userEvent.click(screen.getByRole('button', { name: 'Find My Maps' }))
-
-    expect(onSubmit).toHaveBeenCalledWith('1420 Maple Street')
-  })
-
-  it('submits when Enter is pressed in the field', async () => {
-    const { onSubmit } = renderForm()
-
-    await userEvent.type(
-      screen.getByLabelText('Home address'),
-      '1420 Maple Street{enter}',
+      '  1420 Maple Street  {enter}',
     )
 
     expect(onSubmit).toHaveBeenCalledWith('1420 Maple Street')
   })
 
-  it('refuses an empty submit and says why', async () => {
+  it('refuses an empty submit, says why, and stops flagging the field once something is typed', async () => {
     const { onSubmit } = renderForm()
 
     await userEvent.click(screen.getByRole('button', { name: 'Find My Maps' }))
@@ -86,12 +74,7 @@ describe('AddressForm', () => {
       'aria-invalid',
       'true',
     )
-  })
 
-  it('stops flagging the field once something is typed', async () => {
-    renderForm()
-
-    await userEvent.click(screen.getByRole('button', { name: 'Find My Maps' }))
     await userEvent.type(screen.getByLabelText('Home address'), '1')
 
     expect(screen.getByLabelText('Home address')).not.toHaveAttribute(

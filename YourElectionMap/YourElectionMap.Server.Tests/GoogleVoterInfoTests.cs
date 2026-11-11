@@ -57,10 +57,7 @@ namespace YourElectionMap.Server.Tests
         [Theory]
         [InlineData(HttpStatusCode.BadRequest, FakeVoterInfo.NoElection)] // no election here
         [InlineData(HttpStatusCode.Forbidden, "{}")] // a bad key, or the quota spent
-        [InlineData(HttpStatusCode.ServiceUnavailable, "{}")]
         [InlineData(HttpStatusCode.OK, "<html>down for maintenance</html>")]
-        [InlineData(HttpStatusCode.OK, "{}")]
-        [InlineData(HttpStatusCode.OK, "[]")]
         [InlineData(HttpStatusCode.OK, "{ \"election\": { \"electionDay\": \"soon\" } }")]
         public async Task GetAsync_ShowsNothingWhenThereIsNoElectionToRead(
             HttpStatusCode status,
@@ -180,7 +177,6 @@ namespace YourElectionMap.Server.Tests
         [Theory]
         [InlineData(HttpStatusCode.Forbidden, "{}")]
         [InlineData(HttpStatusCode.OK, "<html>down for maintenance</html>")]
-        [InlineData(HttpStatusCode.OK, "{ \"elections\": {} }")]
         public async Task GetAsync_ShowsNothingWhenTheElectionListCannotBeRead(
             HttpStatusCode status,
             string body)

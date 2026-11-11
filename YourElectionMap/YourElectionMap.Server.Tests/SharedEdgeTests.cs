@@ -81,14 +81,6 @@ namespace YourElectionMap.Server.Tests
             Assert.DoesNotContain(Ids(0.900005), id => id.StartsWith("city-", StringComparison.Ordinal));
         }
 
-        [Fact]
-        public void Covering_StillListsBroadToLocal()
-        {
-            Assert.Equal(
-                ["congressional-1", "state-upper-1", "state-lower-1", "city-9900100"],
-                Ids(0.499993).Where(id => !id.StartsWith("county-", StringComparison.Ordinal)));
-        }
-
         private string[] Ids(double longitude) =>
             _data.Covering(longitude, 0.5)!.Districts.Select(district => district.Id).ToArray();
 

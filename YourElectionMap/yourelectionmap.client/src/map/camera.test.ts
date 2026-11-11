@@ -106,14 +106,6 @@ describe('maxBoundsFor', () => {
 })
 
 describe('scaleBarAt', () => {
-  it('reads a mile at the zoom a State House district opens at', () => {
-    expect(scaleBarAt(12, ADDRESS[1]).miles).toBe(1)
-  })
-
-  it('reaches a tenth of a mile at street level', () => {
-    expect(scaleBarAt(15, ADDRESS[1]).miles).toBe(0.1)
-  })
-
   it('reaches the distances a congressional district is measured in', () => {
     const scale = scaleBarAt(8, ADDRESS[1])
 

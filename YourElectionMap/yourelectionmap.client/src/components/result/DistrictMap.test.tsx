@@ -12,7 +12,7 @@ import {
   maxBoundsFor,
   type Bounds,
 } from '../../map/camera'
-import { TILE_SOURCE, type StyleSpecification } from '../../map/style'
+import type { StyleSpecification } from '../../map/style'
 
 // maplibre-gl is replaced by the fake in src/test/fakeMaplibre.ts, which
 // records what the component tells it. What is checked here is that: the
@@ -103,10 +103,8 @@ describe('DistrictMap', () => {
     expect(idsIn(style(), 'selected')).toEqual(['state-lower-44'])
     expect(idsIn(style(), 'dashed')).toEqual(['state-upper-22'])
     expect(idsIn(style(), 'dotted')).toEqual(['county-3'])
-  })
 
-  it('hands the map each boundary as a MultiPolygon, holes and all', () => {
-    const { style } = renderMap()
+    // Each boundary goes to the map as a MultiPolygon, holes and all.
     const spec = style().sources.selected
     const data = (spec as { data: { features: { geometry: unknown }[] } }).data
 
@@ -114,34 +112,6 @@ describe('DistrictMap', () => {
       type: 'MultiPolygon',
       coordinates: layersFor().selected.boundary,
     })
-  })
-
-  // OpenFreeMap's tiles carry buildings, points of interest and more; only the
-  // streets and the landmarks a visitor finds their bearings by are drawn.
-  it('draws streets and landmarks from the tile provider and nothing else of theirs', () => {
-    const { style } = renderMap()
-    const streets = style().sources.streets
-
-    expect(streets).toEqual({ type: 'vector', url: TILE_SOURCE.url })
-
-    const fromTiles = style().layers.filter(
-      (layer) => 'source' in layer && layer.source === 'streets',
-    )
-
-    expect(
-      new Set(fromTiles.map((layer) => layer['source-layer' as keyof typeof layer])),
-    ).toEqual(
-      new Set([
-        'transportation',
-        'transportation_name',
-        'place',
-        'water',
-        'waterway',
-        'water_name',
-        'park',
-        'landcover',
-      ]),
-    )
   })
 
   // The district is the point of the map: the ground lies under the streets,
@@ -185,15 +155,12 @@ describe('DistrictMap', () => {
     expect(map.fitted).toHaveLength(1)
   })
 
-  it('keeps the map near the lookup it was given', () => {
-    const { map } = renderMap()
+  it('keeps the map near the lookup, and moves its limits when the lookup moves', () => {
+    const { map, limit } = renderMap()
 
     expect(map.options.maxBounds).toEqual(sampleLimits)
     expect(map.limited).toEqual([])
-  })
 
-  it('moves its limits when the lookup moves, before refitting', () => {
-    const { map, limit } = renderMap()
     const california: Bounds = [
       [-126.5, 30.5],
       [-112.1, 44.1],

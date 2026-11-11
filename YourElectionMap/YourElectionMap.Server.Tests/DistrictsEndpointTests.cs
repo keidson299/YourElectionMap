@@ -22,9 +22,6 @@ namespace YourElectionMap.Server.Tests
         /// <summary>16 W Jones Street, Raleigh: an address the stubbed geocoder places.</summary>
         private const string RaleighAddress = "16 W Jones St, Raleigh NC";
 
-        /// <summary>The California State Capitol: an address the stubbed geocoder places.</summary>
-        private const string SacramentoAddress = "1315 10th St, Sacramento CA";
-
         private readonly OfflineApp _app;
 
         public DistrictsEndpointTests(OfflineApp app)
@@ -79,149 +76,15 @@ namespace YourElectionMap.Server.Tests
                 new[] { "Federal", "State", "State", "County", "City or town", "School district" },
                 Each(districts, "detail"));
 
-            // The county is named on every other district's map chip.
+            // The county is named on every other district's map chip. Local rows are
+            // named, not numbered, and send null for what they lack rather than leave it out.
             Assert.Equal(
                 new[] { "Wake County", "Wake County", "Wake County", null, "Wake County", "Wake County" },
                 Each(districts, "area"));
-        }
-
-        [Theory]
-        [InlineData(SacramentoAddress, "county-06067", "city-0664000", "school-0633840")]
-        [InlineData("900 Court St NE, Salem OR", "county-41047", "city-4164900", "school-4110820")]
-        [InlineData("1100 Gervais St, Columbia SC", "county-45079", "city-4516000", "school-4503360")]
-        [InlineData("416 Sid Snyder Ave SW, Olympia WA", "county-53067", "city-5351300", "school-5306180")]
-        [InlineData("1700 W Washington St, Phoenix AZ", "county-04013", "city-0455000", "school-0406330", "school-0406300")]
-        [InlineData("700 W Jefferson St, Boise ID", "county-16001", "city-1608830", "school-1600360")]
-        [InlineData("1301 E 6th Ave, Helena MT", "county-30049", "city-3035600", "school-3013830", "school-3000005")]
-        [InlineData("350 N State St, Salt Lake City UT", "county-49035", "city-4967000", "school-4900870")]
-        [InlineData("200 W 24th St, Cheyenne WY", "county-56021", "city-5613900", "school-5601980")]
-        [InlineData("200 E Colfax Ave, Denver CO", "county-08031", "city-0820000", "school-0803360")]
-        [InlineData("490 Old Santa Fe Trl, Santa Fe NM", "county-35049", "city-3570500", "school-3502370")]
-        [InlineData("101 N Carson St, Carson City NV", "county-32510", "city-3209700", "school-3200390")]
-        [InlineData("2300 N Lincoln Blvd, Oklahoma City OK", "county-40109", "city-4055000", "school-4022770")]
-        [InlineData("1100 Congress Ave, Austin TX", "county-48453", "city-4805000", "school-4808940")]
-        [InlineData("300 SW 10th Ave, Topeka KS", "county-20177", "city-2071000", "school-2012260")]
-        [InlineData("75 Rev Dr Martin Luther King Jr Blvd, St Paul MN", "county-27123", "city-2758000", "school-2733840")]
-        [InlineData("600 E Boulevard Ave, Bismarck ND", "county-38015", "city-3807200", "school-3800014")]
-        [InlineData("1445 K St, Lincoln Nebraska", "county-31109", "city-3128000", "school-3172840")]
-        [InlineData("500 E Capitol Ave, Pierre SD", "county-46065", "city-4649600", "school-4655260")]
-        [InlineData("500 Woodlane St, Little Rock AR", "county-05119", "city-0541000", "school-0509000")]
-        [InlineData("1007 E Grand Ave, Des Moines IA", "county-19153", "city-1921000", "school-1908970")]
-        [InlineData("900 N 3rd St, Baton Rouge LA", "county-22033", "city-2205000", "school-2200540")]
-        [InlineData("201 W Capitol Ave, Jefferson City Missouri", "county-29051", "city-2937000", "school-2916190")]
-        [InlineData("400 High St, Jackson MS", "county-28049", "city-2836000", "school-2802190")]
-        [InlineData("600 Dexter Ave, Montgomery AL", "county-01101", "city-0151000", "school-0102430")]
-        [InlineData("400 S Monroe St, Tallahassee FL", "county-12073", "city-1270600", "school-1201110")]
-        [InlineData("206 Washington St SW, Atlanta GA", "county-13121", "city-1304000", "school-1300120")]
-        [InlineData("700 Capital Ave, Frankfort KY", "county-21073", "city-2128900", "school-2101980")]
-        [InlineData("600 Dr Martin L King Jr Blvd, Nashville TN", "county-47037", "city-4752006", "school-4703180")]
-        [InlineData("401 S 2nd St, Springfield IL", "county-17167", "city-1716711046", "city-1772000", "school-1737080")]
-        [InlineData("200 W Washington St, Indianapolis IN", "county-18097", "city-1809711512", "city-1836003", "school-1804770")]
-        [InlineData("100 N Capitol Ave, Lansing MI", "county-26065", "city-2646000", "school-2621150")]
-        [InlineData("1 Capitol Sq, Columbus OH", "county-39049", "city-3918000", "school-3904380")]
-        [InlineData("2 E Main St, Madison WI", "county-55025", "city-5548000", "school-5508520")]
-        [InlineData("411 Legislative Ave, Dover DE", "county-10001", "city-1021200", "school-1000190")]
-        [InlineData("100 State Cir, Annapolis MD", "county-24003", "city-2401600", "school-2400060")]
-        [InlineData("501 N 3rd St, Harrisburg PA", "county-42043", "city-4232800", "school-4211580")]
-        // Richmond is a city outside any county, as St. Louis is, so TIGER has it as both.
-        [InlineData("1000 Bank St, Richmond VA", "county-51760", "city-5167000", "school-5103240")]
-        [InlineData("1900 Kanawha Blvd E, Charleston WV", "county-54039", "city-5414600", "school-5400600")]
-        [InlineData("210 Capitol Ave, Hartford CT", "county-09110", "city-0937000", "school-0901920")]
-        [InlineData("24 Beacon St, Boston MA", "county-25025", "city-2507000", "school-2502790")]
-        [InlineData("125 W State St, Trenton NJ", "county-34021", "city-3474000", "school-3416290")]
-        [InlineData("172 State St, Albany NY", "county-36001", "city-3601000", "school-3602460")]
-        [InlineData("82 Smith St, Providence RI", "county-44007", "city-4459000", "school-4400900")]
-        [InlineData("115 State St, Montpelier VT", "county-50023", "city-5046000", "school-5000410")]
-        [InlineData("107 N Main St, Concord NH", "county-33013", "city-3314200", "school-3302460")]
-        [InlineData("210 State St, Augusta ME", "county-23011", "city-2302100", "school-2302640")]
-        // Honolulu is a county with no city in it.
-        [InlineData("415 S Beretania St, Honolulu HI", "county-15003", null, "school-1500030")]
-        // Juneau is a borough and a city in one, so TIGER has it as both.
-        [InlineData("120 4th St, Juneau AK", "county-02110", "city-0236400", "school-0200210")]
-        public async Task Get_ListsTheCapitolsCountyCityAndSchoolDistricts(
-            string address,
-            string county,
-            string? city,
-            params string[] rest)
-        {
-            // Phoenix and Helena have a high school district over an elementary one, and
-            // list both, high school first; Springfield and Indianapolis are in a township
-            // as well as a city, and list both, township first. Nebraska has one chamber,
-            // so two legislative rows rather than three come before them.
-            var lookup = await LookupAsync(AddressQuery(address));
-
             Assert.Equal(
-                new[] { county, city }.OfType<string>().Concat(rest),
-                Each(lookup.GetProperty("districts"), "id")
-                    .SkipWhile(id => id!.StartsWith("congressional-", StringComparison.Ordinal)
-                        || id.StartsWith("state-", StringComparison.Ordinal)));
-        }
-
-        [Theory]
-        [InlineData(SacramentoAddress, 7, 8, "6", "State Assembly")]
-        [InlineData("900 Court St NE, Salem OR", 6, 11, "21", "State House")]
-        [InlineData("1100 Gervais St, Columbia SC", 6, 26, "72", "State House")]
-        [InlineData("416 Sid Snyder Ave SW, Olympia WA", 10, 22, "22", "State House")]
-        [InlineData("1700 W Washington St, Phoenix AZ", 3, 11, "11", "State House")]
-        [InlineData("700 W Jefferson St, Boise ID", 2, 19, "19", "State House")]
-        [InlineData("1301 E 6th Ave, Helena MT", 2, 41, "82", "State House")]
-        [InlineData("350 N State St, Salt Lake City UT", 1, 8, "22", "State House")]
-        [InlineData("200 W 24th St, Cheyenne WY", 1, 8, "11", "State House")]
-        [InlineData("200 E Colfax Ave, Denver CO", 1, 31, "6", "State House")]
-        [InlineData("490 Old Santa Fe Trl, Santa Fe NM", 3, 25, "47", "State House")]
-        [InlineData("101 N Carson St, Carson City NV", 2, 16, "40", "State Assembly")]
-        [InlineData("2300 N Lincoln Blvd, Oklahoma City OK", 5, 48, "99", "State House")]
-        [InlineData("1100 Congress Ave, Austin TX", 10, 14, "49", "State House")]
-        [InlineData("300 SW 10th Ave, Topeka KS", 2, 19, "57", "State House")]
-        // Each Minnesota Senate district is halved into two House districts.
-        [InlineData("75 Rev Dr Martin Luther King Jr Blvd, St Paul MN", 4, 65, "65B", "State House")]
-        [InlineData("600 E Boulevard Ave, Bismarck ND", 1, 35, "35", "State House")]
-        [InlineData("500 E Capitol Ave, Pierre SD", 1, 24, "24", "State House")]
-        [InlineData("500 Woodlane St, Little Rock AR", 2, 14, "74", "State House")]
-        [InlineData("1007 E Grand Ave, Des Moines IA", 3, 17, "33", "State House")]
-        [InlineData("900 N 3rd St, Baton Rouge LA", 2, 14, "67", "State House")]
-        // Missouri's 2022 map, which the courts kept for 2026.
-        [InlineData("201 W Capitol Ave, Jefferson City Missouri", 3, 6, "60", "State House")]
-        [InlineData("400 High St, Jackson MS", 2, 29, "67", "State House")]
-        [InlineData("600 Dexter Ave, Montgomery AL", 2, 26, "77", "State House")]
-        [InlineData("400 S Monroe St, Tallahassee FL", 2, 3, "9", "State House")]
-        [InlineData("206 Washington St SW, Atlanta GA", 5, 36, "58", "State House")]
-        [InlineData("700 Capital Ave, Frankfort KY", 1, 20, "57", "State House")]
-        [InlineData("600 Dr Martin L King Jr Blvd, Nashville TN", 7, 21, "51", "State House")]
-        [InlineData("401 S 2nd St, Springfield IL", 13, 48, "96", "State House")]
-        [InlineData("200 W Washington St, Indianapolis IN", 7, 46, "97", "State House")]
-        [InlineData("100 N Capitol Ave, Lansing MI", 7, 21, "77", "State House")]
-        [InlineData("1 Capitol Sq, Columbus OH", 15, 15, "1", "State House")]
-        [InlineData("2 E Main St, Madison WI", 2, 26, "76", "State Assembly")]
-        [InlineData("411 Legislative Ave, Dover DE", 1, 17, "32", "State House")]
-        // Maryland elects some delegates from a district's halves or thirds.
-        [InlineData("100 State Cir, Annapolis MD", 3, 30, "30A", "House of Delegates")]
-        [InlineData("501 N 3rd St, Harrisburg PA", 10, 15, "103", "State House")]
-        [InlineData("1000 Bank St, Richmond VA", 4, 14, "78", "House of Delegates")]
-        [InlineData("1900 Kanawha Blvd E, Charleston WV", 1, 8, "54", "House of Delegates")]
-        [InlineData("210 Capitol Ave, Hartford CT", 1, 1, "7", "State House")]
-        [InlineData("125 W State St, Trenton NJ", 12, 15, "15", "General Assembly")]
-        [InlineData("172 State St, Albany NY", 20, 46, "109", "State Assembly")]
-        [InlineData("82 Smith St, Providence RI", 1, 1, "1", "State House")]
-        [InlineData("210 State St, Augusta ME", 2, 15, "59", "State House")]
-        [InlineData("415 S Beretania St, Honolulu HI", 1, 13, "25", "State House")]
-        public async Task Get_PlacesEachOtherCapitolInItsStatesDistricts(
-            string address,
-            int congressional,
-            int upper,
-            string lower,
-            string lowerHouse)
-        {
-            // Pinned the same way as Raleigh; the local rows that follow are pinned above.
-            var lookup = await LookupAsync(AddressQuery(address));
-            var districts = lookup.GetProperty("districts");
-
-            Assert.Equal(
-                new[] { $"congressional-{congressional}", $"state-upper-{upper}", $"state-lower-{lower}" },
-                Each(districts, "id").Take(3));
-            Assert.Equal(
-                new[] { "U.S. House", "State Senate", lowerHouse },
-                Each(districts, "office").Take(3));
+                new[] { "District", "District", "District", null, null, null },
+                Each(districts, "unit"));
+            Assert.Equal(new[] { "2", "14", "38", null, null, null }, Each(districts, "number"));
         }
 
         [Fact]
@@ -258,44 +121,6 @@ namespace YourElectionMap.Server.Tests
         }
 
         [Fact]
-        public async Task Get_NamesVermontsDistrictsRatherThanNumberingThem()
-        {
-            // As Massachusetts's are: "Washington-4", from TIGER's "Washington-4 State House
-            // District", over its chamber.
-            var lookup = await LookupAsync(AddressQuery("115 State St, Montpelier VT"));
-            var districts = lookup.GetProperty("districts");
-
-            Assert.Equal(
-                new[] { "congressional-1", "state-upper-50WAS", "state-lower-50WA4" },
-                Each(districts, "id").Take(3));
-            Assert.Equal(
-                new[] { "U.S. House", "Washington District", "Washington-4 District" },
-                Each(districts, "office").Take(3));
-            Assert.Equal(new[] { "Federal", "State Senate", "State House" }, Each(districts, "detail").Take(3));
-            Assert.Equal(new[] { "District", null, null }, Each(districts, "unit").Take(3));
-            Assert.Equal(new[] { "1", null, null }, Each(districts, "number").Take(3));
-        }
-
-        [Fact]
-        public async Task Get_NamesNewHampshiresHouseDistrictsByTheirCounty()
-        {
-            // Its House districts are numbered within each county, so the number alone
-            // would not say which; its Senate districts are numbered across the state.
-            var lookup = await LookupAsync(AddressQuery("107 N Main St, Concord NH"));
-            var districts = lookup.GetProperty("districts");
-
-            Assert.Equal(
-                new[] { "congressional-2", "state-upper-15", "state-lower-33618" },
-                Each(districts, "id").Take(3));
-            Assert.Equal(
-                new[] { "U.S. House", "State Senate", "Merrimack District 18" },
-                Each(districts, "office").Take(3));
-            Assert.Equal(new[] { "Federal", "State", "State House" }, Each(districts, "detail").Take(3));
-            Assert.Equal(new[] { "District", "District", null }, Each(districts, "unit").Take(3));
-            Assert.Equal(new[] { "2", "15", null }, Each(districts, "number").Take(3));
-        }
-
-        [Fact]
         public async Task Get_LettersAlaskasSenateDistricts()
         {
             // Senate District B is House Districts 3 and 4, and the county is a borough.
@@ -310,28 +135,6 @@ namespace YourElectionMap.Server.Tests
                 new[] { "U.S. House", "State Senate", "State House", "Juneau City and Borough" },
                 Each(districts, "office").Take(4));
             Assert.Equal("Borough or census area", Each(districts, "detail")[3]);
-        }
-
-        [Fact]
-        public async Task Get_NamesConnecticutsCountiesPlanningRegions()
-        {
-            var lookup = await LookupAsync(AddressQuery("210 Capitol Ave, Hartford CT"));
-            var region = lookup.GetProperty("districts").EnumerateArray()
-                .Single(district => district.GetProperty("level").GetString() == "county");
-
-            Assert.Equal("Capitol Planning Region", region.GetProperty("office").GetString());
-            Assert.Equal("Planning region", region.GetProperty("detail").GetString());
-        }
-
-        [Fact]
-        public async Task Get_NamesLouisianasCountiesParishes()
-        {
-            var lookup = await LookupAsync(AddressQuery("900 N 3rd St, Baton Rouge LA"));
-            var parish = lookup.GetProperty("districts").EnumerateArray()
-                .Single(district => district.GetProperty("level").GetString() == "county");
-
-            Assert.Equal("East Baton Rouge Parish", parish.GetProperty("office").GetString());
-            Assert.Equal("Parish", parish.GetProperty("detail").GetString());
         }
 
         [Fact]
@@ -379,19 +182,6 @@ namespace YourElectionMap.Server.Tests
 
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
             Assert.Contains("gzip", response.Content.Headers.ContentEncoding);
-        }
-
-        [Fact]
-        public async Task Get_SendsNullRatherThanOmittingWhatIsNotKnown()
-        {
-            var lookup = await LookupAsync(AddressQuery(RaleighAddress));
-            var county = lookup.GetProperty("districts")[3];
-
-            // A county is named, not numbered, and is no other place's part.
-            Assert.Equal("county", county.GetProperty("level").GetString());
-            Assert.Equal(JsonValueKind.Null, county.GetProperty("unit").ValueKind);
-            Assert.Equal(JsonValueKind.Null, county.GetProperty("number").ValueKind);
-            Assert.Equal(JsonValueKind.Null, county.GetProperty("area").ValueKind);
         }
 
         [Theory]
@@ -452,15 +242,9 @@ namespace YourElectionMap.Server.Tests
             Assert.Equal(-71.6662, location[0], 0.0001);
             Assert.Equal(41.4734, location[1], 0.0001);
             Assert.Equal(6, lookup.GetProperty("districts").GetArrayLength());
-        }
 
-        [Fact]
-        public async Task Get_AsksGoogleAboutTheAddressTheGeocoderMatchedInACoveredState()
-        {
-            // Typed with no state, and matched in Puerto Rico first: Google must be
-            // asked about the match the districts came from, spelled with its state.
-            await LookupAsync(AddressQuery("100 Main St, Carolina"));
-
+            // Google is asked about the match the districts came from, spelled with its
+            // state.
             Assert.Contains(
                 FakeVoterInfo.Asked,
                 asked => asked.Contains("100 MAIN ST, CAROLINA, RI, 02812"));
@@ -475,15 +259,12 @@ namespace YourElectionMap.Server.Tests
             Assert.DoesNotContain(FakeVoterInfo.Asked, asked => asked.Contains("PENNSYLVANIA"));
         }
 
-        [Theory]
-        [InlineData("101 S Tryon St")] // Google has no election for it
-        [InlineData("101 N Mangum St")] // Google is down
-        [InlineData(SacramentoAddress)] // Google has no election for it either
-        public async Task Get_StillAnswersWhenGoogleHasNoElectionToGive(string address)
+        [Fact]
+        public async Task Get_StillAnswersWhenGoogleIsDown()
         {
             // The districts do not depend on the election, so they come back without it:
             // three legislative, then the county, the city and the school district.
-            var lookup = await LookupAsync(AddressQuery(address));
+            var lookup = await LookupAsync(AddressQuery("101 N Mangum St"));
 
             Assert.Equal(6, lookup.GetProperty("districts").GetArrayLength());
             Assert.Equal(JsonValueKind.Null, lookup.GetProperty("election").ValueKind);

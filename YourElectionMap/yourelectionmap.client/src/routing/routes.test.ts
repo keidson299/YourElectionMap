@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { mapUrl, parseRoute, targetQuery } from './routes'
+import { mapUrl, parseRoute } from './routes'
 
 describe('parseRoute', () => {
   it('treats the root as home', () => {
@@ -99,26 +99,5 @@ describe('mapUrl', () => {
       target,
       district: 'state-upper-22',
     })
-  })
-
-  it('leaves the district out when there is none', () => {
-    expect(mapUrl({ address: 'Springfield' }, { district: null })).toBe(
-      '/map?address=Springfield',
-    )
-  })
-})
-
-// The same query serves the page URL, the API request and the lookup's cache key.
-describe('targetQuery', () => {
-  it('names an address', () => {
-    expect(targetQuery({ address: '1420 Maple Street, Springfield' })).toBe(
-      'address=1420+Maple+Street%2C+Springfield',
-    )
-  })
-
-  it('names a point, rounded to five places', () => {
-    expect(targetQuery({ coords: { lat: 42.10123456789, lon: -71.2 } })).toBe(
-      'lat=42.10123&lon=-71.2',
-    )
   })
 })

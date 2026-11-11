@@ -48,17 +48,14 @@ describe('lookups', () => {
     expect(state.status === 'found' && state.lookup.districts).toHaveLength(6)
   })
 
-  it('reads a 404 as an address that could not be placed', async () => {
-    const state = await requestLookup({ address: 'Main Street' })
-
-    expect(state.status).toBe('no-match')
-  })
-
-  // Not an error: asking again would send the same rejected query.
-  it('reads a 400 the same way, not as a server that is down', async () => {
-    const state = await requestLookup({ address: `1 ${'x'.repeat(250)} Road` })
-
-    expect(state.status).toBe('no-match')
+  // A 400 is not an error either: asking again would send the same rejected query.
+  it('reads a 404 or a 400 as an address that could not be placed', async () => {
+    expect((await requestLookup({ address: 'Main Street' })).status).toBe(
+      'no-match',
+    )
+    expect(
+      (await requestLookup({ address: `1 ${'x'.repeat(250)} Road` })).status,
+    ).toBe('no-match')
   })
 
   it('reads a lookup with no districts the same way', async () => {

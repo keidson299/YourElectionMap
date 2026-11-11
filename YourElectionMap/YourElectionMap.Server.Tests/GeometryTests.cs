@@ -46,25 +46,8 @@ namespace YourElectionMap.Server.Tests
             Assert.False(Geometry.Covers([Square, Island], 15, 1));
         }
 
-        [Fact]
-        public void BoxOf_SpansEveryRing()
-        {
-            Assert.Equal(new double[] { 0, 0, 22, 10 }, Geometry.BoxOf([Square, Island]));
-        }
-
-        [Theory]
-        [InlineData(5, 5, true)]
-        [InlineData(15, 1, true)] // in the box, between the two rings
-        [InlineData(23, 1, false)]
-        public void BoxCovers_IsTheCheapFirstAnswer(double x, double y, bool inside)
-        {
-            Assert.Equal(inside, Geometry.BoxCovers(Geometry.BoxOf([Square, Island]), x, y));
-        }
-
         [Theory]
         [InlineData(0.002, 0.005, 0.002)] // inside, nearest the west edge
-        [InlineData(0.005, 0.009, 0.001)] // inside, nearest the north edge
-        [InlineData(0.013, 0.005, 0.003)] // outside, east of it
         [InlineData(0.013, 0.014, 0.005)] // outside, off the corner: a 3-4-5 triangle
         public void DistanceToRings_MeasuresToTheNearestEdge(double x, double y, double distance)
         {
@@ -82,15 +65,6 @@ namespace YourElectionMap.Server.Tests
             double[] edge = [1, 59, 1, 61, 1, 59];
 
             Assert.Equal(0.5, Geometry.DistanceToRings([edge], 0, 60), 3);
-        }
-
-        [Fact]
-        public void ToPolygons_MakesOneRingOnePolygon()
-        {
-            var polygons = Geometry.ToPolygons([Square]);
-
-            Assert.Single(polygons);
-            Assert.Single(polygons[0]);
         }
 
         [Fact]

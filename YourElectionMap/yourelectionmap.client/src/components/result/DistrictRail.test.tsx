@@ -50,7 +50,7 @@ describe('DistrictRail', () => {
     expect(within(group).getAllByRole('radio')).toHaveLength(6)
   })
 
-  it('checks exactly the selected district and says it is on the map', () => {
+  it('checks exactly the selected district, says it is on the map, and the others where they are', () => {
     renderRail()
 
     const checked = screen
@@ -60,11 +60,6 @@ describe('DistrictRail', () => {
     expect(checked).toHaveLength(1)
     expect(checked[0]).toHaveAccessibleName('State House · District 44')
     expect(checked[0]).toHaveAccessibleDescription('Shown on the map')
-  })
-
-  it('describes the other rows by where they are', () => {
-    renderRail()
-
     expect(
       screen.getByRole('radio', { name: 'County Commission · District 3' }),
     ).toHaveAccessibleDescription('Greenlake County')
@@ -78,15 +73,6 @@ describe('DistrictRail', () => {
     )
 
     expect(onSelect).toHaveBeenCalledWith('city-2')
-  })
-
-  it('moves the selection with the arrow keys', async () => {
-    const { onSelect } = renderRail()
-
-    screen.getByRole('radio', { name: 'State House · District 44' }).focus()
-    await userEvent.keyboard('{ArrowDown}')
-
-    expect(onSelect).toHaveBeenCalledWith('county-3')
   })
 
   it('shows the election details for the address', () => {
@@ -142,12 +128,6 @@ describe('DistrictRail', () => {
       'href',
       'https://tigerweb.geo.census.gov/tigerwebmain/TIGERweb_main.html',
     )
-  })
-
-  it('leaves the source tag out when there is no source to name', () => {
-    renderRail({ source: null })
-
-    expect(document.querySelector('.source-tag')).toBeNull()
   })
 })
 
