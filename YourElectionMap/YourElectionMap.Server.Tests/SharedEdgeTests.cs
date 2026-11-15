@@ -21,7 +21,6 @@ namespace YourElectionMap.Server.Tests
         {
             File.WriteAllText(_path, $$"""
                 {
-                  "source": "U.S. Census Bureau TIGER",
                   "state": "ZZ",
                   "units": "degrees",
                   "districts": [
@@ -82,7 +81,7 @@ namespace YourElectionMap.Server.Tests
         }
 
         private string[] Ids(double longitude) =>
-            _data.Covering(longitude, 0.5)!.Districts.Select(district => district.Id).ToArray();
+            _data.Covering(longitude, 0.5)!.Select(district => district.Id).ToArray();
 
         /// <summary>A box from <paramref name="west"/> to <paramref name="east"/>, and 0 to 1 north.</summary>
         private static string Box(

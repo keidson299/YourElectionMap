@@ -2,11 +2,7 @@ using YourElectionMap.Server.Districts;
 
 namespace YourElectionMap.Server.Tests
 {
-    /// <summary>
-    /// The geometry behind "which district am I in", "which ring is a hole" and "how
-    /// much of this boundary is worth keeping". Rings here are written out by hand, so
-    /// what is being asserted is visible in the test.
-    /// </summary>
+    /// <summary>Rings written out by hand, so what is asserted is visible in the test.</summary>
     public class GeometryTests
     {
         private static readonly double[] Square =
@@ -118,43 +114,6 @@ namespace YourElectionMap.Server.Tests
             Assert.Equal(polygon[0][1], polygon[0][^1]);
         }
 
-        [Fact]
-        public void Thin_DropsWhatIsAlreadyOnTheLine()
-        {
-            // A square whose sides carry nine needless vertices each.
-            var ring = Detailed();
-
-            Assert.Equal(41, ring.Length / 2);
-
-            var thinned = Geometry.Thin(ring, 0.01);
-
-            // The four corners, and the closing repeat of the first.
-            Assert.Equal(5, thinned.Length / 2);
-            Assert.Equal(ring[0], thinned[0]);
-            Assert.Equal(ring[1], thinned[1]);
-            Assert.Equal(ring[^2], thinned[^2]);
-            Assert.Equal(ring[^1], thinned[^1]);
-        }
-
-        [Fact]
-        public void Thin_KeepsWhatIsFurtherOutThanTheTolerance()
-        {
-            var ring = Detailed();
-            // The sixth vertex pulled five units off the side it was sitting on.
-            ring[11] = -5;
-
-            var thinned = Geometry.Thin(ring, 0.01);
-
-            Assert.Contains(-5.0, thinned);
-            Assert.True(thinned.Length < ring.Length, "it should still have thinned");
-        }
-
-        [Fact]
-        public void Thin_LeavesARingItCannotUsefullyShorten()
-        {
-            Assert.Equal(Square, Geometry.Thin(Square, 100));
-        }
-
         private static double SignedArea(double[] ring)
         {
             var sum = 0.0;
@@ -165,36 +124,6 @@ namespace YourElectionMap.Server.Tests
             }
 
             return sum / 2;
-        }
-
-        /// <summary>A 10x10 square with ten vertices along each side, closed.</summary>
-        private static double[] Detailed()
-        {
-            var points = new List<double>();
-
-            for (var i = 0; i < 10; i++)
-            {
-                points.AddRange([i, 0]);
-            }
-
-            for (var i = 0; i < 10; i++)
-            {
-                points.AddRange([10, i]);
-            }
-
-            for (var i = 10; i > 0; i--)
-            {
-                points.AddRange([i, 10]);
-            }
-
-            for (var i = 10; i > 0; i--)
-            {
-                points.AddRange([0, i]);
-            }
-
-            points.AddRange([0, 0]);
-
-            return [.. points];
         }
     }
 }

@@ -20,7 +20,6 @@ namespace YourElectionMap.Server.Tests
         {
             File.WriteAllText(_path, $$"""
                 {
-                  "source": "U.S. Census Bureau TIGER",
                   "state": "ZZ",
                   "units": "degrees",
                   "districts": [
@@ -46,17 +45,16 @@ namespace YourElectionMap.Server.Tests
             Assert.NotNull(found);
             Assert.Equal(
                 ["state-lower-4", "county-06001", "city-0600100", "school-0600001", "school-0600002"],
-                found.Districts.Select(district => district.Id));
+                found.Select(district => district.Id));
         }
 
         [Fact]
-        public void Covering_GivesANamedRowNoUnitOrNumber()
+        public void Covering_GivesANamedRowNoNumber()
         {
-            var county = _data.Covering(0.3, 0.3)!.Districts.Single(district => district.Level == "county");
+            var county = _data.Covering(0.3, 0.3)!.Single(district => district.Level == "county");
 
             Assert.Equal("Greenlake County", county.Office);
             Assert.Equal("County", county.Detail);
-            Assert.Null(county.Unit);
             Assert.Null(county.Number);
         }
 
@@ -66,9 +64,9 @@ namespace YourElectionMap.Server.Tests
             var found = _data.Covering(0.3, 0.3)!;
 
             Assert.All(
-                found.Districts.Where(district => district.Level != "county"),
+                found.Where(district => district.Level != "county"),
                 district => Assert.Equal("Greenlake County", district.Area));
-            Assert.Null(found.Districts.Single(district => district.Level == "county").Area);
+            Assert.Null(found.Single(district => district.Level == "county").Area);
         }
 
         [Fact]
@@ -79,7 +77,7 @@ namespace YourElectionMap.Server.Tests
 
             Assert.Equal(
                 ["state-lower", "county", "school"],
-                found.Districts.Select(district => district.Level));
+                found.Select(district => district.Level));
         }
 
         /// <summary>A square from (low, low) to (high, high), in the file's own shape.</summary>

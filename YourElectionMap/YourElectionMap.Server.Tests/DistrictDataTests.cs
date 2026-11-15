@@ -23,115 +23,64 @@ namespace YourElectionMap.Server.Tests
             .ToDictionary(data => data.States[0]);
 
         /// <summary>
-        /// Each state's FIPS code, which begins its local rows' Census codes, its capitol,
-        /// what its lower house is called (Nebraska has none), and the box around the state
-        /// that every boundary point must fall in.
+        /// Each state's FIPS code, its capitol, its lower house (Nebraska has none), and the
+        /// box every boundary point must fall in.
         /// </summary>
         private static readonly Dictionary<string, State> States = new()
         {
-            // The State Legislative Building, 16 W Jones Street, Raleigh.
             ["NC"] = new("37", 35.7822, -78.6398, "State House", (-84.4, -75.4), (33.8, 36.6)),
-            // The State Capitol, 1315 10th Street, Sacramento.
             ["CA"] = new("06", 38.5767, -121.4934, "State Assembly", (-124.5, -114.1), (32.5, 42.1)),
-            // The State Capitol, 900 Court Street NE, Salem.
             ["OR"] = new("41", 44.9385, -123.0301, "State House", (-124.75, -116.4), (41.95, 46.35)),
-            // The State House, 1100 Gervais Street, Columbia.
             ["SC"] = new("45", 34.0004, -81.0330, "State House", (-83.4, -78.45), (31.95, 35.25)),
             // From here on the boxes start a few hundredths off any border on a round degree:
             // a grid row on 37°N would be on the Utah–Arizona line, and one on 49°N finds a
             // Washington school district on the Canadian line itself.
-            // The Legislative Building, 416 Sid Snyder Avenue SW, Olympia.
             ["WA"] = new("53", 47.0358, -122.9048, "State House", (-124.9, -116.9), (45.52, 49.1)),
-            // The State Capitol, 1700 W Washington Street, Phoenix.
             ["AZ"] = new("04", 33.4481, -112.0970, "State House", (-114.83, -109.0), (31.31, 37.05)),
-            // The State Capitol, 700 W Jefferson Street, Boise.
             ["ID"] = new("16", 43.6177, -116.1996, "State House", (-117.23, -111.0), (41.97, 49.05)),
-            // The State Capitol, 1301 E 6th Avenue, Helena.
             ["MT"] = new("30", 46.5857, -112.0184, "State House", (-116.07, -104.0), (44.37, 49.05)),
-            // The State Capitol, 350 N State Street, Salt Lake City.
             ["UT"] = new("49", 40.7774, -111.8882, "State House", (-114.07, -109.0), (36.97, 42.05)),
-            // The State Capitol, 200 W 24th Street, Cheyenne.
             ["WY"] = new("56", 41.1403, -104.8202, "State House", (-111.07, -104.0), (40.97, 45.05)),
-            // The State Capitol, 200 E Colfax Avenue, Denver.
             ["CO"] = new("08", 39.7393, -104.9848, "State House", (-109.07, -102.02), (36.97, 41.05)),
-            // The State Capitol, 490 Old Santa Fe Trail, Santa Fe.
             ["NM"] = new("35", 35.6824, -105.9397, "State House", (-109.07, -102.97), (31.31, 37.02)),
-            // The State Capitol, 101 N Carson Street, Carson City.
             ["NV"] = new("32", 39.1640, -119.7663, "State Assembly", (-120.07, -114.0), (34.97, 42.05)),
-            // The State Capitol, 2300 N Lincoln Boulevard, Oklahoma City.
             ["OK"] = new("40", 35.4922, -97.5034, "State House", (-103.07, -94.4), (33.57, 37.05)),
-            // The State Capitol, 1100 Congress Avenue, Austin.
             ["TX"] = new("48", 30.2747, -97.7403, "State House", (-106.67, -93.47), (25.82, 36.52)),
-            // The State Capitol, 300 SW 10th Avenue, Topeka.
             ["KS"] = new("20", 39.0481, -95.6780, "State House", (-102.07, -94.55), (36.97, 40.05)),
-            // The State Capitol, 75 Rev Dr Martin Luther King Jr Boulevard, St. Paul.
             ["MN"] = new("27", 44.9551, -93.1022, "State House", (-97.27, -89.45), (43.47, 49.42)),
-            // The State Capitol, 600 E Boulevard Avenue, Bismarck.
             ["ND"] = new("38", 46.8209, -100.7827, "State House", (-104.07, -96.5), (45.92, 49.05)),
-            // The State Capitol, 1445 K Street, Lincoln. One chamber, the Legislature.
             ["NE"] = new("31", 40.8081, -96.6997, null, (-104.07, -95.27), (39.97, 43.05), UpperHouse: "Legislature"),
-            // The State Capitol, 500 E Capitol Avenue, Pierre.
             ["SD"] = new("46", 44.3671, -100.3462, "State House", (-104.07, -96.4), (42.47, 45.97)),
-            // The State Capitol, 500 Woodlane Street, Little Rock.
             ["AR"] = new("05", 34.7466, -92.2890, "State House", (-94.62, -89.64), (32.97, 36.52)),
-            // The State Capitol, 1007 E Grand Avenue, Des Moines.
             ["IA"] = new("19", 41.5912, -93.6038, "State House", (-96.64, -90.14), (40.37, 43.51)),
-            // The State Capitol, 900 N 3rd Street, Baton Rouge.
             ["LA"] = new("22", 30.4571, -91.1874, "State House", (-94.05, -88.75), (28.87, 33.03)),
-            // The State Capitol, 201 W Capitol Avenue, Jefferson City.
             ["MO"] = new("29", 38.5792, -92.1729, "State House", (-95.78, -89.09), (35.97, 40.62)),
-            // The State Capitol, 400 High Street, Jackson.
             ["MS"] = new("28", 32.3036, -90.1823, "State House", (-91.66, -88.07), (30.12, 35.02)),
-            // The State Capitol, 600 Dexter Avenue, Montgomery.
             ["AL"] = new("01", 32.3771, -86.3008, "State House", (-88.48, -84.88), (30.14, 35.01)),
-            // The Capitol, 400 S Monroe Street, Tallahassee.
             ["FL"] = new("12", 30.4381, -84.2816, "State House", (-87.64, -79.97), (24.39, 31.01)),
-            // The State Capitol, 206 Washington Street SW, Atlanta.
             ["GA"] = new("13", 33.7490, -84.3880, "State House", (-85.61, -80.78), (30.34, 35.01)),
-            // The State Capitol, 700 Capital Avenue, Frankfort.
             ["KY"] = new("21", 38.1867, -84.8753, "State House", (-89.58, -81.96), (36.49, 39.15)),
-            // The State Capitol, 600 Dr. Martin L. King Jr. Boulevard, Nashville.
             ["TN"] = new("47", 36.1658, -86.7844, "State House", (-90.32, -81.64), (34.98, 36.68)),
-            // The State Capitol, 401 S 2nd Street, Springfield.
             ["IL"] = new("17", 39.7983, -89.6544, "State House", (-91.52, -87.01), (36.96, 42.51)),
-            // The Statehouse, 200 W Washington Street, Indianapolis.
             ["IN"] = new("18", 39.7686, -86.1625, "State House", (-88.10, -84.78), (37.77, 41.77)),
-            // The State Capitol, 100 N Capitol Avenue, Lansing.
             ["MI"] = new("26", 42.7336, -84.5555, "State House", (-90.42, -82.12), (41.69, 48.31)),
-            // The Statehouse, 1 Capitol Square, Columbus.
             ["OH"] = new("39", 39.9612, -82.9988, "State House", (-84.83, -80.51), (38.40, 42.33)),
-            // The State Capitol, 2 E Main Street, Madison.
             ["WI"] = new("55", 43.0747, -89.3842, "State Assembly", (-92.89, -86.24), (42.48, 47.31)),
-            // Legislative Hall, 411 Legislative Avenue, Dover.
             ["DE"] = new("10", 39.1573, -75.5197, "State House", (-75.79, -74.98), (38.45, 39.84)),
-            // The State House, 100 State Circle, Annapolis.
             ["MD"] = new("24", 38.9787, -76.4910, "House of Delegates", (-79.49, -74.98), (37.88, 39.73)),
-            // The State Capitol, 501 N 3rd Street, Harrisburg.
             ["PA"] = new("42", 40.2645, -76.8836, "State House", (-80.52, -74.68), (39.71, 42.52)),
-            // The State Capitol, 1000 Bank Street, Richmond.
             ["VA"] = new("51", 37.5385, -77.4336, "House of Delegates", (-83.68, -75.16), (36.54, 39.47)),
-            // The State Capitol, 1900 Kanawha Boulevard E, Charleston.
             ["WV"] = new("54", 38.3365, -81.6123, "House of Delegates", (-82.65, -77.71), (37.20, 40.64)),
-            // The State Capitol, 210 Capitol Avenue, Hartford.
             ["CT"] = new("09", 41.7640, -72.6823, "State House", (-73.73, -71.78), (40.95, 42.06)),
-            // The State House, 24 Beacon Street, Boston. Its legislative districts are named.
             ["MA"] = new("25", 42.3587, -71.0637, "State House", (-73.51, -69.85), (41.18, 42.89), Named: ["state-upper", "state-lower"]),
-            // The State House, 125 W State Street, Trenton.
             ["NJ"] = new("34", 40.2204, -74.7701, "General Assembly", (-75.57, -73.88), (38.78, 41.36)),
-            // The State Capitol, 172 State Street, Albany.
             ["NY"] = new("36", 42.6526, -73.7573, "State Assembly", (-79.77, -71.77), (40.47, 45.02)),
-            // The State House, 82 Smith Street, Providence.
             ["RI"] = new("44", 41.8309, -71.4148, "State House", (-71.91, -71.08), (41.09, 42.02)),
-            // The State House, 115 State Street, Montpelier. Its districts are named.
             ["VT"] = new("50", 44.2624, -72.5809, "State House", (-73.44, -71.46), (42.72, 45.02), Named: ["state-upper", "state-lower"]),
-            // The State House, 107 N Main Street, Concord. Its House districts are named.
             ["NH"] = new("33", 43.2068, -71.5383, "State House", (-72.56, -70.57), (42.69, 45.31), Named: ["state-lower"]),
-            // The State House, 210 State Street, Augusta.
             ["ME"] = new("23", 44.3072, -69.7817, "State House", (-71.09, -66.88), (42.91, 47.46)),
-            // The State Capitol, 415 S Beretania Street, Honolulu, which is in no city.
             ["HI"] = new("15", 21.3073, -157.8574, "State House", (-178.45, -154.75), (18.86, 28.52), NoCity: true),
-            // The State Capitol, 120 4th Street, Juneau. Its Senate districts are lettered;
-            // the Near Islands, past the 180th meridian, are kept west of it, below -180.
+            // The Near Islands, past the 180th meridian, are kept below -180.
             ["AK"] = new("02", 58.3020, -134.4104, "State House", (-187.66, -129.97), (51.17, 71.44)),
         };
 
@@ -165,11 +114,10 @@ namespace YourElectionMap.Server.Tests
             var found = Data.Covering(state.Longitude, state.Latitude);
 
             Assert.NotNull(found);
-            Assert.Equal("U.S. Census Bureau TIGER", found.Source);
 
             var levels = Legislative(state);
-            var legislative = found.Districts.Take(levels.Length).ToArray();
-            var local = found.Districts.Skip(levels.Length).ToArray();
+            var legislative = found.Take(levels.Length).ToArray();
+            var local = found.Skip(levels.Length).ToArray();
 
             Assert.Equal(levels, legislative.Select(district => district.Level));
 
@@ -199,7 +147,7 @@ namespace YourElectionMap.Server.Tests
             Assert.InRange(cities, state.NoCity ? 0 : 1, state.NoCity ? 0 : 2);
             Assert.NotEmpty(local.Skip(1 + cities));
             Assert.All(local.Skip(1 + cities), district => Assert.Equal("school", district.Level));
-            Assert.Null(Disagreement(found.Districts, state.Longitude, state.Latitude));
+            Assert.Null(Disagreement(found, state.Longitude, state.Latitude));
 
             var county = local[0].Office;
 
@@ -208,13 +156,11 @@ namespace YourElectionMap.Server.Tests
                 if (state.Names(district.Level))
                 {
                     Assert.StartsWith($"{district.Level}-{state.Fips}", district.Id);
-                    Assert.Null(district.Unit);
                     Assert.Null(district.Number);
                 }
                 else
                 {
                     Assert.Equal($"{district.Level}-{district.Number}", district.Id);
-                    Assert.Equal("District", district.Unit);
                 }
 
                 Assert.Equal(county, district.Area);
@@ -223,11 +169,10 @@ namespace YourElectionMap.Server.Tests
             foreach (var district in local)
             {
                 Assert.StartsWith($"{district.Level}-{state.Fips}", district.Id);
-                Assert.Null(district.Unit);
                 Assert.Null(district.Number);
             }
 
-            foreach (var district in found.Districts)
+            foreach (var district in found)
             {
                 // Polygons of closed rings in [longitude, latitude], inside the state.
                 Assert.NotEmpty(district.Boundary);
@@ -441,9 +386,9 @@ namespace YourElectionMap.Server.Tests
 
                         tested++;
 
-                        if (Disagreement(found.Districts, longitude, latitude) is { } wrong)
+                        if (Disagreement(found, longitude, latitude) is { } wrong)
                         {
-                            var ids = found.Districts.Select(district => district.Id);
+                            var ids = found.Select(district => district.Id);
                             disagreed.Add($"({longitude:0.000000}, {latitude:0.000000}): {wrong}: {string.Join(", ", ids)}");
                         }
                     }
@@ -476,7 +421,7 @@ namespace YourElectionMap.Server.Tests
         }
 
         private static List<District> Covering(double latitude, double longitude) =>
-            Data.Covering(longitude, latitude)?.Districts ?? [];
+            Data.Covering(longitude, latitude) ?? [];
 
         /// <summary>
         /// Walks a grid over one state's box, and at every point the state covers, checks
@@ -502,9 +447,9 @@ namespace YourElectionMap.Server.Tests
 
                     inside++;
 
-                    if (Disagreement(found.Districts, longitude, latitude) is { } wrong)
+                    if (Disagreement(found, longitude, latitude) is { } wrong)
                     {
-                        var ids = found.Districts.Select(district => district.Id);
+                        var ids = found.Select(district => district.Id);
                         disagreed.Add($"({longitude:0.00}, {latitude:0.00}): {wrong}: {string.Join(", ", ids)}");
                     }
 
@@ -533,9 +478,9 @@ namespace YourElectionMap.Server.Tests
         /// Whether a point is within thirty feet of the edge of the US House district it
         /// was found in: as far apart as two thinned edges can be.
         /// </summary>
-        private static bool OnEdge(Found found, double longitude, double latitude)
+        private static bool OnEdge(List<District> found, double longitude, double latitude)
         {
-            var rings = found.Districts[0].Boundary
+            var rings = found[0].Boundary
                 .SelectMany(polygon => polygon)
                 .Select(ring => ring.SelectMany(point => point).ToArray())
                 .ToArray();

@@ -3,13 +3,9 @@ using System.Text.Json;
 namespace YourElectionMap.Server.Districts
 {
     /// <summary>
-    /// Every district the site knows, held in memory for the life of the process.
-    /// <para>
-    /// One file per state, <c>nc-districts.json</c> and so on, built by
-    /// YourElectionMap.Tools (see its DATA-SOURCE.md) and read once, at startup. Rings
-    /// are in longitude and latitude, which is what an address is tested against and
-    /// what the page is sent.
-    /// </para>
+    /// Every district the site knows, from one file per state built by
+    /// YourElectionMap.Tools (see its DATA-SOURCE.md), read once at startup and held in
+    /// memory.
     /// </summary>
     public sealed class DistrictData
     {
@@ -17,6 +13,18 @@ namespace YourElectionMap.Server.Districts
 
         private static readonly JsonSerializerOptions ReadOptions =
             new() { PropertyNameCaseInsensitive = true };
+
+        /// <summary>The converter's detail for a school district that runs every grade.</summary>
+        private const string UnifiedSchool = "School district";
+
+        /// <summary>
+        /// Fifty feet, in degrees of latitude: past the thirty a gap between two thinned
+        /// edges can be at most, and well short of the next street.
+        /// </summary>
+        private const double Reach = 50 / 364_000.0;
+
+        /// <summary>The levels every point in the state has one of.</summary>
+        private static readonly string[] WholeState = ["congressional", "state-upper", "state-lower", "county"];
 
         private readonly Document[] _states;
 
@@ -40,38 +48,29 @@ namespace YourElectionMap.Server.Districts
             Array.Sort(_states, (left, right) => string.CompareOrdinal(left.State, right.State));
         }
 
-        /// <summary>The states loaded, by postal code: "AZ", "CA", "ID".</summary>
+        /// <summary>The states loaded, by postal code.</summary>
         public IReadOnlyList<string> States => Array.ConvertAll(_states, state => state.State);
 
-        public int Count => _states.Sum(state => state.Districts.Length);
-
         /// <summary>
-        /// Every district covering a point, broad to local, each with its boundary for the
-        /// page's map, and what the state's boundaries are credited to. Null for a point
-        /// in no state the site covers.
+        /// Every district covering a point, broad to local, or null for a point in no
+        /// state the site covers.
         /// </summary>
-        public Found? Covering(double longitude, double latitude)
+        public List<District>? Covering(double longitude, double latitude)
         {
             foreach (var state in _states)
             {
-                var found = new List<Stored>();
-
-                foreach (var district in state.Districts)
-                {
-                    if (Geometry.BoxCovers(district.Bbox, longitude, latitude)
+                var found = state.Districts
+                    .Where(district => Geometry.BoxCovers(district.Bbox, longitude, latitude)
                         && Geometry.Covers(district.Rings, longitude, latitude))
-                    {
-                        found.Add(district);
-                    }
-                }
+                    .ToList();
 
-                // States do not overlap, so the first to cover the point is the only one,
-                // but for a strip a few feet wide where two thinned borders cross.
+                // States do not overlap, but for a strip a few feet wide where two
+                // thinned borders cross, so the first to cover the point is the one.
                 if (found.Count > 0)
                 {
                     var settled = Settle(state.Districts, found, longitude, latitude);
 
-                    return new Found(state.Source, WithCounty(settled.ConvertAll(district => district.ToDistrict())));
+                    return WithCounty(settled.ConvertAll(district => district.ToDistrict()));
                 }
             }
 
@@ -81,21 +80,18 @@ namespace YourElectionMap.Server.Districts
         /// <summary>
         /// Each district is thinned on its own, so two that share an edge no longer meet
         /// exactly: a few feet either side of it, both cover a point, or neither does. A
-        /// point covered twice keeps the district it is deeper inside. A level that
-        /// covers the whole state, left with nothing, takes the nearest district within
-        /// <see cref="Reach"/>. A city or school district is never filled in that way,
-        /// because plenty of land has none. Either answer is a few feet from a line
-        /// that is itself only good to fifteen.
+        /// point covered twice keeps the district it is deeper inside. A whole-state level
+        /// left with nothing takes the nearest district within <see cref="Reach"/>. A
+        /// city or school district is never filled in, because plenty of land has none.
         /// </summary>
         private static List<Stored> Settle(Stored[] districts, List<Stored> found, double x, double y)
         {
             double Depth(Stored district) => Geometry.DistanceToRings(district.Rings, x, y);
 
-            // Two of a kind, where there can only be one: an elementary district inside
-            // a high school district is a different kind, and stays, as does a city or
-            // village inside a township. A town, township and plantation are one kind,
-            // since two of them can meet, as Vinalhaven town and Matinicus Isle
-            // plantation do off Maine.
+            // Two of a kind where there can only be one. An elementary district inside a
+            // high school district is another kind, as is a city inside a township. A
+            // town, township and plantation are one kind, since two can meet, as
+            // Vinalhaven town and Matinicus Isle plantation do off Maine.
             var settled = found
                 .GroupBy(district => (district.Level, district.Level == "city" ? Inner(district).ToString() : district.Detail))
                 .Select(kind => kind.Count() == 1 ? kind.First() : kind.MaxBy(Depth)!)
@@ -127,11 +123,16 @@ namespace YourElectionMap.Server.Districts
 
                 Stored? nearest = null;
                 var nearestDistance = Reach;
+                // Twice the reach, so the box allows for a degree of longitude being short.
+                var margin = 2 * Reach;
 
                 foreach (var district in districts)
                 {
-                    // Twice the reach, so the box allows for a degree of longitude being short.
-                    if (district.Level != level || !Geometry.BoxCovers(Widened(district.Bbox, 2 * Reach), x, y))
+                    var box = district.Bbox;
+
+                    if (district.Level != level
+                        || x < box[0] - margin || x > box[2] + margin
+                        || y < box[1] - margin || y > box[3] + margin)
                     {
                         continue;
                     }
@@ -156,26 +157,7 @@ namespace YourElectionMap.Server.Districts
             return settled;
         }
 
-        /// <summary>The converter's detail for a school district that runs every grade.</summary>
-        private const string UnifiedSchool = "School district";
-
-        /// <summary>
-        /// Fifty feet, in degrees of latitude: past the thirty a gap between two thinned
-        /// edges can be at most, and well short of the next street.
-        /// </summary>
-        private const double Reach = 50 / 364_000.0;
-
-        /// <summary>The levels every point in the state has one of.</summary>
-        private static readonly string[] WholeState = ["congressional", "state-upper", "state-lower", "county"];
-
-        private static double[] Widened(double[] box, double margin) =>
-            [box[0] - margin, box[1] - margin, box[2] + margin, box[3] + margin];
-
-        /// <summary>
-        /// The county the point is in, named on the map chip of every other district:
-        /// "State House · District 38" over "Wake County". Left as it was where the
-        /// file has no counties.
-        /// </summary>
+        /// <summary>The county, named on every other district's map chip, where the file has counties.</summary>
         private static List<District> WithCounty(List<District> found)
         {
             var county = found.Find(district => district.Level == "county")?.Office;
@@ -200,7 +182,6 @@ namespace YourElectionMap.Server.Districts
                     $"{path} is not in degrees. Rebuild it with YourElectionMap.Tools.");
             }
 
-            // In the rail's order (see Compare).
             Array.Sort(document.Districts, Compare);
 
             return document;
@@ -208,7 +189,7 @@ namespace YourElectionMap.Server.Districts
 
         /// <summary>
         /// Broad to local, then by number, then the outer of two at one level before the
-        /// inner (<see cref="Inner"/>), then by id, so the order never depends on the sort.
+        /// inner, then by id, so the order never depends on the sort.
         /// </summary>
         private static int Compare(Stored left, Stored right)
         {
@@ -233,9 +214,9 @@ namespace YourElectionMap.Server.Districts
         }
 
         /// <summary>
-        /// 1 for the more local of two at one level: the converter's "Elementary school
-        /// district", inside a high school district, and a city, town or village, which
-        /// can be inside a "Town", "Township" or Maine's "Plantation".
+        /// 1 for the more local of two at one level: an elementary school district inside
+        /// a high school district, or a city or village inside a town, township or
+        /// Maine plantation.
         /// </summary>
         private static int Inner(Stored district) =>
             district.Detail.StartsWith("Elementary", StringComparison.Ordinal)
@@ -244,8 +225,8 @@ namespace YourElectionMap.Server.Districts
                 : 0;
 
         /// <summary>
-        /// The client's DISTRICT_LEVELS order. A level this does not know sorts last
-        /// rather than throwing, so adding one to the data file cannot take the site down.
+        /// The client's level order. An unknown level sorts last rather than throwing, so
+        /// a new one in a data file cannot take the site down.
         /// </summary>
         private static int Rank(string level) => level switch
         {
@@ -261,13 +242,8 @@ namespace YourElectionMap.Server.Districts
         /// <summary>A district as the file stores it, rings flattened to <c>[lon, lat, lon, lat, …]</c>.</summary>
         private sealed class Stored
         {
-            /// <summary>
-            /// Degrees to five places, about a metre — finer than the fifteen feet the
-            /// file keeps, and no longer on the wire than it needs to be.
-            /// </summary>
-            private const int Decimals = 5;
-
             private double[][][][]? _boundary;
+
             public string Id { get; init; } = "";
 
             public string Level { get; init; } = "";
@@ -282,38 +258,28 @@ namespace YourElectionMap.Server.Districts
 
             public double[][] Rings { get; init; } = [];
 
+            /// <summary>
+            /// At the detail the file stores, not thinned further: the map zooms to street
+            /// level, where a simplified line would land on the wrong side of the street.
+            /// Built the first time it is asked for, then kept: sorting a large district's
+            /// rings is too slow to repeat.
+            /// </summary>
             public District ToDistrict() =>
                 new(
                     Id,
                     Level,
                     Office,
-                    // A district known by name, "Wake County", is stored with no number.
-                    Unit: Number.Length == 0 ? null : "District",
                     Number: Number.Length == 0 ? null : Number,
                     Detail,
-                    // Filled from the county by Covering, where the file has counties.
                     Area: null,
-                    // Built the first time it is asked for, then kept.
-                    Boundary: _boundary ??= Boundary());
+                    Boundary: _boundary ??= Geometry.ToPolygons(Array.ConvertAll(Rings, Round))
+                        .Select(polygon => polygon.Select(ToPairs).ToArray())
+                        .ToArray());
 
-            /// <summary>
-            /// The rings at the detail the file stores, not thinned: the page's map zooms
-            /// to street level, where a simplified line would land on the wrong side of
-            /// the street. The map simplifies for wider views itself.
-            /// </summary>
-            private double[][][][] Boundary()
-            {
-                var rounded = Array.ConvertAll(Rings, Round);
-
-                return Geometry.ToPolygons(rounded)
-                    .Select(polygon => polygon.Select(ToPairs).ToArray())
-                    .ToArray();
-            }
-
+            /// <summary>Five places is about a metre, finer than the file's fifteen feet.</summary>
             private static double[] Round(double[] ring) =>
-                Array.ConvertAll(ring, value => Math.Round(value, Decimals));
+                Array.ConvertAll(ring, value => Math.Round(value, 5));
 
-            /// <summary>Flat back to the pairs GeoJSON holds.</summary>
             private static double[][] ToPairs(double[] ring)
             {
                 var pairs = new double[ring.Length / 2][];
@@ -327,22 +293,13 @@ namespace YourElectionMap.Server.Districts
             }
         }
 
-        /// <summary>One state's file as a whole.</summary>
         private sealed class Document
         {
             public string State { get; init; } = "";
-
-            public string Source { get; init; } = "";
 
             public string Units { get; init; } = "";
 
             public Stored[] Districts { get; init; } = [];
         }
     }
-
-    /// <summary>
-    /// The districts covering a point, broad to local, and what that state's boundaries
-    /// are credited to: "U.S. Census Bureau TIGER".
-    /// </summary>
-    public sealed record Found(string Source, List<District> Districts);
 }

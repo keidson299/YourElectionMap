@@ -19,8 +19,7 @@ export type District = {
   id: string
   level: DistrictLevel
   office: string
-  /** Null, with the number, for a district known by name: 'Wake County'. */
-  unit: 'District' | null
+  /** Null for a district known by name: 'Wake County'. */
   number: string | null
   detail: string
   area: string | null
@@ -42,5 +41,4 @@ export type DistrictLookup = {
   /** Never empty, and never assume six. */
   districts: readonly District[]
   election: ElectionSummary | null
-  source: string | null
 }

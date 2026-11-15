@@ -7,7 +7,6 @@ function district(id: string, level: DistrictLevel): District {
     id,
     level,
     office: id,
-    unit: 'District',
     number: '1',
     detail: '',
     area: null,

@@ -63,7 +63,6 @@ describe('maxBoundsFor', () => {
       id: 'x',
       level: 'state-lower',
       office: 'State House',
-      unit: 'District',
       number: '1',
       detail: 'State',
       area: null,

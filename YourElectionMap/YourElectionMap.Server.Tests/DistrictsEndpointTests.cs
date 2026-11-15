@@ -34,8 +34,6 @@ namespace YourElectionMap.Server.Tests
         {
             var lookup = await LookupAsync(AddressQuery(RaleighAddress));
 
-            Assert.Equal("U.S. Census Bureau TIGER", lookup.GetProperty("source").GetString());
-
             // The stub's election: a date in the "2026-11-03" form the client reads, and
             // the counts the rail's footer states.
             var election = lookup.GetProperty("election");
@@ -77,13 +75,10 @@ namespace YourElectionMap.Server.Tests
                 Each(districts, "detail"));
 
             // The county is named on every other district's map chip. Local rows are
-            // named, not numbered, and send null for what they lack rather than leave it out.
+            // named, not numbered, and send null rather than leave the number out.
             Assert.Equal(
                 new[] { "Wake County", "Wake County", "Wake County", null, "Wake County", "Wake County" },
                 Each(districts, "area"));
-            Assert.Equal(
-                new[] { "District", "District", "District", null, null, null },
-                Each(districts, "unit"));
             Assert.Equal(new[] { "2", "14", "38", null, null, null }, Each(districts, "number"));
         }
 
@@ -105,7 +100,7 @@ namespace YourElectionMap.Server.Tests
         [Fact]
         public async Task Get_NamesMassachusettssDistrictsRatherThanNumberingThem()
         {
-            // Each is its name, over its chamber, with no unit or number, as a county is.
+            // Each is its name, over its chamber, with no number, as a county is.
             var lookup = await LookupAsync(AddressQuery("24 Beacon St, Boston MA"));
             var districts = lookup.GetProperty("districts");
 
@@ -116,7 +111,6 @@ namespace YourElectionMap.Server.Tests
                 new[] { "U.S. House", "Third Suffolk District", "8th Suffolk District" },
                 Each(districts, "office").Take(3));
             Assert.Equal(new[] { "Federal", "State Senate", "State House" }, Each(districts, "detail").Take(3));
-            Assert.Equal(new[] { "District", null, null }, Each(districts, "unit").Take(3));
             Assert.Equal(new[] { "8", null, null }, Each(districts, "number").Take(3));
         }
 

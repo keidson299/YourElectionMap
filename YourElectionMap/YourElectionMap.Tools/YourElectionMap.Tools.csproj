@@ -9,8 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- For Geometry: the box and thinning the files are written with, beside the
-         containment the server tests them by. -->
+    <!-- For Geometry.BoxOf, the box the server reads back. -->
     <ProjectReference Include="..\YourElectionMap.Server\YourElectionMap.Server.csproj" />
   </ItemGroup>
 

@@ -7,7 +7,6 @@ function district(overrides: Partial<District>): District {
     id: 'state-lower-44',
     level: 'state-lower',
     office: 'State House',
-    unit: 'District',
     number: '44',
     detail: 'State',
     area: 'Greenlake County',
@@ -30,7 +29,6 @@ describe('districtName', () => {
       id: 'county-37183',
       level: 'county',
       office: 'Wake County',
-      unit: null,
       number: null,
       detail: 'County',
     })

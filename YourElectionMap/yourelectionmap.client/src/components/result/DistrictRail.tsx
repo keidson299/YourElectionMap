@@ -20,7 +20,6 @@ type DistrictRailProps = {
   districts: readonly District[]
   layers: MapLayers
   election: ElectionSummary | null
-  source: string | null
   /** The phone layout: a sheet with a handle, a hint, and a one-line footer. */
   compact: boolean
   sheetExpanded: boolean
@@ -32,7 +31,6 @@ export function DistrictRail({
   districts,
   layers,
   election,
-  source,
   compact,
   sheetExpanded,
   onToggleSheet,
@@ -41,8 +39,7 @@ export function DistrictRail({
   const baseId = useId()
   const titleId = `${baseId}-title`
   const listId = `${baseId}-list`
-  const sourceTag =
-    source === null ? null : <span className="source-tag">{source}</span>
+  const sourceTag = <span className="source-tag">U.S. Census Bureau TIGER</span>
 
   return (
     <section className="district-rail" aria-labelledby={titleId}>

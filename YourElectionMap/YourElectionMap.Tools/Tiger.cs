@@ -1,7 +1,6 @@
 using System.Globalization;
 using System.Text.Json;
 using System.Text.RegularExpressions;
-using YourElectionMap.Server.Districts;
 
 namespace YourElectionMap.Tools
 {
@@ -446,7 +445,7 @@ namespace YourElectionMap.Tools
 
             return (
                 parts.Sum(part => part.Length / 2),
-                parts.Select(part => Geometry.Thin(part, ToleranceDegrees)).ToList());
+                parts.Select(part => Thin(part, ToleranceDegrees)).ToList());
         }
 
         /// <summary>
@@ -557,5 +556,147 @@ namespace YourElectionMap.Tools
         /// (<see cref="IsGovernment"/>), each with the detail its kind gives it.
         /// </param>
         private sealed record NamedLayer(string File, string Level, string Detail, bool Towns = false);
+
+        /// <summary>
+        /// Douglas-Peucker: drop every vertex that sits within <paramref name="tolerance"/>
+        /// of the line its neighbours already draw. Returns the ring unchanged when it
+        /// is too short to thin, and never returns fewer than four points.
+        /// </summary>
+        private static double[] Thin(double[] ring, double tolerance)
+        {
+            var count = ring.Length / 2;
+
+            if (count < 5 || tolerance <= 0)
+            {
+                return ring;
+            }
+
+            var keep = new bool[count];
+            keep[0] = true;
+            keep[count - 1] = true;
+
+            // A ring ends where it began, so the chord between those two points has no
+            // length and everything would measure as being on it. Anchoring the vertex
+            // furthest from the start gives the halves a chord each.
+            var far = FurthestFromStart(ring, count);
+            keep[far] = true;
+
+            Thin(ring, keep, 0, far, tolerance);
+            Thin(ring, keep, far, count - 1, tolerance);
+
+            var kept = 0;
+
+            foreach (var flag in keep)
+            {
+                if (flag)
+                {
+                    kept++;
+                }
+            }
+
+            if (kept < 4)
+            {
+                return ring;
+            }
+
+            var thinned = new double[kept * 2];
+            var next = 0;
+
+            for (var i = 0; i < count; i++)
+            {
+                if (keep[i])
+                {
+                    thinned[next++] = ring[i * 2];
+                    thinned[next++] = ring[i * 2 + 1];
+                }
+            }
+
+            return thinned;
+        }
+
+        /// <summary>
+        /// Marks every vertex between <paramref name="first"/> and <paramref name="last"/>
+        /// that has to stay. Walked with an explicit stack rather than by recursion:
+        /// a congressional boundary arrives with tens of thousands of vertices.
+        /// </summary>
+        private static void Thin(
+            double[] ring,
+            bool[] keep,
+            int first,
+            int last,
+            double tolerance)
+        {
+            var pending = new Stack<(int First, int Last)>();
+            pending.Push((first, last));
+
+            while (pending.Count > 0)
+            {
+                var (from, to) = pending.Pop();
+
+                if (to - from < 2)
+                {
+                    continue;
+                }
+
+                var ax = ring[from * 2];
+                var ay = ring[from * 2 + 1];
+                var bx = ring[to * 2];
+                var by = ring[to * 2 + 1];
+                var dx = bx - ax;
+                var dy = by - ay;
+                var length = Math.Sqrt(dx * dx + dy * dy);
+
+                var worst = -1.0;
+                var worstAt = -1;
+
+                for (var i = from + 1; i < to; i++)
+                {
+                    var px = ring[i * 2];
+                    var py = ring[i * 2 + 1];
+
+                    var distance = length == 0
+                        ? Math.Sqrt((px - ax) * (px - ax) + (py - ay) * (py - ay))
+                        : Math.Abs(dy * px - dx * py + bx * ay - by * ax) / length;
+
+                    if (distance > worst)
+                    {
+                        worst = distance;
+                        worstAt = i;
+                    }
+                }
+
+                if (worst <= tolerance || worstAt < 0)
+                {
+                    continue;
+                }
+
+                keep[worstAt] = true;
+                pending.Push((from, worstAt));
+                pending.Push((worstAt, to));
+            }
+        }
+
+        private static int FurthestFromStart(double[] ring, int count)
+        {
+            var x = ring[0];
+            var y = ring[1];
+            var worst = -1.0;
+            var worstAt = count / 2;
+
+            for (var i = 1; i < count - 1; i++)
+            {
+                var dx = ring[i * 2] - x;
+                var dy = ring[i * 2 + 1] - y;
+                var distance = dx * dx + dy * dy;
+
+                if (distance > worst)
+                {
+                    worst = distance;
+                    worstAt = i;
+                }
+            }
+
+            return worstAt;
+        }
     }
 }

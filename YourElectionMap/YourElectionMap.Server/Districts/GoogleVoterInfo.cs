@@ -1,81 +1,52 @@
 using System.Globalization;
-using System.Text.Json;
+using System.Net.Http.Json;
 using Microsoft.Extensions.Caching.Memory;
 
 namespace YourElectionMap.Server.Districts
 {
     /// <summary>
-    /// The next election at an address, from the Google Civic Information API's voter
-    /// lookup, whose data comes from election officials through the Voting Information
-    /// Project. It is free with an API key, read from <c>GoogleCivic:ApiKey</c>: user
-    /// secrets in development, an environment variable when deployed.
+    /// The next election at an address, from the Google Civic Information API, with the
+    /// key in <c>GoogleCivic:ApiKey</c>. The election is extra to the districts, so
+    /// nothing here can fail a lookup: every way of getting no answer comes back null,
+    /// which hides the rail's footer.
     /// <para>
-    /// The election is extra to the districts, so nothing here can fail a lookup. No key,
-    /// no election, a refusal, a timeout, a reply that is not JSON or anything else that
-    /// goes wrong all come back as null, which hides the rail's footer. Google is sent the
-    /// address and nothing else, from the server, so it never sees the visitor; nothing
-    /// is logged or kept.
-    /// </para>
-    /// <para>
-    /// Google answers an address asked about without an election ID with "Election
-    /// unknown", even with a general election weeks away, so the election list is read
-    /// first and the next election covering the address's state is asked about by ID.
-    /// The list is the same for every address, so it is kept for an hour.
+    /// Asked without an election ID, Google answers "Election unknown" even weeks before
+    /// a general election, so the election list is read first (and kept for an hour) and
+    /// the next election covering the address's state is asked about by ID.
     /// </para>
     /// </summary>
-    public sealed class GoogleVoterInfo
+    public sealed class GoogleVoterInfo(HttpClient client, IConfiguration configuration, IMemoryCache cache)
     {
-        private const string ElectionsEndpoint =
-            "https://www.googleapis.com/civicinfo/v2/elections";
-
-        private const string Endpoint =
-            "https://www.googleapis.com/civicinfo/v2/voterinfo?address=";
+        private const string ElectionsEndpoint = "https://www.googleapis.com/civicinfo/v2/elections";
+        private const string VoterInfoEndpoint = "https://www.googleapis.com/civicinfo/v2/voterinfo?address=";
 
         /// <summary>Google's "VIP Test Election", always listed and always in the future.</summary>
         private const string TestElectionId = "2000";
 
         private const string Nationwide = "ocd-division/country:us";
+        private const string ListCacheKey = "GoogleVoterInfo.Elections";
+        private static readonly TimeSpan ListLifetime = TimeSpan.FromHours(1);
+
+        /// <summary>Both calls together, after the geocoder's eight seconds and inside the client's fifteen.</summary>
+        private static readonly TimeSpan Budget = TimeSpan.FromSeconds(4);
 
         /// <summary>
-        /// Where "today" is decided: the Pacific coast's time zone, whose midnight comes after
-        /// every state's polls have closed, Alaska's and Hawaii's included. In the East an
-        /// election stays up until 3 a.m., which does no harm. A host with no time zone
-        /// data gets Pacific standard time all year, an hour off in summer.
+        /// Where "today" is decided: Pacific midnight comes after every state's polls have
+        /// closed, Alaska's and Hawaii's included. A host with no time zone data gets
+        /// Pacific standard time all year.
         /// </summary>
         private static readonly TimeZoneInfo LastToClose =
             TimeZoneInfo.TryFindSystemTimeZoneById("America/Los_Angeles", out var pacific)
                 ? pacific
                 : TimeZoneInfo.CreateCustomTimeZone("Pacific", TimeSpan.FromHours(-8), "Pacific", "Pacific");
 
-        /// <summary>How long the election list is kept. Google adds to it a few times a month.</summary>
-        private static readonly TimeSpan ListLifetime = TimeSpan.FromHours(1);
-
-        private const string ListCacheKey = "GoogleVoterInfo.Elections";
+        private readonly string? _apiKey = configuration["GoogleCivic:ApiKey"];
 
         /// <summary>
-        /// Both calls together. They run after the geocoder's eight seconds, and the client
-        /// gives up on the whole lookup at fifteen.
+        /// The next election for an address in the geocoder's spelling, or null. Only the
+        /// browser cancelling propagates.
         /// </summary>
-        private static readonly TimeSpan Budget = TimeSpan.FromSeconds(4);
-
-        private readonly HttpClient _client;
-        private readonly IMemoryCache _cache;
-        private readonly string? _apiKey;
-
-        public GoogleVoterInfo(HttpClient client, IConfiguration configuration, IMemoryCache cache)
-        {
-            _client = client;
-            _cache = cache;
-            _apiKey = configuration["GoogleCivic:ApiKey"];
-        }
-
-        /// <summary>
-        /// The next election for an address, or null when there is none to show or no
-        /// answer to be had.
-        /// </summary>
-        public async Task<ElectionSummary?> GetAsync(
-            string address,
-            CancellationToken cancellationToken)
+        public async Task<ElectionSummary?> GetAsync(string address, CancellationToken cancellationToken)
         {
             if (string.IsNullOrWhiteSpace(_apiKey))
             {
@@ -91,153 +62,126 @@ namespace YourElectionMap.Server.Districts
             try
             {
                 var elections = await ElectionsAsync(budget.Token);
-                var electionId = elections is null
-                    ? null
-                    : NextElectionId(elections, State(address), today);
+                var electionId = elections is null ? null : NextElectionId(elections, State(address), today);
 
                 if (electionId is null)
                 {
                     return null;
                 }
 
-                using var voterInfo = await GetJsonAsync(
-                    Endpoint + Uri.EscapeDataString(address)
+                var reply = await GetAsync<VoterInfoReply>(
+                    VoterInfoEndpoint + Uri.EscapeDataString(address)
                         + "&electionId=" + Uri.EscapeDataString(electionId),
                     budget.Token);
 
-                return voterInfo is null ? null : Summary(voterInfo.RootElement, today);
+                return reply is null ? null : Summary(reply, today);
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
-                // The browser gave up and went away.
                 throw;
             }
             catch (Exception)
             {
-                // A refusal, a timeout, a reply that is not JSON, or anything nobody
-                // thought of: the election is extra, and never costs the districts.
+                // A refusal, a timeout, a reply that is not JSON, or anything else.
                 return null;
             }
         }
 
-        /// <summary>
-        /// Google's election list, as read within the last hour, or null when it cannot
-        /// be read. A failure is not kept, so the next lookup asks again.
-        /// </summary>
-        private async Task<IReadOnlyList<Election>?> ElectionsAsync(CancellationToken cancellationToken)
+        /// <summary>Google's election list, kept for an hour. A failure is not kept.</summary>
+        private async Task<List<Listed>?> ElectionsAsync(CancellationToken cancellationToken)
         {
-            if (_cache.TryGetValue(ListCacheKey, out IReadOnlyList<Election>? kept))
+            if (cache.TryGetValue(ListCacheKey, out List<Listed>? kept))
             {
                 return kept;
             }
 
-            using var document = await GetJsonAsync(ElectionsEndpoint, cancellationToken);
-            var elections = document is null ? null : ReadElections(document.RootElement);
+            var reply = await GetAsync<ElectionsReply>(ElectionsEndpoint, cancellationToken);
+            var elections = reply?.Elections?
+                .Select(election =>
+                    election.Id is { } id && id != TestElectionId
+                        && election.OcdDivisionId is { } division
+                        && TryParseDay(election.ElectionDay, out var day)
+                        ? new Listed(id, day, division)
+                        : null)
+                .OfType<Listed>()
+                .ToList();
 
             if (elections is not null)
             {
-                _cache.Set<IReadOnlyList<Election>>(ListCacheKey, elections, ListLifetime);
+                cache.Set(ListCacheKey, elections, ListLifetime);
             }
 
             return elections;
         }
 
         /// <summary>
-        /// The parsed answer, or null for any status but success. Google answers an
-        /// address with no election as an error, so that is the usual way of hearing
-        /// "nothing to show", not only an outage.
+        /// The parsed reply, or null for any status but success. Google answers an address
+        /// with no election as an error, so that is the usual "nothing to show".
         /// </summary>
-        private async Task<JsonDocument?> GetJsonAsync(string url, CancellationToken cancellationToken)
+        private async Task<T?> GetAsync<T>(string url, CancellationToken cancellationToken)
         {
             using var request = new HttpRequestMessage(HttpMethod.Get, url);
 
             // In a header rather than the URL, so the key is in no logged request line.
             request.Headers.Add("X-Goog-Api-Key", _apiKey);
 
-            using var response = await _client.SendAsync(request, cancellationToken);
+            using var response = await client.SendAsync(request, cancellationToken);
 
-            if (!response.IsSuccessStatusCode)
-            {
-                return null;
-            }
-
-            await using var body = await response.Content.ReadAsStreamAsync(cancellationToken);
-            return await JsonDocument.ParseAsync(body, default, cancellationToken);
+            return response.IsSuccessStatusCode
+                ? await response.Content.ReadFromJsonAsync<T>(cancellationToken)
+                : default;
         }
 
         /// <summary>
-        /// Every election in Google's list that can be read, leaving out Google's test
-        /// election, or null when the answer is not a list at all.
+        /// The soonest coming election for the whole country or the address's state. One
+        /// for a county of the state still counts: Google then has nothing for an address
+        /// outside it, which reads as no election.
         /// </summary>
-        private static List<Election>? ReadElections(JsonElement root)
-        {
-            if (root.ValueKind != JsonValueKind.Object
-                || !root.TryGetProperty("elections", out var elections)
-                || elections.ValueKind != JsonValueKind.Array)
-            {
-                return null;
-            }
-
-            var read = new List<Election>();
-
-            foreach (var election in elections.EnumerateArray())
-            {
-                if (election.ValueKind != JsonValueKind.Object
-                    || Text(election, "id") is not { } id
-                    || id == TestElectionId
-                    || Text(election, "electionDay") is not { } dayText
-                    || !TryParseDay(dayText, out var day)
-                    || Text(election, "ocdDivisionId") is not { } division)
-                {
-                    continue;
-                }
-
-                read.Add(new Election(id, day, division));
-            }
-
-            return read;
-        }
-
-        /// <summary>
-        /// The soonest election in the list that has not passed and covers the whole
-        /// country or the address's state. An election for one county of the state still
-        /// counts: Google then has nothing for an address outside it, which reads as no
-        /// election.
-        /// </summary>
-        private static string? NextElectionId(IReadOnlyList<Election> elections, string? state, DateOnly today)
+        private static string? NextElectionId(List<Listed> elections, string? state, DateOnly today)
         {
             var statewide = state is null ? null : $"{Nationwide}/state:{state.ToLowerInvariant()}";
-            Election? next = null;
 
-            foreach (var election in elections)
-            {
-                var division = election.Division;
-                var covers = division == Nationwide
-                    || (statewide is not null
-                        && (division == statewide || division.StartsWith(statewide + "/", StringComparison.Ordinal)));
-
-                if (covers && election.Day >= today && (next is null || election.Day < next.Day))
-                {
-                    next = election;
-                }
-            }
-
-            return next?.Id;
+            return elections
+                .Where(election => election.Day >= today
+                    && (election.Division == Nationwide
+                        || (statewide is not null
+                            && (election.Division == statewide
+                                || election.Division.StartsWith(statewide + "/", StringComparison.Ordinal)))))
+                .MinBy(election => election.Day)?
+                .Id;
         }
 
-        /// <summary>Google's "2026-11-03", read the same whatever the server's culture.</summary>
-        private static bool TryParseDay(string? text, out DateOnly day) =>
-            DateOnly.TryParseExact(text, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out day);
+        /// <summary>
+        /// Candidates across every contest, and referenda as measures. A reply with no
+        /// contests (Google leaves them out when two elections share a day) gives null
+        /// counts, so the page never says "0 candidates" about a ballot it has not seen.
+        /// </summary>
+        private static ElectionSummary? Summary(VoterInfoReply reply, DateOnly today)
+        {
+            if (!TryParseDay(reply.Election?.ElectionDay, out var date) || date < today)
+            {
+                return null;
+            }
 
-        private static string? Text(JsonElement element, string name) =>
-            element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String
-                ? value.GetString()
-                : null;
+            if (reply.Contests is not { Count: > 0 } contests)
+            {
+                return new ElectionSummary(date, Candidates: null, Measures: null);
+            }
+
+            // Google marks a referendum by its type, and only a referendum has a title.
+            bool IsReferendum(Contest contest) =>
+                string.Equals(contest.Type, "Referendum", StringComparison.OrdinalIgnoreCase)
+                || contest.ReferendumTitle is not null;
+
+            return new ElectionSummary(
+                date,
+                contests.Where(contest => !IsReferendum(contest)).Sum(contest => contest.Candidates?.Count ?? 0),
+                contests.Count(IsReferendum));
+        }
 
         /// <summary>
-        /// The state in the geocoder's spelling of an address, "16 W JONES ST, RALEIGH, NC,
-        /// 27601": the part before the ZIP code. Null if it is not there to read, which
-        /// leaves only nationwide elections.
+        /// The state in the geocoder's spelling, "16 W JONES ST, RALEIGH, NC, 27601": the
+        /// part before the ZIP code. Null leaves only nationwide elections.
         /// </summary>
         private static string? State(string address)
         {
@@ -248,64 +192,18 @@ namespace YourElectionMap.Server.Districts
                 : null;
         }
 
-        /// <summary>
-        /// Reads <c>election.electionDay</c> and counts <c>contests[]</c>: candidates
-        /// across every contest with them, and referenda as measures. A reply with no
-        /// contests (Google leaves them out when two elections share a day, and some data
-        /// has only voting places) gives null counts rather than zeros, so the page never
-        /// says "0 candidates on your ballot" about a ballot it has not seen.
-        /// </summary>
-        private static ElectionSummary? Summary(JsonElement root, DateOnly today)
-        {
-            if (root.ValueKind != JsonValueKind.Object
-                || !root.TryGetProperty("election", out var election)
-                || election.ValueKind != JsonValueKind.Object
-                || !TryParseDay(Text(election, "electionDay"), out var date)
-                || date < today)
-            {
-                return null;
-            }
-
-            if (!root.TryGetProperty("contests", out var contests)
-                || contests.ValueKind != JsonValueKind.Array
-                || contests.GetArrayLength() == 0)
-            {
-                return new ElectionSummary(date, Candidates: null, Measures: null);
-            }
-
-            var candidates = 0;
-            var measures = 0;
-
-            foreach (var contest in contests.EnumerateArray())
-            {
-                if (contest.ValueKind != JsonValueKind.Object)
-                {
-                    continue;
-                }
-
-                if (IsReferendum(contest))
-                {
-                    measures++;
-                }
-                else if (contest.TryGetProperty("candidates", out var running)
-                    && running.ValueKind == JsonValueKind.Array)
-                {
-                    candidates += running.GetArrayLength();
-                }
-            }
-
-            return new ElectionSummary(date, candidates, measures);
-        }
-
-        /// <summary>
-        /// Google marks a referendum with the type "Referendum", and only a referendum
-        /// has a <c>referendumTitle</c>.
-        /// </summary>
-        private static bool IsReferendum(JsonElement contest) =>
-            string.Equals(Text(contest, "type"), "Referendum", StringComparison.OrdinalIgnoreCase)
-            || contest.TryGetProperty("referendumTitle", out _);
+        private static bool TryParseDay(string? text, out DateOnly day) =>
+            DateOnly.TryParseExact(text, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out day);
 
         /// <summary>One election in Google's list, as kept between lookups.</summary>
-        private sealed record Election(string Id, DateOnly Day, string Division);
+        private sealed record Listed(string Id, DateOnly Day, string Division);
+
+        private sealed record ElectionsReply(List<Election>? Elections);
+
+        private sealed record Election(string? Id, string? ElectionDay, string? OcdDivisionId);
+
+        private sealed record VoterInfoReply(Election? Election, List<Contest>? Contests);
+
+        private sealed record Contest(string? Type, string? ReferendumTitle, List<object>? Candidates);
     }
 }

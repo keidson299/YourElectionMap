@@ -12,7 +12,6 @@ function renderRail(
   options: {
     selectedId?: string
     election?: ElectionSummary | null
-    source?: string | null
     compact?: boolean
   } = {},
 ) {
@@ -28,7 +27,6 @@ function renderRail(
       districts={lookup.districts}
       layers={mapLayers(lookup.districts, selected)}
       election={options.election === undefined ? lookup.election : options.election}
-      source={options.source === undefined ? lookup.source : options.source}
       compact={options.compact ?? false}
       sheetExpanded={false}
       onToggleSheet={() => {}}
@@ -118,7 +116,7 @@ describe('DistrictRail', () => {
   })
 
   it('credits the data the boundaries came from', () => {
-    renderRail({ source: 'U.S. Census Bureau TIGER' })
+    renderRail()
 
     expect(screen.getByText('U.S. Census Bureau TIGER')).toBeInTheDocument()
   })

@@ -246,7 +246,8 @@ the file has counties, as every other row's `area`, for the map chip; for a type
 `GoogleVoterInfo` then reads Google's election list, picks the soonest coming election that is
 nationwide or in the address's state (read from the geocoder's spelling of the match), and asks
 the voter lookup about the address for that election by ID. Asked without an ID, Google answers
-"Election unknown" even weeks before a general election. `DistrictsController` answers 200, 404 when nothing can be placed or found,
+"Election unknown" even weeks before a general election. `DistrictsController` does the
+orchestration itself (there is no service layer) and answers 200, 404 when nothing can be placed or found,
 503 when the geocoder did not answer, and 400 for an unusable query; the client reads 404 and 400
 as no-match and anything else as an error, so an outage never reads as a bad address. Before
 changing it, know that:
@@ -258,7 +259,9 @@ changing it, know that:
   that structure.
 - **Boundaries are sent at the detail the file stores** (about 15 feet), not thinned: the map zooms
   to street level. Responses are compressed (Brotli or gzip, the
-  framework's defaults).
+  framework's defaults). Each district's GeoJSON boundary is built on first use and kept: sorting
+  a large district's rings on every call is far too slow, and the grid tests call `Covering`
+  thousands of times. Thinning itself lives in the converter (`Tiger.Thin`), not the server.
 - **Districts are thinned to 15 feet each on its own**, so neighbours overlap or miss by a few
   feet along a shared edge. `DistrictData.Covering` settles a point there: two of a kind keep the
   one it is deeper in, and a whole-state level (congressional, both chambers, county) left empty
@@ -269,7 +272,7 @@ changing it, know that:
   key, no election, a refusal, a timeout (four seconds for both calls together), an unreadable
   answer or anything else; only the browser cancelling propagates. The election list is the same
   for every address and is kept in `IMemoryCache` for an hour; a failed read is not kept.
-- **A county, city or school row has no unit or number** (both null on the wire); its `office` is
+- **A county, city or school row has no number** (null on the wire); its `office` is
   its name and its id is its level and Census GEOID, `county-37183`. So has a named
   legislative row, Massachusetts's, Vermont's or a New Hampshire State House one, whose `office`
   is its name, "Third Suffolk District", over its chamber, and whose id is `state-upper-25D25`.
@@ -308,7 +311,8 @@ jsdom has no WebGL.
   rules added there.
 - `src/test/sampleLookup.ts` has all six levels and an election: numbered rows, including a
   numbered county district no real data has yet, and named city and school rows as the server
-  sends them. The client knows no unit but "District"; wards and zones were removed.
+  sends them. The wire has no `unit` (a numbered row is a "District") and no `source`: the rail's
+  "U.S. Census Bureau TIGER" tag is written in `DistrictRail`.
 - The phone layout switches at 860px, set in `PHONE_QUERY` (`src/hooks/useIsPhone.ts`) and
   again in every stylesheet's media query; change them together. To test it, stub `matchMedia` as
   `ResultView.test.tsx` does.

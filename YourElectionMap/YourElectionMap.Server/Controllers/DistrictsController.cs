@@ -4,38 +4,22 @@ using YourElectionMap.Server.Districts;
 namespace YourElectionMap.Server.Controllers
 {
     /// <summary>
-    /// The one endpoint the result page calls. It takes either an address or a point,
-    /// the same two things the page URL carries, and answers:
-    /// <list type="bullet">
-    /// <item>200 with a <see cref="DistrictLookup"/>, holding at least one district;</item>
-    /// <item>404 when the place could not be found or has no districts;</item>
-    /// <item>400 when the query itself is wrong, which only a hand-edited URL can send;</item>
-    /// <item>503 when the geocoder did not answer, so the page can offer to try again.</item>
-    /// </list>
-    /// The address arrives in the query string, as it does in the page URL, and is not
-    /// logged.
+    /// The one endpoint: 200 with a <see cref="DistrictLookup"/>, 404 when nothing can be
+    /// placed or found, 400 for an unusable query, and 503 when the geocoder did not
+    /// answer, so the page offers to try again rather than doubt the address.
     /// </summary>
     [ApiController]
     [Route("api/districts")]
-    public class DistrictsController : ControllerBase
+    public class DistrictsController(
+        DistrictData districts,
+        CensusGeocoder geocoder,
+        GoogleVoterInfo voterInfo) : ControllerBase
     {
         private const int MaxAddressLength = 200;
 
-        private readonly DistrictLookupService _lookups;
-
-        public DistrictsController(DistrictLookupService lookups)
-        {
-            _lookups = lookups;
-        }
-
         [HttpGet]
-        // The answer names the address it was asked about, so no proxy, CDN or disk
-        // cache should hold on to it.
+        // The answer names the address, so no proxy, CDN or disk cache should keep it.
         [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
-        [ProducesResponseType(typeof(DistrictLookup), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
         public async Task<ActionResult<DistrictLookup>> Get(
             [FromQuery] string? address,
             [FromQuery] double? lat,
@@ -59,7 +43,7 @@ namespace YourElectionMap.Server.Controllers
 
                 try
                 {
-                    lookup = await _lookups.LookupAddressAsync(typed, cancellationToken);
+                    lookup = await LookupAddressAsync(typed, cancellationToken);
                 }
                 catch (GeocoderUnavailableException)
                 {
@@ -71,7 +55,8 @@ namespace YourElectionMap.Server.Controllers
             }
             else if (lat is not null && lon is not null)
             {
-                if (!IsOnEarth(lat.Value, lon.Value))
+                if (!double.IsFinite(lat.Value) || !double.IsFinite(lon.Value)
+                    || Math.Abs(lat.Value) > 90 || Math.Abs(lon.Value) > 180)
                 {
                     ModelState.AddModelError(
                         nameof(lat),
@@ -80,13 +65,11 @@ namespace YourElectionMap.Server.Controllers
                     return ValidationProblem(ModelState);
                 }
 
-                lookup = _lookups.LookupLocation(lat.Value, lon.Value);
+                lookup = At(lat.Value, lon.Value, "Your location");
             }
             else
             {
-                ModelState.AddModelError(
-                    nameof(address),
-                    "Give an address, or both lat and lon.");
+                ModelState.AddModelError(nameof(address), "Give an address, or both lat and lon.");
 
                 return ValidationProblem(ModelState);
             }
@@ -102,10 +85,38 @@ namespace YourElectionMap.Server.Controllers
             return lookup;
         }
 
-        private static bool IsOnEarth(double latitude, double longitude) =>
-            double.IsFinite(latitude)
-            && double.IsFinite(longitude)
-            && Math.Abs(latitude) <= 90
-            && Math.Abs(longitude) <= 180;
+        /// <summary>
+        /// An address with no state can match in several places; the first inside a
+        /// covered state wins. An address outside the fifty states is placed, then found
+        /// in no district: the same null as one that could not be placed.
+        /// </summary>
+        private async Task<DistrictLookup?> LookupAddressAsync(
+            string address,
+            CancellationToken cancellationToken)
+        {
+            // Named as typed: the geocoder's spelling is in capitals, and no more correct.
+            var line = address.Split(',')[0].Trim();
+            var label = line.Length == 0 ? address : line;
+
+            foreach (var (latitude, longitude, matched) in await geocoder.FindAsync(address, cancellationToken))
+            {
+                if (At(latitude, longitude, label) is { } lookup)
+                {
+                    // Google is asked about the geocoder's spelling, which names the state,
+                    // so it cannot place a "100 Main St, Greenville" somewhere else.
+                    return lookup with
+                    {
+                        Election = await voterInfo.GetAsync(matched, cancellationToken),
+                    };
+                }
+            }
+
+            return null;
+        }
+
+        private DistrictLookup? At(double latitude, double longitude, string label) =>
+            districts.Covering(longitude, latitude) is { } found
+                ? new DistrictLookup(label, [longitude, latitude], found, Election: null)
+                : null;
     }
 }

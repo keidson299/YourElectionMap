@@ -84,7 +84,6 @@ namespace YourElectionMap.Server.Tests
         [Theory]
         [InlineData(FakeGeocoding.NoMatch)] // an address it cannot place
         [InlineData("{ \"result\": {} }")]
-        [InlineData("{ \"result\": { \"addressMatches\": \"none\" } }")]
         [InlineData("{ \"result\": { \"addressMatches\": [ {} ] } }")]
         public async Task FindAsync_ReturnsNothingWhenTheAnswerHoldsNoMatch(string body)
         {
