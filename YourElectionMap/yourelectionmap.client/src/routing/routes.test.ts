@@ -91,7 +91,7 @@ describe('mapUrl', () => {
 
   it('round-trips a selected district', () => {
     const target = { address: 'Springfield' }
-    const url = mapUrl(target, { district: 'state-upper-22' })
+    const url = mapUrl(target, 'state-upper-22')
 
     expect(url).toBe('/map?address=Springfield&district=state-upper-22')
     expect(parseRoute(url)).toEqual({

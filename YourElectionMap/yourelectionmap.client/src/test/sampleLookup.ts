@@ -2,16 +2,12 @@ import type { District, DistrictLookup, LngLat, Polygon } from '../districts/typ
 import type { LookupTarget } from '../routing/routes'
 
 // An invented fixture, so component tests can render a result without a fetch.
-// Unlike the server's named county, city and school rows, its local rows are
-// numbered districts on purpose: it is the only thing exercising a ward and a
-// zone. DistrictsEndpointTests pins what the server really sends.
+// It has a numbered county district, which no real data has yet, beside named
+// city and school rows as the server sends them. DistrictsEndpointTests pins
+// what the server really sends.
 //
-// The shapes are written in the stand-in drawing's units, as the spec draws them,
-// and placed on the globe by `at`: the spec's address lands on downtown Raleigh,
-// one drawing unit is SHEET_DEGREES (about a hundred feet), and the drawing's y,
-// which counts down, becomes latitude, which counts up. State House 44, the
-// county and the school zone are the spec's shapes; the other three are made up,
-// each containing the address.
+// The shapes are in the spec's drawing units, placed on the globe by `at`: the
+// spec's address lands on downtown Raleigh, and one unit is about a hundred feet.
 
 const SHEET_ADDRESS = [1127, 629] as const
 const ADDRESS_LNG_LAT: LngLat = [-78.64, 35.78]
@@ -78,23 +74,23 @@ const SAMPLE_DISTRICTS: readonly District[] = [
     boundary: sheet([700, 300], [1520, 330], [1480, 930], [740, 900]),
   },
   {
-    id: 'city-2',
+    id: 'city-3755000',
     level: 'city',
-    office: 'City Council',
-    unit: 'Ward',
-    number: '2',
-    detail: 'City of Springfield',
-    area: 'City of Springfield',
+    office: 'Springfield city',
+    unit: null,
+    number: null,
+    detail: 'City',
+    area: 'Greenlake County',
     boundary: sheet([1030, 540], [1250, 555], [1235, 720], [1050, 735]),
   },
   {
-    id: 'school-5',
+    id: 'school-3700001',
     level: 'school',
-    office: 'School Board',
-    unit: 'Zone',
-    number: '5',
-    detail: 'Springfield Unified',
-    area: 'Springfield Unified',
+    office: 'Springfield Unified',
+    unit: null,
+    number: null,
+    detail: 'School district',
+    area: 'Greenlake County',
     boundary: sheet([965, 455], [1345, 478], [1305, 800], [1010, 825]),
   },
 ]

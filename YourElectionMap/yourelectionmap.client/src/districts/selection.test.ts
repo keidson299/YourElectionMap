@@ -1,10 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import {
-  layerCount,
-  layerRole,
-  mapLayers,
-  resolveSelection,
-} from './selection'
+import { layerRole, mapLayers, resolveSelection } from './selection'
 import type { District, DistrictLevel } from './types'
 
 function district(id: string, level: DistrictLevel): District {
@@ -74,10 +69,7 @@ describe('mapLayers', () => {
   })
 
   it('draws the selection alone when it is the only district', () => {
-    const layers = mapLayers([county], county)
-
-    expect(ids(layers)).toEqual(['county', null, null])
-    expect(layerCount(layers)).toBe(1)
+    expect(ids(mapLayers([county], county))).toEqual(['county', null, null])
   })
 
   it('tells each row which way it is drawn', () => {
@@ -91,6 +83,5 @@ describe('mapLayers', () => {
       'none',
       'none',
     ])
-    expect(layerCount(layers)).toBe(3)
   })
 })

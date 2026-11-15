@@ -303,10 +303,13 @@ jsdom has no WebGL.
 - `DistrictMap` makes one MapLibre map for the life of the result page; its whole look comes from
   `buildStyle` in `src/map/style.ts`, so a new selection or theme is one `setStyle`. The layers
   handed to it are memoized in `ResultView`: a new `layers` object rebuilds the style.
-- `src/test/sampleLookup.ts` deliberately has all six levels, a ward, a zone and an election: it is
-  the only thing exercising wards and zones, which no real data has. Named rows (no unit or
-  number) are tested in `labels.test.ts` and `DistrictRail.test.tsx`.
-- The phone layout switches at 860px, set in `PHONE_QUERY` (`src/hooks/useMediaQuery.ts`) and
+  MapLibre's stylesheet is not imported: `DistrictMap.css` carries the few rules the map needs
+  (canvas, marker, touch handling, compact attribution), so a new MapLibre control needs its
+  rules added there.
+- `src/test/sampleLookup.ts` has all six levels and an election: numbered rows, including a
+  numbered county district no real data has yet, and named city and school rows as the server
+  sends them. The client knows no unit but "District"; wards and zones were removed.
+- The phone layout switches at 860px, set in `PHONE_QUERY` (`src/hooks/useIsPhone.ts`) and
   again in every stylesheet's media query; change them together. To test it, stub `matchMedia` as
   `ResultView.test.tsx` does.
 - Sizes, colours and line weights come from the build spec, `design/canvas4/Main.dc.html`. The

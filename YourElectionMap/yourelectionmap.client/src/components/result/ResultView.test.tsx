@@ -57,9 +57,9 @@ describe('ResultView on a phone', () => {
     expect(handle).toHaveAttribute('aria-expanded', 'true')
 
     await userEvent.click(
-      screen.getByRole('radio', { name: 'School Board · Zone 5' }),
+      screen.getByRole('radio', { name: 'Springfield Unified' }),
     )
-    expect(onSelect).toHaveBeenCalledWith('school-5')
+    expect(onSelect).toHaveBeenCalledWith('school-3700001')
     expect(handle).toHaveAttribute('aria-expanded', 'false')
   })
 })

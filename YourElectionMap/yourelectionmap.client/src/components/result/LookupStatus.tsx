@@ -1,14 +1,12 @@
 import { useState } from 'react'
 import { SpinnerIcon } from '../icons'
 import { SurveyGround } from '../SurveyGround'
-import { problemCard, type LookupProblem } from '../../districts/lookups'
+import { COVERED_STATES, type LookupProblem } from '../../districts/lookups'
 import type { LookupTarget } from '../../routing/routes'
 import './LookupStatus.css'
 
-// What the map page shows while it has no result to draw: the survey sheet with
-// nothing on it, and one card saying where the lookup got to. Reached by opening
-// or reloading a map URL — a lookup started from a form is already in hand by
-// the time the page changes.
+// What the map page shows with no result to draw. Only reached by opening or
+// reloading a map URL: a form's lookup is in hand before the page changes.
 
 type LookupStatusProps = {
   state: 'loading' | LookupProblem
@@ -16,14 +14,29 @@ type LookupStatusProps = {
   onRetry: () => void
 }
 
-// A blank sheet at the spec's 620×496 desktop design frame, with paper three
-// times that size so it fills the view whatever shape the window is.
-const SHEET_VIEW_BOX = '-310 -248 620 496'
-const SHEET_GROUND = { x: -930, y: -744, width: 1860, height: 1488 }
+function problemCard(problem: LookupProblem, target: LookupTarget) {
+  if (problem === 'error') {
+    return {
+      heading: 'The district lookup is not responding',
+      body: 'Check your connection, then try again.',
+    }
+  }
+
+  if ('address' in target) {
+    return {
+      heading: 'We could not place that address',
+      body: `The site covers ${COVERED_STATES}. Check the address, or try adding your city or ZIP code, in the search above.`,
+    }
+  }
+
+  return {
+    heading: 'We could not find districts here',
+    body: `The site covers ${COVERED_STATES}. Enter an address in the search above.`,
+  }
+}
 
 export function LookupStatus({ state, target, onRetry }: LookupStatusProps) {
-  // Set once Try again has been pressed, so the button can stay put while the
-  // lookup it started runs rather than unmounting and dropping focus to nowhere.
+  // Keeps the button mounted while its retry runs, so focus isn't dropped.
   const [retried, setRetried] = useState(false)
 
   const waiting = state === 'loading'
@@ -33,7 +46,6 @@ export function LookupStatus({ state, target, onRetry }: LookupStatusProps) {
     : problemCard(state, target)
 
   function handleRetry() {
-    // aria-disabled rather than disabled, so the button still fires.
     if (waiting) {
       return
     }
@@ -44,20 +56,20 @@ export function LookupStatus({ state, target, onRetry }: LookupStatusProps) {
 
   return (
     <main className={waiting ? 'lookup-status lookup-status--waiting' : 'lookup-status'}>
+      {/* The spec's 620×496 frame, with paper three times that so it fills any window. */}
       <svg
         className="lookup-status__sheet"
-        viewBox={SHEET_VIEW_BOX}
+        viewBox="-310 -248 620 496"
         preserveAspectRatio="xMidYMid meet"
         aria-hidden="true"
         focusable="false"
       >
-        <SurveyGround ground={SHEET_GROUND} />
+        <SurveyGround ground={{ x: -930, y: -744, width: 1860, height: 1488 }} />
       </svg>
 
       <div className="lookup-status__card card">
-        {/* Hidden while waiting: the news is the line below, and a heading that
-            announced itself first would say nothing yet. Focusable either way,
-            because App moves focus here on a page change. */}
+        {/* Hidden while waiting, since the line below says it, but still
+            focusable: App moves focus here on a page change. */}
         <h1
           className={waiting ? 'visually-hidden' : 'lookup-status__title'}
           tabIndex={-1}
@@ -65,8 +77,7 @@ export function LookupStatus({ state, target, onRetry }: LookupStatusProps) {
           {card.heading}
         </h1>
 
-        {/* One live region across all three states, so an answer that arrives
-            after the page has loaded is announced. */}
+        {/* One live region across every state, so a late answer is announced. */}
         <p className="lookup-status__body" role="status">
           {waiting ? (
             <>

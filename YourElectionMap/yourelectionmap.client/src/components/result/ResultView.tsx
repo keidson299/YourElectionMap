@@ -3,22 +3,18 @@ import { DistrictRail } from './DistrictRail'
 import { maxBoundsFor } from '../../map/camera'
 import { mapLayers, resolveSelection } from '../../districts/selection'
 import type { DistrictLookup } from '../../districts/types'
-import { PHONE_QUERY, useMediaQuery } from '../../hooks/useMediaQuery'
+import { useIsPhone } from '../../hooks/useIsPhone'
 import './ResultView.css'
 
-// The result screen under the header: the rail of districts beside the map on
-// desktop, the map over a sheet on a phone. It renders whatever DistrictLookup
-// it is given, so where that lookup comes from can change underneath it.
-
-// The street map library is most of the page's weight, so it loads with the
-// first result rather than with Home.
+// MapLibre is most of the page's weight, so it loads with the first result
+// rather than with Home.
 const DistrictMap = lazy(() =>
   import('./DistrictMap').then((module) => ({ default: module.DistrictMap })),
 )
 
 type ResultViewProps = {
   lookup: DistrictLookup
-  /** The district named in the URL, if any; an unknown one falls back. */
+  /** The district named in the URL; an unknown one falls back. */
   requestedDistrict: string | null
   onSelect: (districtId: string) => void
 }
@@ -28,11 +24,10 @@ export function ResultView({
   requestedDistrict,
   onSelect,
 }: ResultViewProps) {
-  const compact = useMediaQuery(PHONE_QUERY)
+  const compact = useIsPhone()
   const [sheetExpanded, setSheetExpanded] = useState(false)
 
-  // Kept stable between renders: the map rebuilds its drawing only when what
-  // these say changes, not whenever the sheet opens or closes.
+  // Memoized: a new layers object rebuilds the map's style.
   const { districts } = lookup
   const maxBounds = useMemo(() => maxBoundsFor(districts), [districts])
   const selected = resolveSelection(districts, requestedDistrict)
@@ -40,12 +35,6 @@ export function ResultView({
     () => mapLayers(districts, selected),
     [districts, selected],
   )
-
-  function handleSelect(districtId: string) {
-    // Put the drawing back in view after a pick from the expanded sheet.
-    setSheetExpanded(false)
-    onSelect(districtId)
-  }
 
   return (
     <main className={sheetExpanded ? 'result result--expanded' : 'result'}>
@@ -61,11 +50,13 @@ export function ResultView({
         compact={compact}
         sheetExpanded={sheetExpanded}
         onToggleSheet={() => setSheetExpanded((expanded) => !expanded)}
-        onSelect={handleSelect}
+        onSelect={(id) => {
+          // Put the drawing back in view after a pick from the expanded sheet.
+          setSheetExpanded(false)
+          onSelect(id)
+        }}
       />
 
-      {/* One map for the life of the page: a new selection redraws and refits
-          it rather than making another. */}
       <Suspense fallback={<section className="district-map" aria-hidden="true" />}>
         <DistrictMap
           location={lookup.location}

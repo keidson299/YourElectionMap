@@ -1,22 +1,17 @@
-// The diagonal hatch over the selected district, drawn as one tile MapLibre
-// repeats. The spec rotates its lines −32.5°; a repeating tile needs a slope
-// that lands back on a corner, and 2:3 (33.7°) is the nearest that does in a
-// small tile. Lines run up to the right, as the spec's do.
+// The diagonal hatch over the selected district, as one tile MapLibre repeats.
+// The spec's lines are at −32.5°; a repeating tile needs a slope that lands on
+// a corner, and 2:3 (33.7°) is the nearest in a small tile.
 
 /** Perpendicular gap between lines in a 3a×2a tile: 6a/√13. */
 const GAP_PER_A = 6 / Math.sqrt(13)
-
-/** The spec's hatch lines are 0.9 of a survey unit at 1.68px a unit. */
 const LINE_WIDTH_PER_SPACING = 1.5 / 57
 const LINE_OPACITY = 0.45
 
-export type HatchImage = { image: ImageData; pixelRatio: number }
-
-/**
- * A tile of hatch lines `spacing` CSS pixels apart in `color`, at the screen's
- * pixel ratio. Null where there is no canvas to draw on.
- */
-export function drawHatch(spacing: number, color: string): HatchImage | null {
+/** A tile of lines `spacing` CSS pixels apart, or null with no canvas (jsdom). */
+export function drawHatch(
+  spacing: number,
+  color: string,
+): { image: ImageData; pixelRatio: number } | null {
   const pixelRatio = Math.max(1, Math.round(window.devicePixelRatio || 1))
   const a = Math.max(4, Math.round(spacing / GAP_PER_A))
   const width = 3 * a * pixelRatio
@@ -31,7 +26,7 @@ export function drawHatch(spacing: number, color: string): HatchImage | null {
   try {
     context = canvas.getContext('2d')
   } catch {
-    // jsdom has no canvas, and says so by throwing.
+    // jsdom throws rather than returning null.
   }
 
   if (context === null) {
@@ -42,8 +37,8 @@ export function drawHatch(spacing: number, color: string): HatchImage | null {
   context.globalAlpha = LINE_OPACITY
   context.lineWidth = Math.max(0.8, spacing * LINE_WIDTH_PER_SPACING) * pixelRatio
 
-  // The tile's diagonal, and the two lines through its opposite corners, so the
-  // stroke is whole where four tiles meet.
+  // The diagonal, and the lines through the opposite corners, so the stroke is
+  // whole where four tiles meet.
   context.beginPath()
   for (const offset of [-1, 0, 1]) {
     context.moveTo(offset * width, height)

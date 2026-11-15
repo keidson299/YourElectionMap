@@ -2,23 +2,15 @@ import { vi } from 'vitest'
 import { sampleLookup } from './sampleLookup'
 import { resetLookups } from '../districts/lookups'
 
-// Stands in for GET /api/districts with the invented fixture, and can be told to
-// fail, so tests can drive the page's flows: waiting, a match, a miss, a failure.
-//
-// Statuses follow DistrictsController: 400 for a query it cannot use, 404
-// for no districts, anything else a failure. What counts as a match does not: here
-// it is an address with a digit, or a point roughly in North America.
-// DistrictsEndpointTests pins what the server really answers.
-//
-// Responses carry only the members the client reads, so nothing depends on jsdom
-// having fetch.
+// Stands in for GET /api/districts with the sample fixture. An address with a
+// digit, or a point roughly in North America, is a match; anything else is a
+// 404. DistrictsEndpointTests pins what the server really answers.
 
 export type FakeDistrictsApi = {
   /** The stubbed global fetch, for counting requests. */
   fetch: ReturnType<typeof vi.fn>
   /** Answer every later request with a 500, as a stopped server would. */
   fail: () => void
-  /** Answer properly again. */
   recover: () => void
 }
 
@@ -26,13 +18,8 @@ export function startFakeDistrictsApi(): FakeDistrictsApi {
   let failing = false
 
   const fetchMock = vi.fn((input: string | URL) => {
-    if (failing) {
-      return Promise.resolve(response(500, {}))
-    }
-
-    const query = String(input).split('?')[1] ?? ''
-
-    return Promise.resolve(answer(new URLSearchParams(query)))
+    const params = new URLSearchParams(String(input).split('?')[1] ?? '')
+    return Promise.resolve(failing ? response(500, {}) : answer(params))
   })
 
   vi.stubGlobal('fetch', fetchMock)
@@ -54,43 +41,18 @@ export function stopFakeDistrictsApi(): void {
   resetLookups()
 }
 
-/** The server's cap, from DistrictsController.MaxAddressLength. */
-const MAX_ADDRESS_LENGTH = 200
-
 function answer(params: URLSearchParams): Response {
-  const typed = params.get('address')?.trim() ?? ''
+  const address = params.get('address')
 
-  if (typed !== '') {
-    if (typed.length > MAX_ADDRESS_LENGTH) {
-      return response(400, {})
-    }
-
-    return /\d/.test(typed)
-      ? response(200, sampleLookup({ address: typed }))
+  if (address !== null) {
+    return /\d/.test(address)
+      ? response(200, sampleLookup({ address }))
       : response(404, {})
   }
 
-  const rawLat = params.get('lat')?.trim() ?? ''
-  const rawLon = params.get('lon')?.trim() ?? ''
+  const lat = Number(params.get('lat'))
+  const lon = Number(params.get('lon'))
 
-  // Blank values must not reach Number(), which reads '' as 0.
-  if (rawLat === '' || rawLon === '') {
-    return response(400, {})
-  }
-
-  const lat = Number(rawLat)
-  const lon = Number(rawLon)
-
-  if (
-    !Number.isFinite(lat) ||
-    !Number.isFinite(lon) ||
-    Math.abs(lat) > 90 ||
-    Math.abs(lon) > 180
-  ) {
-    return response(400, {})
-  }
-
-  // Roughly North America.
   return lat >= 18 && lat <= 72 && lon >= -180 && lon <= -64
     ? response(200, sampleLookup({ coords: { lat, lon } }))
     : response(404, {})

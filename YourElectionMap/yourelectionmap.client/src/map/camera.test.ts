@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { maxBoundsFor, minimumSpan, openingBounds, scaleBarAt } from './camera'
+import { MINIMUM_SPAN, maxBoundsFor, openingBounds, scaleBarAt } from './camera'
 import type { District, LngLat, Polygon } from '../districts/types'
 
 // Downtown Raleigh, where a degree of longitude is about 56 miles and a degree
@@ -20,14 +20,14 @@ function box(west: number, south: number, east: number, north: number): Polygon[
   return [[ring]]
 }
 
-const desktop = minimumSpan(false)
+const desktop = MINIMUM_SPAN.desktop
 
 describe('openingBounds', () => {
   it('keeps the design span when the district already fits', () => {
     const [[west, south], [east, north]] = openingBounds(
       ADDRESS,
       box(0.01, 0.01, 0.01, 0.01),
-      desktop,
+      false,
     )
     const milesAcross = (east - west) * 69.17 * Math.cos((ADDRESS[1] * Math.PI) / 180)
     const milesHigh = (north - south) * 69.0
@@ -37,7 +37,7 @@ describe('openingBounds', () => {
   })
 
   it('widens to take in a large district, with padding, still centred', () => {
-    const bounds = openingBounds(ADDRESS, box(1.0, 0.2, 0.4, 0.6), desktop)
+    const bounds = openingBounds(ADDRESS, box(1.0, 0.2, 0.4, 0.6), false)
     const [[west, south], [east, north]] = bounds
 
     // The farthest reach on each axis, either side, plus 8%.
@@ -51,8 +51,8 @@ describe('openingBounds', () => {
     const [outer] = box(0.5, 0.5, 0.5, 0.5)[0]
     const hole = box(0.1, 0.1, 0.1, 0.1)[0][0]
 
-    expect(openingBounds(ADDRESS, [[outer, hole]], desktop)).toEqual(
-      openingBounds(ADDRESS, [[outer]], desktop),
+    expect(openingBounds(ADDRESS, [[outer, hole]], false)).toEqual(
+      openingBounds(ADDRESS, [[outer]], false),
     )
   })
 })

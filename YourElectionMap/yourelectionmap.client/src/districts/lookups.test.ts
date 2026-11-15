@@ -53,9 +53,12 @@ describe('lookups', () => {
     expect((await requestLookup({ address: 'Main Street' })).status).toBe(
       'no-match',
     )
-    expect(
-      (await requestLookup({ address: `1 ${'x'.repeat(250)} Road` })).status,
-    ).toBe('no-match')
+
+    resetLookups()
+    vi.stubGlobal('fetch', () => Promise.resolve({ ok: false, status: 400 } as Response))
+    expect((await requestLookup({ address: '1 Bad Query Road' })).status).toBe(
+      'no-match',
+    )
   })
 
   it('reads a lookup with no districts the same way', async () => {

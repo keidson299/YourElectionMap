@@ -4,12 +4,8 @@ import type { Coordinates } from '../routing/routes'
 import { COVERED_STATES, type LookupNotice } from '../districts/lookups'
 import './AddressForm.css'
 
-// One form serves the home card and the result header; only the sizes differ.
-// It submits through a real <form> so Enter works, and the label is hidden
-// rather than absent, so assistive technology still names the field.
-//
-// Submitting runs the caller's lookup and waits for it, so a place that cannot
-// be found is said here rather than on a page that has nothing to show.
+// Submitting waits on the caller's lookup, so a place that can't be found is
+// said here rather than on a page with nothing to show.
 
 type AddressFormProps = {
   variant: 'home' | 'header'
@@ -21,14 +17,8 @@ type AddressFormProps = {
   onLocate?: (coords: Coordinates) => Promise<LookupNotice | null>
 }
 
-/** The server's cap, from DistrictsController.MaxAddressLength. */
+/** DistrictsController.MaxAddressLength */
 const MAX_ADDRESS_LENGTH = 200
-
-/** When the caller itself threw, which leaves nothing more specific to say. */
-const CALLER_FAILED: LookupNotice = {
-  text: 'Something went wrong. Try again.',
-  field: false,
-}
 
 export function AddressForm({
   variant,
@@ -45,10 +35,7 @@ export function AddressForm({
 
   const [address, setAddress] = useState(initialAddress)
   const [message, setMessage] = useState<LookupNotice | null>(null)
-  const [locating, setLocating] = useState(false)
-  const [checking, setChecking] = useState(false)
-
-  const busy = checking || locating
+  const [busy, setBusy] = useState<'checking' | 'locating' | null>(null)
 
   useEffect(() => {
     mounted.current = true
@@ -57,6 +44,32 @@ export function AddressForm({
       mounted.current = false
     }
   }, [])
+
+  /** Shows any problem the caller reports, and always clears busy. */
+  async function runCaller(
+    call: () => Promise<LookupNotice | null | undefined>,
+    focusField: boolean,
+  ) {
+    try {
+      const problem = await call()
+
+      if (mounted.current && problem) {
+        setMessage(problem)
+
+        if (focusField) {
+          inputRef.current?.focus()
+        }
+      }
+    } catch {
+      if (mounted.current) {
+        setMessage({ text: 'Something went wrong. Try again.', field: false })
+      }
+    } finally {
+      if (mounted.current) {
+        setBusy(null)
+      }
+    }
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -75,40 +88,8 @@ export function AddressForm({
     }
 
     setMessage(null)
-    setChecking(true)
-
-    await runCaller(() => onSubmit(trimmed), setChecking, (problem) => {
-      setMessage(problem)
-      inputRef.current?.focus()
-    })
-  }
-
-  /**
-   * Waits on the caller's lookup and passes on any problem it reports, or says
-   * CALLER_FAILED if it throws, while the form is still on the page. The busy
-   * flag is cleared in finally, so a throwing caller cannot leave the form stuck
-   * on "Checking…" or "Finding you…".
-   */
-  async function runCaller(
-    call: () => Promise<LookupNotice | null | undefined>,
-    setBusy: (busy: boolean) => void,
-    onProblem: (problem: LookupNotice) => void,
-  ) {
-    try {
-      const problem = await call()
-
-      if (mounted.current && problem) {
-        onProblem(problem)
-      }
-    } catch {
-      if (mounted.current) {
-        setMessage(CALLER_FAILED)
-      }
-    } finally {
-      if (mounted.current) {
-        setBusy(false)
-      }
-    }
+    setBusy('checking')
+    await runCaller(() => onSubmit(trimmed), true)
   }
 
   function handleLocate() {
@@ -125,36 +106,29 @@ export function AddressForm({
     }
 
     setMessage(null)
-    setLocating(true)
+    setBusy('locating')
 
     navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        if (!mounted.current) {
-          return
+      (position) => {
+        if (mounted.current) {
+          void runCaller(
+            async () =>
+              onLocate?.({
+                lat: position.coords.latitude,
+                lon: position.coords.longitude,
+              }),
+            false,
+          )
         }
-
-        // Still "Finding you…" while the fix is looked up: to the visitor it is
-        // one action.
-        await runCaller(
-          async () =>
-            onLocate?.({
-              lat: position.coords.latitude,
-              lon: position.coords.longitude,
-            }),
-          setLocating,
-          setMessage,
-        )
       },
       () => {
-        if (!mounted.current) {
-          return
+        if (mounted.current) {
+          setBusy(null)
+          setMessage({
+            text: 'We could not get your location. Enter an address instead.',
+            field: false,
+          })
         }
-
-        setLocating(false)
-        setMessage({
-          text: 'We could not get your location. Enter an address instead.',
-          field: false,
-        })
       },
       { timeout: 10000 },
     )
@@ -183,13 +157,10 @@ export function AddressForm({
             className="address-form__input"
             placeholder="Enter your home address"
             autoComplete="street-address"
-            // The server rejects anything longer, so stop it at the field rather
-            // than sending it and reporting a failure.
             maxLength={MAX_ADDRESS_LENGTH}
             value={address}
-            // Readable and selectable while the lookup runs, but not editable:
-            // the answer coming back is about the text that was sent.
-            readOnly={checking}
+            // Not editable while checking: the answer is about the text sent.
+            readOnly={busy === 'checking'}
             onChange={(event) => {
               setAddress(event.target.value)
 
@@ -204,9 +175,9 @@ export function AddressForm({
         <button
           type="submit"
           className="address-form__submit"
-          aria-disabled={busy || undefined}
+          aria-disabled={busy !== null || undefined}
         >
-          {checking ? (
+          {busy === 'checking' ? (
             <>
               <SpinnerIcon className="spin" />
               Checking…
@@ -223,10 +194,10 @@ export function AddressForm({
             type="button"
             className="address-form__locate"
             onClick={handleLocate}
-            aria-disabled={busy || undefined}
+            aria-disabled={busy !== null || undefined}
           >
             <CrosshairIcon size={15} />
-            {locating ? 'Finding you…' : 'Use my current location'}
+            {busy === 'locating' ? 'Finding you…' : 'Use my current location'}
           </button>
           <span className="address-form__divider" aria-hidden="true" />
           <p className="address-form__note">
@@ -236,7 +207,7 @@ export function AddressForm({
         </div>
       )}
 
-      {/* Always present so the live region exists before it has anything to say. */}
+      {/* Always present, so the live region exists before it has anything to say. */}
       <p id={messageId} className="address-form__message" role="status">
         {message?.text}
       </p>

@@ -1,7 +1,5 @@
-/* The map's own lines and colours are in map/style.ts, built from the tokens in
-   index.css. What is here is the frame around it and the pin, whose widths come
-   from design/canvas4/Main.dc.html, Result: they are in the spec's units, which
-   the pin's SVG scales to the size the spec draws it. */
+/* The map's own lines and colours are in map/style.ts. The pin's widths are in
+   the spec's units, which its SVG scales to the size the spec draws it. */
 
 .district-map {
   position: relative;
@@ -11,9 +9,7 @@
   background: var(--bg);
 }
 
-/* Two classes, to outrank the .maplibregl-map MapLibre adds to this element,
-   whose position: relative would collapse it to no height at all. */
-.district-map .district-map__canvas {
+.district-map__canvas {
   position: absolute;
   inset: 0;
 }
@@ -29,8 +25,6 @@
   color: var(--ink-soft);
 }
 
-/* MapLibre places the pin's element over the address; the label beside it is
-   positioned from that element's centre (see .map-marker). */
 .district-map__pin {
   display: block;
   overflow: visible;
@@ -55,22 +49,146 @@
   stroke-width: 2.4;
 }
 
-/* The street data's credit, which its licence requires. Lifted clear of the
-   scale bar, and of the pill and sheet edge on a phone. */
-.district-map .maplibregl-ctrl-bottom-right {
-  bottom: 62px;
-  right: 12px;
+/* ── MapLibre ──────────────────────────────────────────────────────────────
+   The rules from maplibre-gl.css this map needs, in place of the whole sheet,
+   which is mostly icons for controls it does not use. It has no controls but
+   the compact attribution. */
+
+.maplibregl-map {
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
 }
 
-.district-map .maplibregl-ctrl-attrib {
-  font-family: var(--ui);
-  font-size: 10.5px;
+.maplibregl-canvas {
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
+.maplibregl-canvas-container.maplibregl-interactive {
+  cursor: grab;
+  user-select: none;
+}
+
+.maplibregl-canvas-container.maplibregl-interactive:active {
+  cursor: grabbing;
+}
+
+/* What the browser may still do with a touch the map takes. */
+.maplibregl-touch-zoom-rotate,
+.maplibregl-touch-zoom-rotate .maplibregl-canvas {
+  touch-action: pan-x pan-y;
+}
+
+.maplibregl-touch-drag-pan,
+.maplibregl-touch-drag-pan .maplibregl-canvas {
+  touch-action: pinch-zoom;
+}
+
+.maplibregl-touch-zoom-rotate.maplibregl-touch-drag-pan,
+.maplibregl-touch-zoom-rotate.maplibregl-touch-drag-pan .maplibregl-canvas {
+  touch-action: none;
+}
+
+/* Shift-drag to zoom to a box. */
+.maplibregl-boxzoom {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  background: #fff;
+  border: 2px dotted #202020;
+  opacity: 0.5;
+}
+
+.maplibregl-marker {
+  position: absolute;
+  top: 0;
+  left: 0;
+  will-change: transform;
+}
+
+/* The street data's credit, which its licence requires, lifted clear of the
+   scale bar, and of the pill and sheet edge on a phone. */
+.maplibregl-ctrl-bottom-right {
+  position: absolute;
+  bottom: 62px;
+  right: 12px;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.maplibregl-ctrl {
+  clear: both;
+  float: right;
+  pointer-events: auto;
+  transform: translate(0);
+}
+
+.maplibregl-ctrl-attrib {
+  position: relative;
+  min-height: 20px;
+  margin: 10px;
+  padding: 2px 24px 2px 0;
+  box-sizing: content-box;
+  border-radius: 12px;
+  font: 10.5px/20px var(--ui);
   color: var(--ink-soft);
   background: var(--card);
 }
 
-.district-map .maplibregl-ctrl-attrib a {
+.maplibregl-ctrl-attrib.maplibregl-compact-show {
+  padding: 2px 28px 2px 8px;
+}
+
+.maplibregl-ctrl-attrib a {
   color: inherit;
+  text-decoration: none;
+}
+
+.maplibregl-ctrl-attrib a:hover {
+  text-decoration: underline;
+}
+
+.maplibregl-attrib-empty,
+.maplibregl-ctrl-attrib-inner {
+  display: none;
+}
+
+.maplibregl-compact-show .maplibregl-ctrl-attrib-inner {
+  display: block;
+}
+
+/* The ⓘ that opens it. */
+.maplibregl-ctrl-attrib-button {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 24px;
+  height: 24px;
+  box-sizing: border-box;
+  border: 0;
+  border-radius: 12px;
+  outline: none;
+  cursor: pointer;
+  list-style: none;
+  appearance: none;
+  background: hsl(0 0% 100% / 0.5)
+    url("data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20fill-rule%3D%22evenodd%22%20viewBox%3D%220%200%2020%2020%22%3E%3Cpath%20d%3D%22M4%2010a6%206%200%201%200%2012%200%206%206%200%201%200-12%200m5-3a1%201%200%201%200%202%200%201%201%200%201%200-2%200m0%203a1%201%200%201%201%202%200v3a1%201%200%201%201-2%200%22%2F%3E%3C%2Fsvg%3E");
+}
+
+.maplibregl-ctrl-attrib-button::-webkit-details-marker {
+  display: none;
+}
+
+.maplibregl-ctrl-attrib-button:focus-visible {
+  box-shadow: 0 0 0 2px var(--accent);
+}
+
+.maplibregl-compact-show .maplibregl-ctrl-attrib-button {
+  background-color: rgb(0 0 0 / 0.05);
 }
 
 @media (max-width: 860px) {
@@ -87,7 +205,7 @@
     stroke-width: 2;
   }
 
-  .district-map .maplibregl-ctrl-bottom-right {
+  .maplibregl-ctrl-bottom-right {
     bottom: 56px;
     right: 4px;
   }

@@ -13,23 +13,18 @@ type MapPageProps = {
 }
 
 export function MapPage({ target, district }: MapPageProps) {
-  // Already in hand when the lookup was run by a form; fetched here when a map
-  // URL is opened or reloaded.
   const { state, retry } = useLookup(target)
-  // Whether the status card has been shown for the lookup in hand.
   const waited = useRef(false)
 
-  // A result that arrives after a wait replaces the status card without a URL
-  // change, so App's page-change focus never runs. Focus the new heading here,
-  // so a screen reader announces the districts.
+  // A result that arrives after the status card replaces it with no URL
+  // change, so App's focus move never runs. Focus the new heading here, but
+  // only if focus fell to the body with the card.
   useEffect(() => {
     if (state.status !== 'found') {
       waited.current = true
       return
     }
 
-    // Only when focus fell to the body with the status card, never from where a
-    // visitor put it.
     if (waited.current && document.activeElement === document.body) {
       document.querySelector<HTMLElement>('h1')?.focus()
     }
@@ -37,23 +32,18 @@ export function MapPage({ target, district }: MapPageProps) {
     waited.current = false
   }, [state.status])
 
-  function handleSelect(districtId: string) {
-    // Replace rather than push, so Back leaves the page instead of stepping
-    // through every district that was looked at.
-    navigate(mapUrl(target, { district: districtId }), { replace: true })
-  }
-
   return (
     <div className="map-page">
       <SiteHeader address={'address' in target ? target.address : null} />
 
       {state.status === 'found' ? (
-        /* Keyed on the lookup so zoom and the sheet start fresh for each one. */
+        // Keyed so zoom and the sheet start fresh for each lookup.
         <ResultView
           key={mapUrl(target)}
           lookup={state.lookup}
           requestedDistrict={district}
-          onSelect={handleSelect}
+          // Replace, so Back leaves the page rather than stepping through picks.
+          onSelect={(id) => navigate(mapUrl(target, id), { replace: true })}
         />
       ) : (
         <LookupStatus state={state.status} target={target} onRetry={retry} />

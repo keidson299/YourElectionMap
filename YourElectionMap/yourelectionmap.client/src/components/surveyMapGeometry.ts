@@ -1,7 +1,5 @@
-// Hand-drawn stand-in geometry, lifted coordinate for coordinate from
-// design/canvas4/Main.dc.html. It is a drawing of what a district map looks
-// like, not data: no shape here corresponds to a real place, and nothing from it
-// reaches the result map.
+// Home's decorative drawing, copied from design/canvas4/Main.dc.html. Not data:
+// no shape here is a real place.
 
 export const DISTRICT_POLYGONS = [
   '0,0 320,-10 350,215 0,240',
@@ -37,7 +35,6 @@ export const ROAD_PATHS = [
   'M1080,-20 L1040,260 L1120,540 L1080,1020',
 ]
 
-/** The district the address falls in, as the wide home board draws it. */
 export const WIDE_FOCUS = {
   polygon: '930,495 1310,520 1270,735 1000,765',
   hatching:
@@ -48,10 +45,7 @@ export const WIDE_FOCUS = {
   ringRadius: 25,
 }
 
-/**
- * The phone board slices a narrower window out of the same drawing, so it
- * highlights the district that sits in the middle of that window instead.
- */
+/** The district in the middle of the phone's narrower slice. */
 export const NARROW_FOCUS = {
   polygon: '610,270 985,235 930,495 665,530',
   hatching: 'M640,470 L960,262 M672,510 L975,300 M628,400 L940,240',
@@ -82,8 +76,3 @@ export const NARROW_TICKS = [
   { value: '1000', x: 1000 },
 ]
 
-/** The whole survey sheet, behind the home card. */
-export const OVERVIEW = {
-  viewBox: '0 0 1600 1000',
-  ground: { x: 0, y: 0, width: 1600, height: 1000 },
-}

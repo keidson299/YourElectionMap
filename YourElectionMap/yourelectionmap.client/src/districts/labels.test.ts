@@ -1,10 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import {
-  countOf,
-  coverageTitle,
-  districtName,
-  formatElectionDate,
-} from './labels'
+import { countOf, districtName, formatElectionDate } from './labels'
 import type { District } from './types'
 
 function district(overrides: Partial<District>): District {
@@ -22,27 +17,12 @@ function district(overrides: Partial<District>): District {
 }
 
 describe('districtName', () => {
-  const stateHouse = district({})
-  const ward = district({ office: 'City Council', unit: 'Ward', number: '2' })
+  it('names a numbered district in each form', () => {
+    const stateHouse = district({})
 
-  it('spells out the unit in full', () => {
     expect(districtName(stateHouse)).toBe('State House · District 44')
-    expect(districtName(ward)).toBe('City Council · Ward 2')
-  })
-
-  it('drops the word District in the short form, but keeps Ward and Zone', () => {
     expect(districtName(stateHouse, 'short')).toBe('State House · 44')
-    expect(districtName(ward, 'short')).toBe('City Council · Ward 2')
-  })
-
-  it('runs the legend form together without a separator', () => {
     expect(districtName(stateHouse, 'legend')).toBe('State House 44')
-    expect(
-      districtName(
-        district({ office: 'School Board', unit: 'Zone', number: '5' }),
-        'legend',
-      ),
-    ).toBe('School Board Zone 5')
   })
 
   it('names a county, city or school district by its name alone in every form', () => {
@@ -61,12 +41,7 @@ describe('districtName', () => {
   })
 })
 
-describe('counts', () => {
-  it('agrees the heading with the number of districts', () => {
-    expect(coverageTitle(6)).toBe('6 districts cover you')
-    expect(coverageTitle(1)).toBe('1 district covers you')
-  })
-
+describe('countOf', () => {
   it('agrees a noun with its count', () => {
     expect(countOf(14, 'candidate', 'candidates')).toBe('14 candidates')
     expect(countOf(1, 'candidate', 'candidates')).toBe('1 candidate')

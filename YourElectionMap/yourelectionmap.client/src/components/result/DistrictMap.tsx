@@ -1,26 +1,18 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Map as MapLibreMap, Marker, setWorkerUrl } from 'maplibre-gl'
-import 'maplibre-gl/dist/maplibre-gl.css'
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url'
-import {
-  AddressMarker,
-  BoundaryPill,
-  MapLegend,
-  ScaleBar,
-  ShowingChip,
-  ZoomControls,
-} from './MapChrome'
-import { layerCount, type MapLayers } from '../../districts/selection'
+import { LineSwatch } from './LineSwatch'
+import { countOf, districtName } from '../../districts/labels'
+import type { MapLayers } from '../../districts/selection'
 import type { LngLat } from '../../districts/types'
-import type { Bounds } from '../../map/camera'
 import {
   MAX_ZOOM,
   MIN_ZOOM,
   ZOOM_STEP,
-  minimumSpan,
   openingBounds,
   scaleBarAt,
+  type Bounds,
 } from '../../map/camera'
 import { drawHatch } from '../../map/hatch'
 import {
@@ -31,44 +23,33 @@ import {
   type StyleSpecification,
 } from '../../map/style'
 import './DistrictMap.css'
+import './MapChrome.css'
 
-// The result map: real streets, towns and water, the selected district solid
-// and hatched over them, its two neighbours dashed and dotted, and the address
-// pin. It opens centred on the address, fitted to the selected boundary, and
-// refits whenever the selection changes; in between, the visitor can drag and
-// zoom freely.
-//
-// One MapLibre map lives for as long as the result page does. Everything it
-// draws comes from buildStyle, so a new selection or theme is one setStyle,
-// which MapLibre diffs rather than reloads.
+// One MapLibre map for the life of the result page. It opens on the address,
+// fitted to the selected boundary, and refits when the selection changes. The
+// drawing is hidden from assistive technology, so the chrome over it says in
+// text everything it shows.
 
-// MapLibre looks for its web worker beside its own file, which bundling breaks:
-// the worker is never emitted and only the background draws. Importing it with
-// ?url makes Vite emit it and gives its URL.
+// MapLibre looks for its worker beside its own file, which bundling breaks;
+// ?url makes Vite emit it.
 setWorkerUrl(workerUrl)
 
 type DistrictMapProps = {
   location: LngLat
   label: string
   layers: MapLayers
-  /** How far the map can be dragged: around the lookup, from maxBoundsFor. */
+  /** How far the map can be dragged, from maxBoundsFor. */
   maxBounds: Bounds
   /** The phone layout: a tighter frame, a short chip, a pill for the legend. */
   compact: boolean
 }
 
-type View = { zoom: number; latitude: number }
-
-/**
- * The pin's dot, ring and crosshair arms in the spec's own units, and how many
- * CSS pixels across it is drawn, as at the spec's design frame.
- */
+/** The pin's parts in the spec's units, and its width in CSS pixels. */
 const PIN = {
   desktop: { dot: 7, ring: 21, arm: 40, pixels: 134 },
   phone: { dot: 6, ring: 16, arm: 32, pixels: 62 },
 }
 
-/** How long a refit takes when the selection changes. */
 const REFIT_MS = 450
 
 export function DistrictMap({
@@ -82,10 +63,10 @@ export function DistrictMap({
   const containerRef = useRef<HTMLDivElement>(null)
   const [map, setMap] = useState<MapLibreMap | null>(null)
   const [failed, setFailed] = useState(false)
-  const [view, setView] = useState<View | null>(null)
+  const [view, setView] = useState<{ zoom: number; latitude: number } | null>(null)
   const colors = useMapColors()
 
-  // The pin is drawn by React into an element MapLibre positions.
+  // React draws the pin into an element MapLibre positions.
   const [pinElement] = useState(() => document.createElement('div'))
 
   const style = useMemo(
@@ -96,7 +77,7 @@ export function DistrictMap({
   // point of the boundary.
   const selectedBoundary = layers.selected.boundary
   const bounds = useMemo(
-    () => openingBounds(location, selectedBoundary, minimumSpan(compact)),
+    () => openingBounds(location, selectedBoundary, compact),
     [location, selectedBoundary, compact],
   )
 
@@ -110,7 +91,7 @@ export function DistrictMap({
   const fitKey = `${layers.selected.id}|${location.join(',')}|${compact}`
   const limitsKey = maxBounds.flat().join(',')
 
-  // Read through a ref by the effect that creates the map, which runs once.
+  // Read by the effect that creates the map, which runs once.
   const initial = useRef({ style, bounds, fitKey, maxBounds, limitsKey })
 
   useEffect(() => {
@@ -136,8 +117,7 @@ export function DistrictMap({
         attributionControl: { compact: true },
       })
     } catch {
-      // No WebGL: MapLibre cannot draw at all. The rail still lists everything.
-      // Only the attempt can tell, and the attempt needs the mounted container.
+      // No WebGL. Only the attempt can tell, and it needs the mounted container.
       // oxlint-disable-next-line react/set-state-in-effect
       setFailed(true)
       return
@@ -146,8 +126,7 @@ export function DistrictMap({
     created.touchZoomRotate.disableRotation()
     created.keyboard.disableRotation()
 
-    // The hatch is drawn on demand, the first time the style asks for it in a
-    // given colour and spacing.
+    // The hatch is drawn the first time the style asks for it.
     created.on('styleimagemissing', (event: { id: string }) => {
       const hatch = readHatchId(event.id)
       const drawn = hatch && drawHatch(hatch.spacing, hatch.color)
@@ -216,12 +195,13 @@ export function DistrictMap({
     }
   }, [map, pinElement, location])
 
-  const size = compact ? 'phone' : 'desktop'
+  const { dot, ring, arm, pixels } = PIN[compact ? 'phone' : 'desktop']
+  const chipMeta = compact ? null : layers.selected.area
+  const scale = view === null ? null : scaleBarAt(view.zoom, view.latitude)
+  const boundaryCount = 1 + (layers.dashed ? 1 : 0) + (layers.dotted ? 1 : 0)
 
   return (
     <section className="district-map" aria-labelledby={titleId}>
-      {/* The drawing says nothing a screen reader needs: the chip, the legend
-          and the rail say it in text. */}
       <div ref={containerRef} className="district-map__canvas" aria-hidden="true" />
 
       {failed ? (
@@ -233,38 +213,108 @@ export function DistrictMap({
 
       {createPortal(
         <>
-          <Pin size={size} />
-          {compact ? null : <AddressMarker label={label} />}
+          <svg
+            className="district-map__pin"
+            width={pixels}
+            height={pixels}
+            viewBox={`${-arm} ${-arm} ${2 * arm} ${2 * arm}`}
+            aria-hidden="true"
+            focusable="false"
+          >
+            <path
+              className="district-map__crosshair"
+              d={`M0,${-arm} V${arm} M${-arm},0 H${arm}`}
+            />
+            <circle className="district-map__ring" r={ring} />
+            <circle className="district-map__dot" r={dot} />
+          </svg>
+          {compact ? null : (
+            // Inside the pin's element, so it moves with the address on a drag.
+            <p className="map-marker">
+              <span className="map-marker__dot" aria-hidden="true" />
+              <span>{label}</span>
+            </p>
+          )}
         </>,
         pinElement,
       )}
 
-      <ShowingChip
-        district={layers.selected}
-        compact={compact}
-        titleId={titleId}
-      />
+      <div className="map-chip">
+        <p className="map-chip__eyebrow">Showing</p>
+        <h2 id={titleId} className="map-chip__title">
+          {districtName(layers.selected, compact ? 'short' : 'full')}
+        </h2>
+        {chipMeta === null ? null : <p className="map-chip__meta">{chipMeta}</p>}
+      </div>
 
       {map === null || view === null ? null : (
-        <ZoomControls
-          canZoomIn={view.zoom < MAX_ZOOM - 0.001}
-          canZoomOut={view.zoom > MIN_ZOOM + 0.001}
-          onZoomIn={() =>
-            map.zoomTo(Math.min(MAX_ZOOM, map.getZoom() + ZOOM_STEP))
-          }
-          onZoomOut={() =>
-            map.zoomTo(Math.max(MIN_ZOOM, map.getZoom() - ZOOM_STEP))
-          }
-        />
+        // aria-disabled rather than disabled: disabling a focused button drops
+        // focus to the page. The zoom is clamped, so a press at a limit is a no-op.
+        <div className="map-zoom">
+          <button
+            type="button"
+            className="map-zoom__button"
+            aria-label="Zoom in"
+            aria-disabled={view.zoom >= MAX_ZOOM - 0.001 || undefined}
+            onClick={() => map.zoomTo(Math.min(MAX_ZOOM, map.getZoom() + ZOOM_STEP))}
+          >
+            +
+          </button>
+          <button
+            type="button"
+            className="map-zoom__button"
+            aria-label="Zoom out"
+            aria-disabled={view.zoom <= MIN_ZOOM + 0.001 || undefined}
+            onClick={() => map.zoomTo(Math.max(MIN_ZOOM, map.getZoom() - ZOOM_STEP))}
+          >
+            −
+          </button>
+        </div>
       )}
 
       {compact ? (
-        <BoundaryPill count={layerCount(layers)} />
+        <p className="map-pill">
+          <LineSwatch role="selected" width={20} />
+          <span>{countOf(boundaryCount, 'boundary', 'boundaries')}</span>
+        </p>
       ) : (
         <>
-          <MapLegend layers={layers} />
-          {view === null ? null : (
-            <ScaleBar scale={scaleBarAt(view.zoom, view.latitude)} />
+          <div className="map-legend">
+            <p className="map-legend__title">On this map</p>
+            <ul className="map-legend__list">
+              <li className="map-legend__item map-legend__item--selected">
+                <LineSwatch role="selected" width={24} />
+                <span>{districtName(layers.selected, 'legend')} — selected</span>
+              </li>
+              {(['dashed', 'dotted'] as const).map((role) => {
+                const district = layers[role]
+
+                return district === null ? null : (
+                  <li key={role} className="map-legend__item">
+                    <LineSwatch role={role} width={24} />
+                    <span>{districtName(district, 'legend')}</span>
+                  </li>
+                )
+              })}
+            </ul>
+          </div>
+
+          {scale === null ? null : (
+            <div className="map-scale">
+              <span
+                className="map-scale__bar"
+                style={{ width: `${scale.width}px` }}
+                aria-hidden="true"
+              >
+                <span className="map-scale__segment map-scale__segment--filled" />
+                <span className="map-scale__segment" />
+              </span>
+              <span className="map-scale__labels" style={{ width: `${scale.width}px` }}>
+                <span className="visually-hidden">Scale: </span>
+                <span aria-hidden="true">0</span>
+                <span>{scale.miles} mi</span>
+              </span>
+            </div>
           )}
         </>
       )}
@@ -272,37 +322,7 @@ export function DistrictMap({
   )
 }
 
-/**
- * The pin as the spec draws it: a dot, a dashed ring and a crosshair, at the
- * size they have at the design frame, whatever the zoom.
- */
-function Pin({ size }: { size: 'desktop' | 'phone' }) {
-  const { dot, ring, arm, pixels } = PIN[size]
-
-  return (
-    <svg
-      className="district-map__pin"
-      width={pixels}
-      height={pixels}
-      viewBox={`${-arm} ${-arm} ${2 * arm} ${2 * arm}`}
-      aria-hidden="true"
-      focusable="false"
-    >
-      <path
-        className="district-map__crosshair"
-        d={`M0,${-arm} V${arm} M${-arm},0 H${arm}`}
-      />
-      <circle className="district-map__ring" r={ring} />
-      <circle className="district-map__dot" r={dot} />
-    </svg>
-  )
-}
-
-/**
- * The theme's map colours, read again whenever the theme changes: by the
- * toggle, which sets data-theme on <html>, or by the system, when the page
- * follows it.
- */
+/** The theme's map colours, read again when the toggle or the system changes it. */
 function useMapColors(): MapColors {
   const [colors, setColors] = useState(readMapColors)
 

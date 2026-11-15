@@ -43,8 +43,10 @@ describe('ThemeToggle', () => {
     expect(window.localStorage.getItem('yem.theme')).toBeNull()
   })
 
-  it('restores a choice made on an earlier visit', () => {
+  // index.html applies the stored choice before React mounts.
+  it('picks up a choice made on an earlier visit', () => {
     window.localStorage.setItem('yem.theme', 'dark')
+    document.documentElement.setAttribute('data-theme', 'dark')
 
     render(<ThemeToggle />)
 

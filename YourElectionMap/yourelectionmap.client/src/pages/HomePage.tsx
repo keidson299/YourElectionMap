@@ -4,20 +4,9 @@ import { LayersIcon } from '../components/icons'
 import { SurveyMap } from '../components/SurveyMap'
 import { ThemeToggle } from '../components/ThemeToggle'
 import { openLookup } from '../districts/lookups'
-import type { Coordinates } from '../routing/routes'
 import './HomePage.css'
 
 export function HomePage() {
-  // The lookup runs before the page changes, so an address that cannot be found
-  // is said here, under the field the visitor typed it into.
-  function handleAddress(address: string) {
-    return openLookup({ address })
-  }
-
-  function handleCoordinates(coords: Coordinates) {
-    return openLookup({ coords })
-  }
-
   return (
     <main className="home">
       <SurveyMap />
@@ -42,8 +31,8 @@ export function HomePage() {
           <AddressForm
             variant="home"
             submitLabel="Find My Maps"
-            onSubmit={handleAddress}
-            onLocate={handleCoordinates}
+            onSubmit={(address) => openLookup({ address })}
+            onLocate={(coords) => openLookup({ coords })}
           />
 
           <p className="home__also">

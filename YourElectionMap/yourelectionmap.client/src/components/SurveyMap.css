@@ -10,6 +10,25 @@
   display: block;
 }
 
+.survey-map__water {
+  fill: var(--water);
+}
+
+.survey-map__roads {
+  fill: none;
+  stroke: var(--road);
+  stroke-width: 3px;
+  stroke-linecap: round;
+  opacity: 0.55;
+}
+
+.survey-map__mesh {
+  fill: none;
+  stroke: var(--district);
+  stroke-width: 1.8px;
+  stroke-linejoin: round;
+}
+
 .survey-map__selected {
   fill: var(--accent-tint);
   stroke: var(--accent);
@@ -67,11 +86,11 @@
     display: revert;
   }
 
-  .survey-map .survey-ground__roads {
+  .survey-map__roads {
     stroke-width: 4;
   }
 
-  .survey-map .survey-ground__mesh {
+  .survey-map__mesh {
     stroke-width: 2.4;
   }
 

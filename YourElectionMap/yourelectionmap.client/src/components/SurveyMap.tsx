@@ -1,30 +1,43 @@
 import { SurveyGround } from './SurveyGround'
 import {
+  DISTRICT_POLYGONS,
   NARROW_FOCUS,
   NARROW_TICKS,
-  OVERVIEW,
+  RIVER_PATH,
+  ROAD_PATHS,
   WIDE_FOCUS,
   WIDE_TICKS,
 } from './surveyMapGeometry'
 import './SurveyMap.css'
 
-// The full survey sheet behind the home card. It is decoration, not
-// information, so it is hidden from assistive technology entirely.
-//
-// The two focus groups are both rendered and swapped by a media query rather
-// than by measuring the window, because the phone board slices a narrower
-// window out of the same drawing and lands on a different district.
+// The decorative survey sheet behind the home card. Both focus groups are
+// rendered and a media query shows one, because the phone's narrower slice of
+// the drawing centres on a different district.
 
 export function SurveyMap() {
   return (
     <svg
-      viewBox={OVERVIEW.viewBox}
+      viewBox="0 0 1600 1000"
       preserveAspectRatio="xMidYMid slice"
       className="survey-map"
       aria-hidden="true"
       focusable="false"
     >
-      <SurveyGround ground={OVERVIEW.ground} standIn />
+      <SurveyGround ground={{ x: 0, y: 0, width: 1600, height: 1000 }} />
+
+      <path className="survey-map__water" d={RIVER_PATH} />
+
+      <g className="survey-map__roads">
+        {ROAD_PATHS.map((road) => (
+          <path key={road} d={road} />
+        ))}
+      </g>
+
+      <g className="survey-map__mesh">
+        {DISTRICT_POLYGONS.map((points) => (
+          <polygon key={points} points={points} />
+        ))}
+      </g>
 
       <FocusGroup variant="wide" focus={WIDE_FOCUS} />
       <FocusGroup variant="narrow" focus={NARROW_FOCUS} />
@@ -53,13 +66,14 @@ export function SurveyMap() {
   )
 }
 
-type FocusGroupProps = {
+/** The address's district, hatched, with the pin over the address. */
+function FocusGroup({
+  variant,
+  focus,
+}: {
   variant: 'wide' | 'narrow'
   focus: typeof WIDE_FOCUS
-}
-
-/** The address's district, hatched, with the pin over the address. */
-function FocusGroup({ variant, focus }: FocusGroupProps) {
+}) {
   const { x, y } = focus.center
 
   return (

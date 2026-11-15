@@ -2,28 +2,23 @@ import type { MapOptions } from 'maplibre-gl'
 import type { MapLayers } from '../districts/selection'
 import type { District } from '../districts/types'
 
-// The result map's whole look, built here rather than fetched: from
-// OpenFreeMap's tiles, the streets and what a visitor finds their bearings by
-// (towns, water, parks, highway numbers), under the districts drawn the way
-// the spec draws them. Rebuilt whenever the selection or the theme changes;
-// MapLibre works out what actually changed.
+// The result map's whole look: OpenFreeMap's streets, water, parks and names
+// under the districts. Rebuilt on any selection or theme change; MapLibre diffs.
 
 export type StyleSpecification = Exclude<MapOptions['style'], string | undefined>
 type LayerSpecification = StyleSpecification['layers'][number]
 type SymbolLayer = Extract<LayerSpecification, { type: 'symbol' }>
 
 /**
- * OpenFreeMap: OpenStreetMap streets as vector tiles, free, with no key, no
- * account and no cookies. The visitor's browser asks it for tiles directly,
- * so it sees roughly where on the map they are looking. Swap the provider here.
+ * OpenFreeMap: no key, no account, no cookies. The browser fetches tiles
+ * directly, so it sees roughly where the visitor is looking.
  */
-export const TILE_SOURCE = {
+const TILE_SOURCE = {
   url: 'https://tiles.openfreemap.org/planet',
   glyphs: 'https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf',
   font: 'Noto Sans Regular',
 }
 
-/** Colours from the page's tokens, resolved to values MapLibre can read. */
 export type MapColors = {
   paper: string
   road: string
@@ -51,9 +46,8 @@ const TOKENS: Record<keyof MapColors, string> = {
 }
 
 /**
- * The current theme's colours. Each token is resolved through a probe element,
- * so `var()` chains, the dark set and the newer `rgb(r g b / a)` syntax all come
- * back as the plain `rgb()` and `rgba()` MapLibre parses.
+ * Resolves each token through a probe element, so var() chains and the newer
+ * `rgb(r g b / a)` syntax come back as the rgb()/rgba() MapLibre parses.
  */
 export function readMapColors(): MapColors {
   const probe = document.createElement('span')
@@ -75,10 +69,10 @@ export function readMapColors(): MapColors {
   }
 }
 
-// Only seen where styles are not computed at all, as in the tests.
+// Only where styles aren't computed, as in jsdom.
 const FALLBACK = 'rgb(128, 128, 128)'
 
-/** Line widths and dash patterns, in CSS pixels, from the spec's Result screens. */
+/** CSS pixels, from the spec's Result screens. */
 const LINES = {
   desktop: {
     selected: 3.4,
@@ -98,12 +92,11 @@ const LINES = {
   },
 }
 
-/** The id the hatch image is registered under; it carries what draws it. */
-export function hatchId(spacing: number, color: string): string {
+// The hatch image's id carries what draws it, so DistrictMap can draw it on demand.
+function hatchId(spacing: number, color: string): string {
   return `hatch|${spacing}|${color}`
 }
 
-/** The spacing and colour a hatch id was made from, or null for any other image. */
 export function readHatchId(
   id: string,
 ): { spacing: number; color: string } | null {
@@ -125,9 +118,8 @@ export function buildStyle({
 }): StyleSpecification {
   const lines = LINES[compact ? 'phone' : 'desktop']
 
-  // A neighbour's boundary, fainter than the selection's. MapLibre measures
-  // dashes in line widths, the spec in pixels; a dot is a short dash with
-  // round caps.
+  // MapLibre measures dashes in line widths, the spec in pixels; a dot is a
+  // short dash with round caps.
   const contextLine = (role: 'dashed' | 'dotted'): LayerSpecification => ({
     id: `${role}-line`,
     type: 'line',
@@ -192,7 +184,7 @@ export function buildStyle({
   }
 }
 
-/** One district as a GeoJSON source, or an empty one where there is no neighbour. */
+/** An empty source where there is no neighbour. */
 function districtSource(
   district: District | null,
 ): StyleSpecification['sources'][string] {
@@ -218,11 +210,7 @@ function districtSource(
   }
 }
 
-/**
- * What lies under the streets: parks and other public land, a town's parks,
- * golf courses and greens, and water. All of it pale, so the hatched district
- * stays the strongest thing on the map.
- */
+/** Pale, so the hatched district stays the strongest thing on the map. */
 function groundLayers(colors: MapColors): LayerSpecification[] {
   return [
     {
@@ -268,14 +256,8 @@ function groundLayers(colors: MapColors): LayerSpecification[] {
   ]
 }
 
-/**
- * The map's names. MapLibre places the labels of higher layers first, so these
- * run from least to most wanted: water and parks, then streets, highway
- * numbers, neighbourhoods, and towns, which win any collision.
- */
+/** MapLibre places higher layers' labels first, so these run least to most wanted. */
 function labelLayers(colors: MapColors): LayerSpecification[] {
-  // A name from the street tiles, in the tiles' font, haloed in paper unless
-  // the layer says otherwise.
   const label = (
     id: string,
     sourceLayer: string,
@@ -318,7 +300,7 @@ function labelLayers(colors: MapColors): LayerSpecification[] {
       },
       { minzoom: 11, filter: ['==', ['get', 'class'], 'river'] },
     ),
-    // The park layer's named points, one per park, rather than its shapes.
+    // One named point per park, rather than its shapes.
     label(
       'park-names',
       'park',
@@ -347,9 +329,8 @@ function labelLayers(colors: MapColors): LayerSpecification[] {
       {
         'symbol-placement': 'line',
         'symbol-spacing': 400,
-        // As people say it: "I-5", "US 93". Where the tiles give a bare number
-        // the network names the kind of road; a ref that already says it
-        // ("I 5"), and a state route, are shown as they are.
+        // As people say it: a bare "5" on an interstate is "I-5", on a US
+        // highway "US 5". Other refs are shown as they are.
         'text-field': [
           'case',
           [
@@ -425,11 +406,7 @@ function labelLayers(colors: MapColors): LayerSpecification[] {
 
 const DIGITS = [...'0123456789']
 
-/**
- * The streets, in three weights by the class OpenMapTiles gives them. The tiles
- * decide which classes exist at which zoom — highways from the state view,
- * local streets only close in — so the map thins itself as it widens.
- */
+/** Three weights by class; the tiles decide which classes exist at each zoom. */
 function streetLayers(colors: MapColors): LayerSpecification[] {
   const street = (
     id: string,
