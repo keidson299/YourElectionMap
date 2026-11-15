@@ -3,7 +3,7 @@
 Every boundary on the site comes from the Census Bureau's TIGERweb map services. This tool turns
 each state's layers into `YourElectionMap.Server/Districts/Data/<state>-districts.json`: rings in
 longitude and latitude, thinned to 15 feet, written to five decimal places (about a metre). The
-files are git-ignored; the command that builds them is in `CLAUDE.md`. TIGER data is public
+files are git-ignored; the README says how to download the layers and run the tool. TIGER data is public
 domain, and the site credits it (`DataCredit` in the client).
 
 ## Downloads

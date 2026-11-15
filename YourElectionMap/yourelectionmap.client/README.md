@@ -29,11 +29,11 @@ modules twice and every suite fails in `src/test/setup.ts` before a test runs.
 | Folder | What is in it |
 | --- | --- |
 | `pages/` | `HomePage` and `MapPage` |
-| `components/` | The address form, header, theme toggle, Home's decorative map, the empty survey sheet behind the waiting and no-match cards (`SurveyGround`), and `DataCredit`, the required Census Bureau credit; `result/` holds the rail, the map and what sits over it |
+| `components/` | The address form, header, light/dark theme toggle, Home's decorative map, the empty survey sheet behind the waiting and no-match cards (`SurveyGround`), and `DataCredit`, the required Census Bureau credit; `result/` holds the rail, the map and what sits over it |
 | `districts/` | `types.ts`, the lookup contract shared with the server's `DistrictLookup.cs`; `lookups.ts`, the whole data layer; selection and labels |
 | `map/` | The MapLibre style, the hatch, and `camera.ts`: where the map opens, how far it can be dragged, and the scale bar |
 | `routing/` | A small wrapper over the History API; the URL decides what is looked up and shown |
-| `hooks/`, `theme/` | The media query hook; the light/dark theme |
+| `hooks/` | `useIsPhone`, the phone-layout media query |
 | `test/` | Test setup, a fake districts API, a fake MapLibre, and a six-level sample lookup |
 
 Sizes, colours and line weights come from the build spec,
