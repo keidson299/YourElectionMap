@@ -8,9 +8,4 @@
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 
-  <ItemGroup>
-    <!-- For Geometry.BoxOf, the box the server reads back. -->
-    <ProjectReference Include="..\YourElectionMap.Server\YourElectionMap.Server.csproj" />
-  </ItemGroup>
-
 </Project>

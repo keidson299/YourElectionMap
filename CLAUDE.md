@@ -167,7 +167,9 @@ it, and any new page that offers or draws the map needs it too.
 `DistrictsEndpointTests` fail. They are
 built by `YourElectionMap.Tools` from TIGERweb GeoJSON kept outside the repository (see
 `YourElectionMap.Tools/DATA-SOURCE.md`), and reach `bin/` through the Web SDK's default `**/*.json`
-content glob. A file not in degrees is refused at startup: rebuild it.
+content glob. A file not in degrees is refused at startup: rebuild it. Coordinates are written to
+five decimal places, which is what the server sends. Tools references no other project: it holds
+its own thinning and bounding box, and building it does not build the server or the client.
 
 ## Project priorities
 
