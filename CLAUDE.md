@@ -115,8 +115,7 @@ console project (`YourElectionMap.Tools`), run by hand, that builds the district
 has a Home page (the address form over a decorative survey map) and a result page (a rail of
 districts beside a MapLibre street map; on a phone, the map above a bottom sheet), fed by the
 server's one endpoint, `GET /api/districts`. The current plan is
-[design/ElectionMapMainDesignPlanV5.md](design/ElectionMapMainDesignPlanV5.md); code comments
-refer to its numbered slices.
+[design/YourElectionMapDesignPlan.md](design/YourElectionMapDesignPlan.md).
 
 **The data is real and covers all fifty states** (not Washington, D.C., or the territories):
 each state's US House, State Senate

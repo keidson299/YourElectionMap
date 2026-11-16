@@ -45,7 +45,7 @@ The solution, in `YourElectionMap/`:
 | `YourElectionMap.Server.Tests` | xUnit tests that run the whole app in memory, with no internet                                                |
 | `YourElectionMap.Tools`        | Console app that turns TIGER downloads into the district files                                                |
 
-The design plan is [design/ElectionMapMainDesignPlanV5.md](design/ElectionMapMainDesignPlanV5.md).
+The design plan is [design/YourElectionMapDesignPlan.md](design/YourElectionMapDesignPlan.md).
 
 ## Running it
 
